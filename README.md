@@ -118,10 +118,10 @@ We also provide a [docker image](https://hub.docker.com/repository/docker/soyabe
 
 ```bash
 # pull the image
-docker pull soyabean/GEfetch2R:1.1
+docker pull soyabean/gefetch2r:1.1
 
 # run the image
-docker run --rm -p 8888:8787 -e PASSWORD=passwd -e ROOT=TRUE -it soyabean/GEfetch2R:1.1
+docker run --rm -p 8888:8787 -e PASSWORD=passwd -e ROOT=TRUE -it soyabean/gefetch2r:1.1
 ```
 
 **Notes**:
