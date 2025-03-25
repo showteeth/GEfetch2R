@@ -118,10 +118,10 @@ We also provide a [docker image](https://hub.docker.com/repository/docker/soyabe
 
 ```bash
 # pull the image
-docker pull soyabean/GEfetch2R:1.6
+docker pull soyabean/GEfetch2R:1.1
 
 # run the image
-docker run --rm -p 8888:8787 -e PASSWORD=passwd -e ROOT=TRUE -it soyabean/GEfetch2R:1.6
+docker run --rm -p 8888:8787 -e PASSWORD=passwd -e ROOT=TRUE -it soyabean/GEfetch2R:1.1
 ```
 
 **Notes**:
@@ -133,6 +133,7 @@ docker run --rm -p 8888:8787 -e PASSWORD=passwd -e ROOT=TRUE -it soyabean/GEfetc
 * The `parallel-fastq-dump` path: `/opt/conda/bin/parallel-fastq-dump`.
 * The `bamtofastq_linux` path: `/opt/bamtofastq_linux`.
 * The `samtools` path: `/opt/conda/bin/samtools`.
+* The `ascp` path: `/opt/conda/bin/ascp`.
 * The `STAR` and `Cell Ranger` is not available in the image because customized reference genome is required.
 
 <hr />
