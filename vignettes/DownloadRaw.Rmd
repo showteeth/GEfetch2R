@@ -55,7 +55,6 @@ With the dataframe contains gsm and run number, `GEfetch2R` will use `prefetch` 
 
 Download from `SRA`:
 ```{r dwonload_sra, eval=FALSE}
-
 # download
 GSE130636.down <- DownloadSRA(
   gsm.df = GSE130636.runs,

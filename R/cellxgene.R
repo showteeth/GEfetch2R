@@ -191,7 +191,6 @@ ExtractCELLxGENEMeta <- function(all.samples.df, organism = NULL, ethnicity = NU
 #' @importFrom utils download.file
 #' @importFrom rlang parse_expr
 #' @importFrom dplyr filter
-#' @import cellxgene.census
 #' @export
 #' @references https://gist.github.com/ivirshup/f1a1603db69de3888eacb4bdb6a9317a
 #'

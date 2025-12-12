@@ -1,3 +1,10 @@
+# GEfetch2R 0.7.2
+
+## Minor changes
+* Removed `cellxgene.census` dependency to avoid possible installation issue on Windows.
+
+-------------------
+
 # GEfetch2R 0.7.1
 
 ## New features

@@ -41,7 +41,7 @@ head(pbmc_small@meta.data)
 ```{r testsce}
 # seger <- scRNAseq::SegerstolpePancreasData()
 # load from local
-seger = readRDS("/Users/soyabean/Desktop/tmp/scdown/conversion/seger.rds")
+seger <- readRDS("/Users/soyabean/Desktop/tmp/scdown/conversion/seger.rds")
 seger
 ```
 

@@ -15,7 +15,6 @@
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter if_all everything group_by_all summarise n arrange desc
 #' @importFrom tidyr separate_rows all_of
-#' @import cellxgene.census
 #' @export
 #'
 #' @examples
