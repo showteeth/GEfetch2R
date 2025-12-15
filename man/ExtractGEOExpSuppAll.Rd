@@ -9,6 +9,9 @@ ExtractGEOExpSuppAll(
   supp.idx = 1,
   timeout = 3600,
   supp.type = c("count", "10x", "10xSingle"),
+  extra.cols = c("chr", "start", "end", "strand", "length", "width", "chromosome",
+    "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop"),
+  transpose = TRUE,
   out.folder = NULL,
   gene2feature = TRUE
 )
@@ -23,6 +26,11 @@ ExtractGEOExpSuppAll(
 \item{supp.type}{The type of downloaded supplementary files, choose from count (count matrix file or single count matrix file),
 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.}
+
+\item{extra.cols}{Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
+Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".}
+
+\item{transpose}{Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.}
 
 \item{out.folder}{Output folder to save 10x files. Default: NULL (current working directory).}
 

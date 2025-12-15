@@ -11,14 +11,18 @@
 #' @param supp.type The type of downloaded supplementary files, choose from count (count matrix file or single count matrix file),
 #' 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 #' and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.
+#' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
+#' Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".
+#' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.
 #' @param out.folder Output folder to save 10x files. Default: NULL (current working directory).
 #' @param gene2feature Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}. Default: TRUE.
+#' @param load2R Logical value, whether to load the count matrix to R. Default: TRUE.
 #' @param merge Logical value, whether to merge Seurat list when there are multiple 10x files (\code{supp.type} is 10x). Default: FALSE.
 #' @param meta.data Dataframe contains sample information for DESeqDataSet, use when \code{data.type} is bulk. Default: NULL.
 #' @param fmu Column of \code{meta.data} contains group information. Default: NULL.
 #' @param ... Parameters for \code{\link{getGEO}}.
 #'
-#' @return If \code{data.type} is "sc", return Seurat object (if \code{merge} is TRUE) or Seurat object list (if \code{merge} is FALSE).
+#' @return If \code{load2R} is FALSE, return count matrix. If \code{data.type} is "sc", return Seurat object (if \code{merge} is TRUE) or Seurat object list (if \code{merge} is FALSE).
 #' If \code{data.type} is "bulk", return DESeqDataSet.
 #' @importFrom magrittr %>%
 #' @importFrom GEOquery getGEO getGEOSuppFiles
@@ -26,7 +30,7 @@
 #' @importFrom tools file_ext
 #' @importFrom utils untar
 #' @importFrom data.table fread
-#' @importFrom openxlsx read.xlsx
+#' @importFrom readxl read_excel
 #' @importFrom Seurat Read10X CreateSeuratObject
 #' @importFrom methods new
 #' @importFrom stats formula
@@ -50,8 +54,14 @@
 #' )
 #' }
 ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, timeout = 3600, data.type = c("sc", "bulk"),
-                     supp.type = c("count", "10x", "10xSingle"), out.folder = NULL, gene2feature = TRUE, merge = TRUE,
-                     meta.data = NULL, fmu = NULL, ...) {
+                     supp.type = c("count", "10x", "10xSingle"),
+                     extra.cols = c(
+                       "chr", "start", "end", "strand", "length",
+                       "width", "chromosome", "seqnames", "seqname",
+                       "chrom", "chromosome_name", "seqid", "stop"
+                     ),
+                     transpose = TRUE, out.folder = NULL, gene2feature = TRUE,
+                     load2R = TRUE, merge = TRUE, meta.data = NULL, fmu = NULL, ...) {
   # check parameters
   data.type <- match.arg(arg = data.type)
   supp.type <- match.arg(arg = supp.type)
@@ -74,37 +84,43 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
   # extract counts matrix
   pf.count <- ExtractGEOExp(
     pf.obj = pf.obj, acce = acce, supp.idx = supp.idx, down.supp = down.supp,
-    timeout = timeout, supp.type = supp.type, out.folder = out.folder, gene2feature = gene2feature
+    timeout = timeout, supp.type = supp.type, extra.cols = extra.cols, transpose = transpose,
+    out.folder = out.folder, gene2feature = gene2feature
   )
-  if (data.type == "bulk") {
-    de.obj <- Loading2DESeq2(mat = pf.count, meta = meta.data, fmu = fmu)
-    return(de.obj)
-  } else if (data.type == "sc") {
-    # load seurat
-    # if (is.null(pf.count) && supp.type == "10x") {
-    if (is.null(pf.count) && (supp.type == "10x" || supp.type == "10xSingle")) {
-      message("Loading data to Seurat!")
-      all.samples.folder <- dir(out.folder, full.names = TRUE)
-      # check file
-      valid.samples.folder <- Check10XFiles(folders = all.samples.folder, gene2feature = gene2feature)
-      if (length(valid.samples.folder) == 0) {
-        stop("No valid sample folder detected under ", out.folder, ". Please check!")
+  # load to R
+  if (load2R) {
+    if (data.type == "bulk") {
+      de.obj <- Loading2DESeq2(mat = pf.count, meta = meta.data, fmu = fmu)
+      return(de.obj)
+    } else if (data.type == "sc") {
+      # load seurat
+      # if (is.null(pf.count) && supp.type == "10x") {
+      if (is.null(pf.count) && (supp.type == "10x" || supp.type == "10xSingle")) {
+        message("Loading data to Seurat!")
+        all.samples.folder <- dir(out.folder, full.names = TRUE)
+        # check file
+        valid.samples.folder <- Check10XFiles(folders = all.samples.folder, gene2feature = gene2feature)
+        if (length(valid.samples.folder) == 0) {
+          stop("No valid sample folder detected under ", out.folder, ". Please check!")
+        }
+        # load to seurat
+        seu.list <- sapply(valid.samples.folder, function(x) {
+          x.mat <- Seurat::Read10X(data.dir = x)
+          seu.obj <- Seurat::CreateSeuratObject(counts = x.mat, project = basename(x))
+          seu.obj
+        })
+        if (isTRUE(merge)) {
+          seu.obj <- mergeExperiments(seu.list)
+        } else {
+          seu.obj <- seu.list
+        }
+      } else if (!is.null(pf.count) && supp.type == "count") {
+        seu.obj <- Seurat::CreateSeuratObject(counts = pf.count, project = acce)
       }
-      # load to seurat
-      seu.list <- sapply(valid.samples.folder, function(x) {
-        x.mat <- Seurat::Read10X(data.dir = x)
-        seu.obj <- Seurat::CreateSeuratObject(counts = x.mat, project = basename(x))
-        seu.obj
-      })
-      if (isTRUE(merge)) {
-        seu.obj <- mergeExperiments(seu.list)
-      } else {
-        seu.obj <- seu.list
-      }
-    } else if (!is.null(pf.count) && supp.type == "count") {
-      seu.obj <- Seurat::CreateSeuratObject(counts = pf.count, project = acce)
+      return(seu.obj)
     }
-    return(seu.obj)
+  } else {
+    return(pf.count)
   }
 }
 
@@ -275,10 +291,18 @@ ExtractGEOSubMeta <- function(pf.obj) {
 #' @param acce GEO accession number.
 #' @param timeout Timeout for \code{\link{download.file}}. Default: 3600.
 #' @param supp.idx The index of supplementary files to download. Default: 1.
+#' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
+#' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns.
 #'
 #' @return A dataframe.
 #'
-ExtractGEOExpSupp <- function(acce, timeout = 3600, supp.idx = 1) {
+ExtractGEOExpSupp <- function(acce, timeout = 3600, supp.idx = 1,
+                              extra.cols = c(
+                                "chr", "start", "end", "strand", "length",
+                                "width", "chromosome", "seqnames", "seqname",
+                                "chrom", "chromosome_name", "seqid", "stop"
+                              ),
+                              transpose = TRUE) {
   # create tmp folder
   tmp.folder <- tempdir()
   # get current timeout
@@ -329,8 +353,18 @@ ExtractGEOExpSupp <- function(acce, timeout = 3600, supp.idx = 1) {
     count.list <- lapply(
       list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE),
       function(x) {
-        sample.count <- data.table::fread(file = x) %>% as.data.frame()
-        colnames(sample.count) <- c("GeneName", gsub(pattern = "(GSM[0-9]*).*", replacement = "\\1", x = basename(x)))
+        sample.count <- ReadFile(file.path = x, extra.cols = extra.cols, transpose = transpose) %>% tibble::rownames_to_column(var = "GeneName")
+        sample.name <- gsub(pattern = "(GSM[0-9]*).*", replacement = "\\1", x = basename(x))
+        if (ncol(sample.count) > 2) {
+          message(
+            "The count matrix has multiple columns, which may be output by STAR!", "\n",
+            "Adding colnames with col1, col2, col3..., you can use dplyr::select(dplyr::ends_with('col2')) to extract the correct count matrix (use 'col2' as example)."
+          )
+          count.col.names <- paste(sample.name, paste0("col", 1:(ncol(sample.count) - 1)), sep = "_")
+        } else {
+          count.col.names <- sample.name
+        }
+        colnames(sample.count) <- c("GeneName", count.col.names)
         sample.count
       }
     )
@@ -340,17 +374,10 @@ ExtractGEOExpSupp <- function(acce, timeout = 3600, supp.idx = 1) {
     }, x = count.list)
     rownames(count.mat) <- count.mat$GeneName
     count.mat$GeneName <- NULL
+  } else if (file.ext %in% c("xlsx", "xls", "csv", "tsv", "txt", "tab")) {
+    count.mat <- ReadFile(file.path = supp.file.path, extra.cols = extra.cols, transpose = transpose)
   } else {
-    if (file.ext %in% c("xlsx", "xls")) {
-      # read excel file
-      count.mat <- openxlsx::read.xlsx(xlsxFile = supp.file.path, rowNames = TRUE)
-    } else if (file.ext %in% c("csv", "tsv", "txt")) {
-      # read text file
-      count.mat <- data.table::fread(file = supp.file.path) %>% as.data.frame()
-      # the first column must be gene
-      rownames(count.mat) <- count.mat[, 1]
-      count.mat[, 1] <- NULL
-    }
+    stop("Unsupported file extension: ", file.ext)
   }
   return(count.mat)
 }
@@ -541,6 +568,9 @@ ExtractGEOExpSupp10xSingle <- function(acce, timeout = 3600, out.folder = NULL, 
 #' @param supp.type The type of downloaded supplementary files, choose from count (count matrix file or single count matrix file),
 #' 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 #' and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.
+#' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
+#' Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".
+#' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.
 #' @param out.folder Output folder to save 10x files. Default: NULL (current working directory).
 #' @param gene2feature Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}. Default: TRUE.
 #' Default: TURE.
@@ -548,9 +578,15 @@ ExtractGEOExpSupp10xSingle <- function(acce, timeout = 3600, out.folder = NULL, 
 #' @return Count matrix (\code{supp.type} is count) or NULL (\code{supp.type} is 10x).
 #'
 ExtractGEOExpSuppAll <- function(acce, supp.idx = 1, timeout = 3600,
-                                 supp.type = c("count", "10x", "10xSingle"), out.folder = NULL, gene2feature = TRUE) {
+                                 supp.type = c("count", "10x", "10xSingle"),
+                                 extra.cols = c(
+                                   "chr", "start", "end", "strand", "length",
+                                   "width", "chromosome", "seqnames", "seqname",
+                                   "chrom", "chromosome_name", "seqid", "stop"
+                                 ),
+                                 transpose = TRUE, out.folder = NULL, gene2feature = TRUE) {
   if (supp.type == "count") {
-    count.mat <- ExtractGEOExpSupp(acce = acce, supp.idx = supp.idx, timeout = timeout)
+    count.mat <- ExtractGEOExpSupp(acce = acce, supp.idx = supp.idx, timeout = timeout, extra.cols = extra.cols, transpose = transpose)
     return(count.mat)
   } else if (supp.type == "10x") {
     ExtractGEOExpSupp10x(acce = acce, supp.idx = supp.idx, timeout = timeout, out.folder = out.folder, gene2feature = gene2feature)
@@ -573,13 +609,22 @@ ExtractGEOExpSuppAll <- function(acce, supp.idx = 1, timeout = 3600,
 #' @param supp.type The type of downloaded supplementary files, choose from count (count matrix file or single count matrix file),
 #' 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 #' and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.
+#' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
+#' Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".
+#' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.
 #' @param out.folder Output folder to save 10x files. Default: NULL (current working directory).
 #' @param gene2feature Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}. Default: TRUE.
 #'
 #' @return Count matrix (\code{supp.type} is count) or NULL (\code{supp.type} is 10x/10xSingle).
 #'
 ExtractGEOExp <- function(pf.obj, acce, supp.idx = 1, down.supp = FALSE, timeout = 3600,
-                          supp.type = c("count", "10x", "10xSingle"), out.folder = NULL, gene2feature = TRUE) {
+                          supp.type = c("count", "10x", "10xSingle"),
+                          extra.cols = c(
+                            "chr", "start", "end", "strand", "length",
+                            "width", "chromosome", "seqnames", "seqname",
+                            "chrom", "chromosome_name", "seqid", "stop"
+                          ),
+                          transpose = TRUE, out.folder = NULL, gene2feature = TRUE) {
   # check parameters
   supp.type <- match.arg(arg = supp.type)
   # download supplementary files

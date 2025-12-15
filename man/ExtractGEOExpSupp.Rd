@@ -4,7 +4,14 @@
 \alias{ExtractGEOExpSupp}
 \title{Extract Raw Count Matrix from Supplementary Files.}
 \usage{
-ExtractGEOExpSupp(acce, timeout = 3600, supp.idx = 1)
+ExtractGEOExpSupp(
+  acce,
+  timeout = 3600,
+  supp.idx = 1,
+  extra.cols = c("chr", "start", "end", "strand", "length", "width", "chromosome",
+    "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop"),
+  transpose = TRUE
+)
 }
 \arguments{
 \item{acce}{GEO accession number.}
@@ -12,6 +19,10 @@ ExtractGEOExpSupp(acce, timeout = 3600, supp.idx = 1)
 \item{timeout}{Timeout for \code{\link{download.file}}. Default: 3600.}
 
 \item{supp.idx}{The index of supplementary files to download. Default: 1.}
+
+\item{extra.cols}{Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).}
+
+\item{transpose}{Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns.}
 }
 \value{
 A dataframe.

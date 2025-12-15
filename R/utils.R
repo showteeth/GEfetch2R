@@ -874,3 +874,82 @@ Gunzip <- function(filename, destname = gsub("[.]gz$", "", filename), overwrite 
 
   invisible(nbytes)
 }
+
+# used in ParseGEO, read count matrix file of bulk and smart-seq2 RNA-seq.
+ReadFile <- function(file.path, extra.cols = c(
+                       "chr", "start", "end", "strand", "length",
+                       "width", "chromosome", "seqnames", "seqname",
+                       "chrom", "chromosome_name", "seqid", "stop"
+                     ),
+                     transpose = TRUE) {
+  file.ext <- tools::file_ext(file.path)
+  if (file.ext %in% c("xlsx", "xls")) {
+    # read excel file
+    count.mat <- tryCatch(
+      {
+        readxl::read_excel(path = file.path) %>% as.data.frame()
+      },
+      error = function(e) {
+        message(e)
+        # empty dataframe
+        data.frame()
+      }
+    )
+  } else if (file.ext %in% c("csv", "tsv", "txt", "tab")) {
+    # read text file
+    count.mat <- tryCatch(
+      {
+        data.table::fread(file = file.path) %>% as.data.frame()
+      },
+      error = function(e) {
+        message(e)
+        # empty dataframe
+        data.frame()
+      }
+    )
+  }
+  if (nrow(count.mat) > 0) {
+    # the first column must be gene
+    # check unique
+    if (length(count.mat[, 1]) != length(unique(count.mat[, 1]))) {
+      message(
+        "The row names are not unique, run 'make.unique'.", "\n",
+        "You can extract duplicated gene names with grep(pattern = '_dup', x = rownames(count.mat), value = T)."
+      )
+      # ensure unique
+      count.mat[, 1] <- make.unique(count.mat[, 1], sep = "_dup")
+    }
+    rownames(count.mat) <- count.mat[, 1]
+    count.mat[, 1] <- NULL
+    # remove extra columns
+    count.mat.cols <- colnames(count.mat) %>% tolower()
+    extra.cols.idx <- sapply(count.mat.cols, function(x) {
+      x %in% extra.cols
+    })
+    extra.cols.remove <- count.mat.cols[extra.cols.idx]
+    if (length(extra.cols.remove) > 0) {
+      message("Detect and remove extra columns: ", paste(extra.cols.remove, collapse = ", "))
+    }
+    count.mat <- count.mat[, !extra.cols.idx, drop = FALSE]
+    # check col type
+    count.mat.ct <- sapply(count.mat, class)
+    # get character columns
+    count.mat.ct.c <- count.mat.ct[count.mat.ct == "character"] %>% names()
+    if (length(count.mat.ct.c) > 0) {
+      message("Detect and remove character columns: ", paste(count.mat.ct.c, collapse = ", "))
+      count.mat[count.mat.ct.c] <- NULL
+    }
+    # check row and col number
+    if (nrow(count.mat) < ncol(count.mat)) {
+      warning(
+        "The number of rows: ", nrow(count.mat), "(", paste(head(rownames(count.mat)), collapse = ", "), ")",
+        " is smaller than the number of columns: ", ncol(count.mat), ". May be a transposed matrix, please check and set parameter transpose (Default: TRUE)!"
+      )
+      if (isTRUE(transpose)) {
+        message("The transpose is set to TRUE, transpose the matrix!")
+        count.mat <- t(count.mat) %>% as.data.frame()
+      }
+    }
+  }
+  return(count.mat)
+}
