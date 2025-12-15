@@ -26,6 +26,7 @@
 #' If \code{data.type} is "bulk", return DESeqDataSet.
 #' @importFrom magrittr %>%
 #' @importFrom GEOquery getGEO getGEOSuppFiles
+#' @importFrom xml2 read_html xml_text xml_find_all
 #' @importFrom Biobase annotation experimentData pData phenoData notes sampleNames exprs
 #' @importFrom tools file_ext
 #' @importFrom utils untar
@@ -313,23 +314,16 @@ ExtractGEOExpSupp <- function(acce, timeout = 3600, supp.idx = 1,
     options(timeout = timeout)
   }
   # download supplementary file
-  # supp.down.log <- GEOquery::getGEOSuppFiles(GEO = acce, baseDir = tmp.folder)
   supp.down.log <- tryCatch(
     expr = {
-      GEOquery::getGEOSuppFiles(GEO = acce, baseDir = tmp.folder)
+      getGEOSuppFilesInner(GEO = acce, baseDir = tmp.folder, index = supp.idx)
     },
     error = function(e) {
       print(e)
-      stop("You can change the timeout with a larger value.")
+      stop("Please check the supp.idx or change the timeout with a larger value.")
     }
   )
-  if (supp.idx > nrow(supp.down.log)) {
-    stop("Please provide valid supplementary file index.")
-  }
-  supp.file.path <- rownames(supp.down.log)[supp.idx]
-  # remove unused supplementary file
-  unused.supp <- setdiff(rownames(supp.down.log), supp.file.path)
-  unused.supp.remove <- file.remove(unused.supp)
+  supp.file.path <- rownames(supp.down.log)
   # file unzip
   file.ext <- tools::file_ext(supp.file.path)
   if (file.ext == "gz") {
@@ -407,22 +401,14 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
   # download supp file
   supp.down.log <- tryCatch(
     expr = {
-      GEOquery::getGEOSuppFiles(GEO = acce, baseDir = tmp.folder)
+      getGEOSuppFilesInner(GEO = acce, baseDir = tmp.folder, index = supp.idx)
     },
     error = function(e) {
       print(e)
-      stop("You can change the timeout with a larger value.")
+      stop("Please check the supp.idx or change the timeout with a larger value.")
     }
   )
-  # check supp.idx
-  if (supp.idx > nrow(supp.down.log)) {
-    stop("Please provide valid supplementary file index.")
-  }
-  # get used supplementary file
-  supp.file.path <- rownames(supp.down.log)[supp.idx]
-  # remove unused supplementary file
-  unused.supp <- setdiff(rownames(supp.down.log), supp.file.path)
-  unused.supp.remove <- file.remove(unused.supp)
+  supp.file.path <- rownames(supp.down.log)
   # file unzip
   file.ext <- tools::file_ext(supp.file.path)
   if (file.ext == "gz") {

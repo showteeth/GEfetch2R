@@ -953,3 +953,92 @@ ReadFile <- function(file.path, extra.cols = c(
   }
   return(count.mat)
 }
+
+# modified from https://github.com/seandavi/GEOquery/blob/c85b1115cdee87515ed0d72bfde86f3986a0b2b7/R/getGEOSuppFiles.R
+getDirListing <- function(url) {
+  # Takes a URL and returns a character vector of filenames
+  a <- xml2::read_html(url)
+  fnames <- grep("^G", xml2::xml_text(xml2::xml_find_all(a, "//a/@href")), value = TRUE)
+  return(fnames)
+}
+# get file name and url
+getGEOFileIndexName <- function(GEO, index) {
+  geotype <- toupper(substr(GEO, 1, 3))
+  stub <- gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
+  if (geotype == "GSM") {
+    url <- sprintf(
+      "https://ftp.ncbi.nlm.nih.gov/geo/samples/%s/%s/suppl/",
+      stub, GEO
+    )
+  }
+  if (geotype == "GSE") {
+    url <- sprintf(
+      "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/suppl/",
+      stub, GEO
+    )
+  }
+  if (geotype == "GPL") {
+    url <- sprintf(
+      "https://ftp.ncbi.nlm.nih.gov/geo/platform/%s/%s/suppl/",
+      stub, GEO
+    )
+  }
+  fnames <- try(getDirListing(url), silent = TRUE)
+  # check status
+  if (inherits(fnames, "try-error")) {
+    stop("No supplemental files found. Check URL manually if in doubt: ", url)
+  }
+  # check index
+  if (index > length(fnames)) {
+    stop("Please provide valid supplementary file index. Total length: ", length(fnames))
+  }
+  used.fnames <- fnames[index]
+  return(c(used.fnames, url))
+}
+# https://github.com/seandavi/GEOquery/blob/c85b1115cdee87515ed0d72bfde86f3986a0b2b7/R/getGEOSuppFiles.R
+getGEOSuppFilesInner <- function(GEO, makeDirectory = TRUE, baseDir = getwd(), index = 1) {
+  # get used file
+  index.url <- getGEOFileIndexName(GEO = GEO, index = index)
+  storedir <- baseDir
+  fileinfo <- list()
+  # create output folder
+  if (makeDirectory) {
+    suppressWarnings(dir.create(storedir <- file.path(baseDir, GEO)))
+  }
+  # download
+  destfile <- file.path(storedir, index.url[1])
+  result <- tryCatch(
+    {
+      if (!file.exists(destfile)) {
+        res <- download.file(
+          paste(file.path(index.url[2], index.url[1]),
+            "tool=geoquery",
+            sep = "?"
+          ),
+          destfile = destfile,
+          mode = "wb", method = getOption("download.file.method.GEOquery")
+        )
+      } else {
+        message(sprintf(
+          "Using locally cached version of supplementary file(s) %s found here:\n%s ",
+          GEO, destfile
+        ))
+        res <- 0
+      }
+      res == 0
+    },
+    error = function(e) {
+      return(FALSE)
+    },
+    warning = function(w) {
+      return(FALSE)
+    }
+  )
+  if (!result) {
+    if (file.exists(destfile)) {
+      file.remove(destfile)
+    }
+    stop(sprintf("Failed to download %s!", destfile))
+  }
+  return(file.info(destfile))
+}
