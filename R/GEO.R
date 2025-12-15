@@ -11,6 +11,7 @@
 #' @param supp.type The type of downloaded supplementary files, choose from count (count matrix file or single count matrix file),
 #' 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 #' and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.
+#' @param file.regex The regex to extract correct count matrix files. Default: NULL (when multiple file extensions are available in the downloaded tar file, use the first file extension).
 #' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
 #' Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".
 #' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.
@@ -55,7 +56,7 @@
 #' )
 #' }
 ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, timeout = 3600, data.type = c("sc", "bulk"),
-                     supp.type = c("count", "10x", "10xSingle"),
+                     supp.type = c("count", "10x", "10xSingle"), file.regex = NULL,
                      extra.cols = c(
                        "chr", "start", "end", "strand", "length",
                        "width", "chromosome", "seqnames", "seqname",
@@ -85,7 +86,8 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
   # extract counts matrix
   pf.count <- ExtractGEOExp(
     pf.obj = pf.obj, acce = acce, supp.idx = supp.idx, down.supp = down.supp,
-    timeout = timeout, supp.type = supp.type, extra.cols = extra.cols, transpose = transpose,
+    timeout = timeout, supp.type = supp.type, file.regex = file.regex,
+    extra.cols = extra.cols, transpose = transpose,
     out.folder = out.folder, gene2feature = gene2feature
   )
   # load to R
@@ -292,12 +294,13 @@ ExtractGEOSubMeta <- function(pf.obj) {
 #' @param acce GEO accession number.
 #' @param timeout Timeout for \code{\link{download.file}}. Default: 3600.
 #' @param supp.idx The index of supplementary files to download. Default: 1.
+#' @param file.regex The regex to extract correct count matrix files. Default: NULL.
 #' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
 #' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns.
 #'
 #' @return A dataframe.
 #'
-ExtractGEOExpSupp <- function(acce, timeout = 3600, supp.idx = 1,
+ExtractGEOExpSupp <- function(acce, timeout = 3600, supp.idx = 1, file.regex = NULL,
                               extra.cols = c(
                                 "chr", "start", "end", "strand", "length",
                                 "width", "chromosome", "seqnames", "seqname",
@@ -336,16 +339,37 @@ ExtractGEOExpSupp <- function(acce, timeout = 3600, supp.idx = 1,
   if (file.ext == "tar") {
     # untar
     utils::untar(supp.file.path, exdir = file.path(tmp.folder, acce, "sample"))
+    # detect file extension
+    all.files <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE)
+    all.file.exts <- sapply(all.files, getExtWithoutCompression)
+    if (length(unique(all.file.exts)) > 1) {
+      message(
+        "Detect more than one file extension: ", paste(unique(all.file.exts), collapse = ", "),
+        ".", "\n", "Please make sure you have set parameter file.regex to extract the correct file."
+      )
+      if (is.null(file.regex)) {
+        message("The file.regex is NULL, use the first file extension: ", unique(all.file.exts)[1])
+        file.regex <- unique(all.file.exts)[1]
+        # subset files
+        all.files <- all.file.exts[all.file.exts == file.regex] %>% names()
+      } else {
+        # subset files
+        all.files <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = file.regex)
+      }
+    } else {
+      all.files <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = file.regex)
+    }
     # unzip
     unzip.log <- sapply(
-      list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = "gz$"),
+      grep(pattern = "gz$", x = all.files, value = T),
       function(x) {
         Gunzip(x, overwrite = TRUE)
       }
     )
+    all.files <- gsub(pattern = ".gz", replacement = "", x = all.files)
     # read files
     count.list <- lapply(
-      list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE),
+      all.files,
       function(x) {
         sample.count <- ReadFile(file.path = x, extra.cols = extra.cols, transpose = transpose) %>% tibble::rownames_to_column(var = "GeneName")
         sample.name <- gsub(pattern = "(GSM[0-9]*).*", replacement = "\\1", x = basename(x))
@@ -554,6 +578,7 @@ ExtractGEOExpSupp10xSingle <- function(acce, timeout = 3600, out.folder = NULL, 
 #' @param supp.type The type of downloaded supplementary files, choose from count (count matrix file or single count matrix file),
 #' 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 #' and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.
+#' @param file.regex The regex to extract correct count matrix files. Default: NULL.
 #' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
 #' Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".
 #' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.
@@ -564,7 +589,7 @@ ExtractGEOExpSupp10xSingle <- function(acce, timeout = 3600, out.folder = NULL, 
 #' @return Count matrix (\code{supp.type} is count) or NULL (\code{supp.type} is 10x).
 #'
 ExtractGEOExpSuppAll <- function(acce, supp.idx = 1, timeout = 3600,
-                                 supp.type = c("count", "10x", "10xSingle"),
+                                 supp.type = c("count", "10x", "10xSingle"), file.regex = NULL,
                                  extra.cols = c(
                                    "chr", "start", "end", "strand", "length",
                                    "width", "chromosome", "seqnames", "seqname",
@@ -572,7 +597,10 @@ ExtractGEOExpSuppAll <- function(acce, supp.idx = 1, timeout = 3600,
                                  ),
                                  transpose = TRUE, out.folder = NULL, gene2feature = TRUE) {
   if (supp.type == "count") {
-    count.mat <- ExtractGEOExpSupp(acce = acce, supp.idx = supp.idx, timeout = timeout, extra.cols = extra.cols, transpose = transpose)
+    count.mat <- ExtractGEOExpSupp(
+      acce = acce, supp.idx = supp.idx, timeout = timeout, file.regex = file.regex,
+      extra.cols = extra.cols, transpose = transpose
+    )
     return(count.mat)
   } else if (supp.type == "10x") {
     ExtractGEOExpSupp10x(acce = acce, supp.idx = supp.idx, timeout = timeout, out.folder = out.folder, gene2feature = gene2feature)
@@ -595,6 +623,7 @@ ExtractGEOExpSuppAll <- function(acce, supp.idx = 1, timeout = 3600,
 #' @param supp.type The type of downloaded supplementary files, choose from count (count matrix file or single count matrix file),
 #' 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 #' and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.
+#' @param file.regex The regex to extract correct count matrix files. Default: NULL.
 #' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
 #' Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".
 #' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.
@@ -604,7 +633,7 @@ ExtractGEOExpSuppAll <- function(acce, supp.idx = 1, timeout = 3600,
 #' @return Count matrix (\code{supp.type} is count) or NULL (\code{supp.type} is 10x/10xSingle).
 #'
 ExtractGEOExp <- function(pf.obj, acce, supp.idx = 1, down.supp = FALSE, timeout = 3600,
-                          supp.type = c("count", "10x", "10xSingle"),
+                          supp.type = c("count", "10x", "10xSingle"), file.regex = NULL,
                           extra.cols = c(
                             "chr", "start", "end", "strand", "length",
                             "width", "chromosome", "seqnames", "seqname",
@@ -617,7 +646,9 @@ ExtractGEOExp <- function(pf.obj, acce, supp.idx = 1, down.supp = FALSE, timeout
   if (down.supp) {
     exp.data <- ExtractGEOExpSuppAll(
       acce = acce, supp.idx = supp.idx, timeout = timeout,
-      supp.type = supp.type, out.folder = out.folder, gene2feature = gene2feature
+      supp.type = supp.type, file.regex = file.regex,
+      extra.cols = extra.cols, transpose = transpose,
+      out.folder = out.folder, gene2feature = gene2feature
     )
   } else {
     expr.mat <- Biobase::exprs(pf.obj)
@@ -625,7 +656,9 @@ ExtractGEOExp <- function(pf.obj, acce, supp.idx = 1, down.supp = FALSE, timeout
       message("Matrix not available! Downloading supplementary files.")
       exp.data <- ExtractGEOExpSuppAll(
         acce = acce, supp.idx = supp.idx, timeout = timeout,
-        supp.type = supp.type, out.folder = out.folder, gene2feature = gene2feature
+        supp.type = supp.type, file.regex = file.regex,
+        extra.cols = extra.cols, transpose = transpose,
+        out.folder = out.folder, gene2feature = gene2feature
       )
     } else {
       if (all(expr.mat %% 1 == 0)) {
@@ -634,7 +667,9 @@ ExtractGEOExp <- function(pf.obj, acce, supp.idx = 1, down.supp = FALSE, timeout
         message("Matrix contains non-integer values! Downloading supplementary files.")
         exp.data <- ExtractGEOExpSuppAll(
           acce = acce, supp.idx = supp.idx, timeout = timeout,
-          supp.type = supp.type, out.folder = out.folder, gene2feature = gene2feature
+          supp.type = supp.type, file.regex = file.regex,
+          extra.cols = extra.cols, transpose = transpose,
+          out.folder = out.folder, gene2feature = gene2feature
         )
       }
     }

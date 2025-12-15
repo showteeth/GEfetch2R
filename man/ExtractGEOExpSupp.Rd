@@ -8,6 +8,7 @@ ExtractGEOExpSupp(
   acce,
   timeout = 3600,
   supp.idx = 1,
+  file.regex = NULL,
   extra.cols = c("chr", "start", "end", "strand", "length", "width", "chromosome",
     "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop"),
   transpose = TRUE
@@ -19,6 +20,8 @@ ExtractGEOExpSupp(
 \item{timeout}{Timeout for \code{\link{download.file}}. Default: 3600.}
 
 \item{supp.idx}{The index of supplementary files to download. Default: 1.}
+
+\item{file.regex}{The regex to extract correct count matrix files. Default: NULL.}
 
 \item{extra.cols}{Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).}
 

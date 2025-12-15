@@ -1042,3 +1042,17 @@ getGEOSuppFilesInner <- function(GEO, makeDirectory = TRUE, baseDir = getwd(), i
   }
   return(file.info(destfile))
 }
+
+# extract file extension without compression
+getExtWithoutCompression <- function(filename) {
+  # Define common compression extensions
+  compression.exts <- c("gz", "bz2", "xz", "zip", "tgz", "tar.gz") # expanded list
+  # Iterate and remove compression extensions
+  for (ext in compression.exts) {
+    if (grepl(paste0("\\.", ext, "$"), filename)) {
+      filename <- sub(paste0("\\.", ext, "$"), "", filename)
+    }
+  }
+  # Now, extract the remaining extension using tools::file_ext
+  return(tools::file_ext(filename))
+}
