@@ -131,53 +131,135 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
 #'
 #' @param acce GEO accession number.
 #' @param platform Platform information/field. Default: NULL (all platforms).
+#' @param down.supp Logical value, whether to download supplementary files to extract sample metadata. If TRUE, always
+#' download supplementary files. If FALSE, extract GEO sample metadata. Default: FALSE.
+#' @param supp.idx The index of supplementary files to download. Default: 1.
+#' @param timeout Timeout for \code{\link{download.file}}. Default: 3600.
 #' @param ... Parameters for \code{\link{getGEO}}.
 #'
 #' @return Dataframe contains all metadata of provided GEO accession number.
 #' @importFrom magrittr %>%
 #' @importFrom GEOquery getGEO
 #' @importFrom Biobase annotation experimentData pData phenoData notes sampleNames exprs
+#' @importFrom tools file_ext
+#' @importFrom readxl read_excel
+#' @importFrom data.table fread
+#' @importFrom xml2 read_html xml_text xml_find_all
 #' @export
 #'
 #' @examples
 #' \donttest{
 #' # users may need to set the size of the connection buffer
 #' # Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 60)
-#' # extract metadata of specified platform
+#' # extract GEO sample metadata of specified platform
 #' GSE200257.meta <- ExtractGEOMeta(acce = "GSE200257", platform = "GPL24676")
+#' # extract sample metadata from supplementary files
+#' GSE292261.meta.supp <- ExtractGEOMetaSupp(acce = "GSE292261", supp.idx = 4)
 #' }
-ExtractGEOMeta <- function(acce, platform = NULL, ...) {
-  # get GEO object
-  if (is.null(platform)) {
-    geo.obj <- GEOquery::getGEO(GEO = acce, ...)
-    pfs <- sapply(geo.obj, function(x) {
-      Biobase::annotation(x)
+ExtractGEOMeta <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, timeout = 3600, ...) {
+  if (down.supp) {
+    message("Download supplementary files to extract sample metadata!")
+    geo.meta.df <- ExtractGEOMetaSupp(acce = acce, timeout = timeout, supp.idx = supp.idx)
+  } else {
+    # get GEO object
+    if (is.null(platform)) {
+      geo.obj <- GEOquery::getGEO(GEO = acce, ...)
+      pfs <- sapply(geo.obj, function(x) {
+        Biobase::annotation(x)
+      })
+      names(geo.obj) <- pfs
+    } else {
+      geo.obj <- list()
+      pf.obj <- GEOobj(acce = acce, platform = platform, ...)
+      geo.obj[[platform]] <- pf.obj
+    }
+    # extract metadata
+    geo.meta.list <- lapply(names(geo.obj), function(x) {
+      # extract general information
+      pf.info <- ExtractGEOInfo(pf.obj = geo.obj[[x]], sample.wise = FALSE)
+      pf.info$Platform <- x
+      # select meta data
+      pf.meta <- ExtractGEOSubMeta(pf.obj = geo.obj[[x]])
+      pf.meta$Platform <- x
+      # merge all dataframe
+      pf.all <- merge(pf.meta, pf.info, by = "Platform", all.x = TRUE) %>% as.data.frame()
+      pf.all
     })
-    names(geo.obj) <- pfs
-  } else {
-    geo.obj <- list()
-    pf.obj <- GEOobj(acce = acce, platform = platform, ...)
-    geo.obj[[platform]] <- pf.obj
-  }
-  # extract metadata
-  geo.meta.list <- lapply(names(geo.obj), function(x) {
-    # extract general information
-    pf.info <- ExtractGEOInfo(pf.obj = geo.obj[[x]], sample.wise = FALSE)
-    pf.info$Platform <- x
-    # select meta data
-    pf.meta <- ExtractGEOSubMeta(pf.obj = geo.obj[[x]])
-    pf.meta$Platform <- x
-    # merge all dataframe
-    pf.all <- merge(pf.meta, pf.info, by = "Platform", all.x = TRUE) %>% as.data.frame()
-    pf.all
-  })
-  # all metadta
-  if (length(geo.meta.list) > 1) {
-    geo.meta.df <- data.table::rbindlist(geo.meta.list, fill = TRUE) %>% as.data.frame()
-  } else {
-    geo.meta.df <- geo.meta.list[[1]]
+    # all metadta
+    if (length(geo.meta.list) > 1) {
+      geo.meta.df <- data.table::rbindlist(geo.meta.list, fill = TRUE) %>% as.data.frame()
+    } else {
+      geo.meta.df <- geo.meta.list[[1]]
+    }
   }
   return(geo.meta.df)
+}
+
+#' Extract Sample Metadata from Supplementary Files.
+#'
+#' @param acce GEO accession number.
+#' @param timeout Timeout for \code{\link{download.file}}. Default: 3600.
+#' @param supp.idx The index of supplementary files to download. Default: 1.
+#'
+#' @return A dataframe.
+#'
+ExtractGEOMetaSupp <- function(acce, timeout = 3600, supp.idx = 1) {
+  # create tmp folder
+  tmp.folder <- tempdir()
+  # get current timeout
+  if (!is.null(timeout)) {
+    message("Change Timeout to: ", timeout)
+    env.timeout <- getOption("timeout")
+    on.exit(options(timeout = env.timeout)) # restore timeout
+    options(timeout = timeout)
+  }
+  # download supplementary file
+  supp.down.log <- tryCatch(
+    expr = {
+      getGEOSuppFilesInner(GEO = acce, baseDir = tmp.folder, index = supp.idx)
+    },
+    error = function(e) {
+      print(e)
+      stop("Please check the supp.idx or change the timeout with a larger value.")
+    }
+  )
+  supp.file.path <- rownames(supp.down.log)
+  # file unzip
+  file.ext <- tools::file_ext(supp.file.path)
+  if (file.ext == "gz") {
+    # gunzip file
+    Gunzip(supp.file.path, overwrite = TRUE)
+    supp.file.path <- gsub(pattern = "\\.gz", replacement = "", x = supp.file.path)
+    # update file extension
+    file.ext <- tools::file_ext(supp.file.path)
+  }
+  # read metatada
+  if (file.ext %in% c("xlsx", "xls")) {
+    # read excel file
+    sample.meta <- tryCatch(
+      {
+        readxl::read_excel(path = supp.file.path, col_names = TRUE) %>% as.data.frame()
+      },
+      error = function(e) {
+        message(e)
+        # empty dataframe
+        data.frame()
+      }
+    )
+  } else if (file.ext %in% c("csv", "tsv", "txt", "tab")) {
+    # read text file
+    sample.meta <- tryCatch(
+      {
+        data.table::fread(file = supp.file.path, header = T) %>% as.data.frame()
+      },
+      error = function(e) {
+        message(e)
+        # empty dataframe
+        data.frame()
+      }
+    )
+  }
+  return(sample.meta)
 }
 
 # connect to GEO, extract GEO object, extract platform object

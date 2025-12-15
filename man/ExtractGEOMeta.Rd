@@ -4,12 +4,26 @@
 \alias{ExtractGEOMeta}
 \title{Extract Sample Metadata from GEO.}
 \usage{
-ExtractGEOMeta(acce, platform = NULL, ...)
+ExtractGEOMeta(
+  acce,
+  platform = NULL,
+  down.supp = FALSE,
+  supp.idx = 1,
+  timeout = 3600,
+  ...
+)
 }
 \arguments{
 \item{acce}{GEO accession number.}
 
 \item{platform}{Platform information/field. Default: NULL (all platforms).}
+
+\item{down.supp}{Logical value, whether to download supplementary files to extract sample metadata. If TRUE, always
+download supplementary files. If FALSE, extract GEO sample metadata. Default: FALSE.}
+
+\item{supp.idx}{The index of supplementary files to download. Default: 1.}
+
+\item{timeout}{Timeout for \code{\link{download.file}}. Default: 3600.}
 
 \item{...}{Parameters for \code{\link{getGEO}}.}
 }
@@ -23,7 +37,9 @@ Extract Sample Metadata from GEO.
 \donttest{
 # users may need to set the size of the connection buffer
 # Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 60)
-# extract metadata of specified platform
+# extract GEO sample metadata of specified platform
 GSE200257.meta <- ExtractGEOMeta(acce = "GSE200257", platform = "GPL24676")
+# extract sample metadata from supplementary files
+GSE292261.meta.supp <- ExtractGEOMetaSupp(acce = "GSE292261", supp.idx = 4)
 }
 }
