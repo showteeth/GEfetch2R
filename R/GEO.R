@@ -528,16 +528,16 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
   if (file.ext == "tar") {
     # untar
     utils::untar(supp.file.path, exdir = file.path(tmp.folder, acce, "sample"))
-    if("MEX" %in% accept.fmt){
+    if ("MEX" %in% accept.fmt) {
       # recognize valid files: barcodes.tsv.gz, genes.tsv.gz, matrix.mtx.gz and features.tsv.gz
       valid.pat.gz <- "barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$"
       all.files.gz <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.gz)
-    }else{
-      all.files.gz = c()
+    } else {
+      all.files.gz <- c()
     }
-    if("h5" %in% accept.fmt){
-      h5.gz.file = list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = "h5.gz$")
-      if(length(h5.gz.file) > 0){
+    if ("h5" %in% accept.fmt) {
+      h5.gz.file <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = "h5.gz$")
+      if (length(h5.gz.file) > 0) {
         # gunzip file
         unzip.log <- sapply(
           h5.gz.file,
@@ -547,15 +547,16 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
         )
       }
       all.files.h5 <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = "h5$")
-    }else{
-      all.files.h5 = c()
+    } else {
+      all.files.h5 <- c()
     }
     # prepare out folder
     if (is.null(out.folder)) {
       out.folder <- getwd()
     }
+    out.folder <- file.path(out.folder, acce) # optimize output folder
     # rename and move files
-    if(length(all.files.gz) > 0){
+    if (length(all.files.gz) > 0) {
       message("Detect ", length(all.files.gz), " files in MEX(barcode/feature/gene/matrix) format.")
       # change file name
       if (gene2feature) {
@@ -594,7 +595,7 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
         copy.tag
       })
     }
-    if(length(all.files.h5) > 0){
+    if (length(all.files.h5) > 0) {
       message("Detect ", length(all.files.h5), " files in h5 format.")
       # get folder
       all.sample.folder <- sapply(all.files.h5, function(x) {
@@ -626,7 +627,7 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
         copy.tag
       })
     }
-    if(length(all.files.gz) == 0 && length(all.files.h5) == 0){
+    if (length(all.files.gz) == 0 && length(all.files.h5) == 0) {
       stop("No valid 10x format (barcode/feature/gene/matrix, h5) files detected! Please check.")
     }
     message("Process 10x fiels done! All files are in ", out.folder)

@@ -17,6 +17,7 @@ ParseGEO(
     "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop"),
   transpose = TRUE,
   out.folder = NULL,
+  accept.fmt = c("MEX", "h5"),
   gene2feature = TRUE,
   load2R = TRUE,
   merge = TRUE,

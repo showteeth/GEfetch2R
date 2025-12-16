@@ -14,6 +14,7 @@ ExtractGEOExpSuppAll(
     "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop"),
   transpose = TRUE,
   out.folder = NULL,
+  accept.fmt = c("MEX", "h5"),
   gene2feature = TRUE
 )
 }
@@ -36,6 +37,8 @@ Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqn
 \item{transpose}{Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.}
 
 \item{out.folder}{Output folder to save 10x files. Default: NULL (current working directory).}
+
+\item{accept.fmt}{Vector of accepted 10x output format, MEX (barcode/feature/gene/matrix), h5 (h5/h5.gz). Default: c("MEX", "h5").}
 
 \item{gene2feature}{Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}. Default: TRUE.
 Default: TURE.}
