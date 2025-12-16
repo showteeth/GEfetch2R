@@ -1056,3 +1056,86 @@ getExtWithoutCompression <- function(filename) {
   # Now, extract the remaining extension using tools::file_ext
   return(tools::file_ext(filename))
 }
+
+# recursively move files to top directory
+MoveFileRecursively <- function(folder) {
+  move.folder.log <- sapply(folder, function(x) {
+    x.files <- list.files(path = x, full.names = TRUE, recursive = TRUE)
+    move.file.log <- sapply(x.files, function(y) {
+      # get file name
+      y.name <- basename(y)
+      new.file <- paste(x, y.name, sep = "_")
+      if (y != new.file) {
+        # move file
+        copy.tag <- file.copy(from = y, to = new.file)
+        # remove the original file
+        remove.tag <- file.remove(y)
+        copy.tag
+      }
+    })
+  })
+  return(move.folder.log)
+}
+
+# untar and recursively move files to top directory
+ProcessTAR <- function(tar.files, remove.cf = TRUE) {
+  untar.log <- sapply(
+    tar.files,
+    function(x) {
+      x.folder <- gsub(pattern = ".tar", replacement = "", x = x)
+      utils::untar(x, exdir = x.folder)
+    }
+  )
+  # recursively move files
+  all.tar.folders <- gsub(pattern = ".tar$", replacement = "", x = tar.files)
+  move.folder.log <- MoveFileRecursively(all.tar.folders)
+  # remove tar.gz files
+  if (remove.cf) {
+    rm.log <- sapply(tar.files, file.remove)
+  }
+  return(move.folder.log)
+}
+
+# process compressed files in zip, tar, tar.gz
+ProcessCompressedFiles <- function(all.files, remove.cf = TRUE) {
+  # deal with zip files
+  all.zip.files <- grep(pattern = "zip$", x = all.files, value = TRUE)
+  if (length(all.zip.files) > 0) {
+    message("Detect files in zip format, extract!")
+    unzip.log <- sapply(
+      all.zip.files,
+      function(x) {
+        x.folder <- gsub(pattern = ".zip", replacement = "", x = x)
+        unzip(x, exdir = x.folder, overwrite = TRUE)
+      }
+    )
+    # recursively move files
+    all.zip.folders <- gsub(pattern = ".zip$", replacement = "", x = all.zip.files)
+    move.folder.log <- MoveFileRecursively(all.zip.folders)
+    # remove zip files
+    if (remove.cf) {
+      rm.log <- sapply(all.zip.files, file.remove)
+    }
+  }
+  # deal with tar.gz files
+  all.targz.files <- grep(pattern = "tar.gz$", x = all.files, value = TRUE)
+  if (length(all.targz.files) > 0) {
+    message("Detect files in tar.gz format, extract!")
+    # unzip
+    unzip.log <- sapply(
+      all.targz.files,
+      function(x) {
+        Gunzip(x, overwrite = TRUE)
+      }
+    )
+    # untar
+    all.tar.files <- gsub(pattern = ".gz$", replacement = "", x = all.targz.files)
+    process.tar <- ProcessTAR(tar.files = all.tar.files, remove.cf = remove.cf)
+  }
+  # deal with tar files
+  all.tar.files2 <- grep(pattern = "tar$", x = all.files, value = TRUE)
+  if (length(all.tar.files2) > 0) {
+    message("Detect files in tar format, extract!")
+    process.tar2 <- ProcessTAR(tar.files = all.tar.files2, remove.cf = remove.cf)
+  }
+}

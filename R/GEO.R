@@ -31,6 +31,7 @@
 #' @importFrom Biobase annotation experimentData pData phenoData notes sampleNames exprs
 #' @importFrom tools file_ext
 #' @importFrom utils untar
+#' @importFrom R.utils gzip
 #' @importFrom data.table fread
 #' @importFrom readxl read_excel
 #' @importFrom Seurat Read10X CreateSeuratObject
@@ -528,7 +529,19 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
   if (file.ext == "tar") {
     # untar
     utils::untar(supp.file.path, exdir = file.path(tmp.folder, acce, "sample"))
+    # deal with compressed files
+    all.files <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE)
+    process.compressed.log <- ProcessCompressedFiles(all.files = all.files, remove.cf = TRUE)
+    # identify accept files in given format
     if ("MEX" %in% accept.fmt) {
+      valid.pat.mex <- "barcodes.tsv$|genes.tsv$|matrix.mtx$|features.tsv$"
+      all.files.mex <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.mex)
+      gzip.log <- sapply(
+        all.files.mex,
+        function(x) {
+          R.utils::gzip(filename = x, remove = TRUE)
+        }
+      )
       # recognize valid files: barcodes.tsv.gz, genes.tsv.gz, matrix.mtx.gz and features.tsv.gz
       valid.pat.gz <- "barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$"
       all.files.gz <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.gz)
@@ -554,7 +567,6 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
     if (is.null(out.folder)) {
       out.folder <- getwd()
     }
-    out.folder <- file.path(out.folder, acce) # optimize output folder
     # rename and move files
     if (length(all.files.gz) > 0) {
       message("Detect ", length(all.files.gz), " files in MEX(barcode/feature/gene/matrix) format.")
