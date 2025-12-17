@@ -534,7 +534,7 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
     process.compressed.log <- ProcessCompressedFiles(all.files = all.files, remove.cf = TRUE)
     # identify accept files in given format
     if ("MEX" %in% accept.fmt) {
-      valid.pat.mex <- "barcodes.tsv$|genes.tsv$|matrix.mtx$|features.tsv$"
+      valid.pat.mex <- "barcodes.*.tsv$|genes.*.tsv$|matrix.*.mtx$|features.*.tsv$"
       all.files.mex <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.mex)
       gzip.log <- sapply(
         all.files.mex,
@@ -542,6 +542,15 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
           R.utils::gzip(filename = x, remove = TRUE)
         }
       )
+      # sample name is after, rename
+      valid.pat.gz <- "barcodes.+.tsv.gz$|genes.+.tsv.gz$|matrix.+.mtx.gz$|features.+.tsv.gz$"
+      all.files.gz <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.gz)
+      if (length(all.files.gz) > 0) {
+        rename.log <- sapply(all.files.gz, function(x) {
+          x.new <- gsub(pattern = "(.*)(barcodes|genes|matrix|features)(.*)(.tsv.gz|.mtx.gz)", replacement = "\\1\\3\\2\\4", x = x)
+          file.rename(from = x, to = x.new)
+        })
+      }
       # recognize valid files: barcodes.tsv.gz, genes.tsv.gz, matrix.mtx.gz and features.tsv.gz
       valid.pat.gz <- "barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$"
       all.files.gz <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.gz)
@@ -567,6 +576,7 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
     if (is.null(out.folder)) {
       out.folder <- getwd()
     }
+    out.folder <- file.path(out.folder, acce) # optimize output folder
     # rename and move files
     if (length(all.files.gz) > 0) {
       message("Detect ", length(all.files.gz), " files in MEX(barcode/feature/gene/matrix) format.")
