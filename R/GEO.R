@@ -11,17 +11,20 @@
 #' @param supp.type The type of downloaded supplementary files, choose from count (count matrix file or single count matrix file),
 #' 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 #' and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.
-#' @param file.regex The regex to extract correct count matrix files. Default: NULL (when multiple file extensions are available in the downloaded tar file, use the first file extension).
-#' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
+#' @param file.regex The regex to extract correct count matrix files. Used when \code{supp.type} is count.
+#' Default: NULL (when multiple file extensions are available in the downloaded tar file, use the first file extension).
+#' @param extra.cols Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts). Used when \code{supp.type} is count.
 #' Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".
-#' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.
-#' @param out.folder Output folder to save 10x files. Default: NULL (current working directory).
-#' @param gene2feature Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}. Default: TRUE.
+#' @param transpose Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Used when \code{supp.type} is count. Default: TRUE.
+#' @param out.folder Output folder to save 10x files. Used when \code{supp.type} is 10x/10xSingle. Default: NULL (current working directory).
+#' @param accept.fmt Vector of accepted 10x output format, MEX (barcode/feature/gene/matrix), h5 (h5/h5.gz). Used when \code{supp.type} is 10x/10xSingle. Default: c("MEX", "h5").
+#' @param gene2feature Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}. Used when \code{supp.type} is 10x/10xSingle. Default: TRUE.
 #' @param load2R Logical value, whether to load the count matrix to R. Default: TRUE.
-#' @param merge Logical value, whether to merge Seurat list when there are multiple 10x files (\code{supp.type} is 10x). Default: FALSE.
-#' @param meta.data Dataframe contains sample information for DESeqDataSet, use when \code{data.type} is bulk. Default: NULL.
-#' @param fmu Column of \code{meta.data} contains group information. Default: NULL.
-#' @param ... Parameters for \code{\link{getGEO}}.
+#' @param merge Logical value, whether to merge Seurat list when there are multiple 10x files (\code{supp.type} is 10x).
+#' Used when \code{supp.type} is 10x/10xSingle. Default: FALSE.
+#' @param meta.data Dataframe contains sample information for DESeqDataSet. Used when \code{data.type} is bulk. Default: NULL.
+#' @param fmu Column of \code{meta.data} contains group information. Used when \code{data.type} is bulk. Default: NULL.
+#' @param ... Parameters for \code{\link{getGEO}}. Used when \code{down.supp} is FALSE.
 #'
 #' @return If \code{load2R} is FALSE, return count matrix. If \code{data.type} is "sc", return Seurat object (if \code{merge} is TRUE) or Seurat object list (if \code{merge} is FALSE).
 #' If \code{data.type} is "bulk", return DESeqDataSet.
@@ -529,130 +532,7 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
   if (file.ext == "tar") {
     # untar
     utils::untar(supp.file.path, exdir = file.path(tmp.folder, acce, "sample"))
-    # deal with compressed files
-    all.files <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE)
-    process.compressed.log <- ProcessCompressedFiles(all.files = all.files, remove.cf = TRUE)
-    # identify accept files in given format
-    if ("MEX" %in% accept.fmt) {
-      valid.pat.mex <- "barcodes.*.tsv$|genes.*.tsv$|matrix.*.mtx$|features.*.tsv$"
-      all.files.mex <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.mex)
-      gzip.log <- sapply(
-        all.files.mex,
-        function(x) {
-          R.utils::gzip(filename = x, remove = TRUE)
-        }
-      )
-      # sample name is after, rename
-      valid.pat.gz <- "barcodes.+.tsv.gz$|genes.+.tsv.gz$|matrix.+.mtx.gz$|features.+.tsv.gz$"
-      all.files.gz <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.gz)
-      if (length(all.files.gz) > 0) {
-        rename.log <- sapply(all.files.gz, function(x) {
-          x.new <- gsub(pattern = "(.*)(barcodes|genes|matrix|features)(.*)(.tsv.gz|.mtx.gz)", replacement = "\\1\\3\\2\\4", x = x)
-          file.rename(from = x, to = x.new)
-        })
-      }
-      # recognize valid files: barcodes.tsv.gz, genes.tsv.gz, matrix.mtx.gz and features.tsv.gz
-      valid.pat.gz <- "barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$"
-      all.files.gz <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.gz)
-    } else {
-      all.files.gz <- c()
-    }
-    if ("h5" %in% accept.fmt) {
-      h5.gz.file <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = "h5.gz$")
-      if (length(h5.gz.file) > 0) {
-        # gunzip file
-        unzip.log <- sapply(
-          h5.gz.file,
-          function(x) {
-            Gunzip(x, overwrite = TRUE)
-          }
-        )
-      }
-      all.files.h5 <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = "h5$")
-    } else {
-      all.files.h5 <- c()
-    }
-    # prepare out folder
-    if (is.null(out.folder)) {
-      out.folder <- getwd()
-    }
-    out.folder <- file.path(out.folder, acce) # optimize output folder
-    # rename and move files
-    if (length(all.files.gz) > 0) {
-      message("Detect ", length(all.files.gz), " files in MEX(barcode/feature/gene/matrix) format.")
-      # change file name
-      if (gene2feature) {
-        change.name.log <- sapply(all.files.gz, function(x) {
-          if (grepl(pattern = "genes.tsv.gz$", x = x)) {
-            new.name <- gsub(pattern = "genes.tsv.gz$", replacement = "features.tsv.gz", x = x)
-            file.rename(from = x, to = new.name)
-          }
-        })
-        all.files.gz <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat.gz)
-      }
-      # get folder
-      all.sample.folder <- sapply(all.files.gz, function(x) {
-        # get basename and dirname
-        file.name <- basename(x)
-        dir.name <- dirname(x)
-        # remove file type tag
-        file.name <- gsub(pattern = valid.pat.gz, replacement = "", x = file.name)
-        # remove possible _ and .
-        file.name <- gsub(pattern = "[_.]$", replacement = "", x = file.name)
-        file.folder <- file.path(out.folder, file.name)
-      })
-      # create folder and move file
-      move.file.log <- sapply(all.files.gz, function(x) {
-        # get folder name
-        folder.name <- all.sample.folder[x]
-        # create folder
-        if (!dir.exists(folder.name)) {
-          dir.create(path = folder.name, recursive = TRUE)
-        }
-        new.file.name <- gsub(pattern = paste0(".*(barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$)"), replacement = "\\1", x = x)
-        # move file
-        copy.tag <- file.copy(from = x, to = file.path(folder.name, new.file.name))
-        # remove the original file
-        remove.tag <- file.remove(x)
-        copy.tag
-      })
-    }
-    if (length(all.files.h5) > 0) {
-      message("Detect ", length(all.files.h5), " files in h5 format.")
-      # get folder
-      all.sample.folder <- sapply(all.files.h5, function(x) {
-        # get basename and dirname
-        file.name <- basename(x)
-        dir.name <- dirname(x)
-        # remove file type tag
-        file.name <- gsub(pattern = "h5$", replacement = "", x = file.name)
-        # remove possible _ and .
-        file.name <- gsub(pattern = "[_.]$", replacement = "", x = file.name)
-        # remove fix prefix
-        file.name <- gsub(pattern = "filtered_feature_bc_matrix$|filtered_gene_bc_matrix$|raw_feature_bc_matrix$|raw_gene_bc_matrix$", replacement = "", x = file.name)
-        # remove possible _ and .
-        file.name <- gsub(pattern = "[_.]$", replacement = "", x = file.name)
-        file.folder <- file.path(out.folder, file.name)
-      })
-      # create folder and move file
-      move.file.log <- sapply(all.files.h5, function(x) {
-        # get folder name
-        folder.name <- all.sample.folder[x]
-        # create folder
-        if (!dir.exists(folder.name)) {
-          dir.create(path = folder.name, recursive = TRUE)
-        }
-        # move file
-        copy.tag <- file.copy(from = x, to = file.path(folder.name, basename(x)))
-        # remove the original file
-        remove.tag <- file.remove(x)
-        copy.tag
-      })
-    }
-    if (length(all.files.gz) == 0 && length(all.files.h5) == 0) {
-      stop("No valid 10x format (barcode/feature/gene/matrix, h5) files detected! Please check.")
-    }
-    message("Process 10x fiels done! All files are in ", out.folder)
+    process.log <- Process10xFiles(acce = acce, folder = file.path(tmp.folder, acce, "sample"), accept.fmt = accept.fmt, out.folder = out.folder, gene2feature = gene2feature)
   } else {
     stop("Does not support non-tar file for 10x mode!")
   }
@@ -663,12 +543,13 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
 #' @param acce GEO accession number.
 #' @param timeout Timeout for \code{\link{download.file}}. Default: 3600.
 #' @param out.folder Output folder to save 10x files. Default: NULL (current working directory).
+#' @param accept.fmt Vector of accepted 10x output format, MEX (barcode/feature/gene/matrix), h5 (h5/h5.gz). Default: c("MEX", "h5").
 #' @param gene2feature Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}.
 #' Default: TURE.
 #'
 #' @return NULL
 #'
-ExtractGEOExpSupp10xSingle <- function(acce, timeout = 3600, out.folder = NULL, gene2feature = TRUE) {
+ExtractGEOExpSupp10xSingle <- function(acce, timeout = 3600, out.folder = NULL, accept.fmt = c("MEX", "h5"), gene2feature = TRUE) {
   # create tmp folder
   tmp.folder <- tempdir()
   # get current timeout
@@ -688,50 +569,8 @@ ExtractGEOExpSupp10xSingle <- function(acce, timeout = 3600, out.folder = NULL, 
       stop("You can change the timeout with a larger value.")
     }
   )
-  # get valid files
-  valid.pat <- "barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$"
-  all.files <- list.files(file.path(tmp.folder, acce), full.names = TRUE, pattern = valid.pat)
-  # change file name
-  if (gene2feature) {
-    change.name.log <- sapply(all.files, function(x) {
-      if (grepl(pattern = "genes.tsv.gz$", x = x)) {
-        new.name <- gsub(pattern = "genes.tsv.gz$", replacement = "features.tsv.gz", x = x)
-        file.rename(from = x, to = new.name)
-      }
-    })
-    all.files <- list.files(file.path(tmp.folder, acce), full.names = TRUE, pattern = valid.pat)
-  }
-  # prepare out folder
-  if (is.null(out.folder)) {
-    out.folder <- getwd()
-  }
-  # get folder
-  all.sample.folder <- sapply(all.files, function(x) {
-    # get basename and dirname
-    file.name <- basename(x)
-    dir.name <- dirname(x)
-    # remove file type tag
-    file.name <- gsub(pattern = valid.pat, replacement = "", x = file.name)
-    # remove possible _ and .
-    file.name <- gsub(pattern = "[_.]$", replacement = "", x = file.name)
-    file.folder <- file.path(out.folder, file.name)
-  })
-  # create folder and move file
-  move.file.log <- sapply(all.files, function(x) {
-    # get folder name
-    folder.name <- all.sample.folder[x]
-    # create folder
-    if (!dir.exists(folder.name)) {
-      dir.create(path = folder.name, recursive = TRUE)
-    }
-    new.file.name <- gsub(pattern = paste0(".*(barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$)"), replacement = "\\1", x = x)
-    # move file
-    copy.tag <- file.copy(from = x, to = file.path(folder.name, new.file.name))
-    # remove the original file
-    remove.tag <- file.remove(x)
-    copy.tag
-  })
-  message("Process 10x fiels done! All files are in ", out.folder)
+  process.log <- Process10xFiles(acce = acce, folder = file.path(tmp.folder, acce), accept.fmt = accept.fmt, out.folder = out.folder, gene2feature = gene2feature)
+  return(process.log)
 }
 
 #' Extract Raw Count Matrix from Supplementary Files or Fortmat Supplementary Files to 10x.
@@ -771,7 +610,7 @@ ExtractGEOExpSuppAll <- function(acce, supp.idx = 1, timeout = 3600,
     ExtractGEOExpSupp10x(acce = acce, supp.idx = supp.idx, timeout = timeout, out.folder = out.folder, accept.fmt = accept.fmt, gene2feature = gene2feature)
     return(NULL)
   } else if (supp.type == "10xSingle") {
-    ExtractGEOExpSupp10xSingle(acce = acce, timeout = timeout, out.folder = out.folder, gene2feature = gene2feature)
+    ExtractGEOExpSupp10xSingle(acce = acce, timeout = timeout, out.folder = out.folder, accept.fmt = accept.fmt, gene2feature = gene2feature)
     return(NULL)
   }
 }

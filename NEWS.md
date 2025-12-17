@@ -8,6 +8,7 @@
   * Load count matrix in mixed file formats from GEO (smart-seq2)
   * Load count matrix in h5 format from GEO (10x)
   * Compressed files (zip, tar.gz, tar) in downloaded supplemental files (GEO, 10x)
+  * Sample name is after the fixed name (GEO, 10x)
 * Change the way of downloading supplemental files with index from GEO.
 * Extract metadata from supplemental files (GEO).
 
@@ -15,6 +16,7 @@
 
 ## Minor changes
 * Removed `cellxgene.census` dependency to avoid possible installation issue on Windows.
+* Fix bug in `MoveFileRecursively`.
 
 -------------------
 

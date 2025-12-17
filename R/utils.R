@@ -1064,7 +1064,10 @@ MoveFileRecursively <- function(folder) {
     move.file.log <- sapply(x.files, function(y) {
       # get file name
       y.name <- basename(y)
-      new.file <- paste(x, y.name, sep = "_")
+      y.last.folder <- basename(dirname(y))
+      # get gse or gsm
+      gname <- gsub(pattern = "(GS[EM][0-9]+).*", replacement = "\\1", x = basename(x))
+      new.file <- file.path(dirname(x), paste(gname, y.last.folder, y.name, sep = "_"))
       if (y != new.file) {
         # move file
         copy.tag <- file.copy(from = y, to = new.file)
@@ -1138,4 +1141,133 @@ ProcessCompressedFiles <- function(all.files, remove.cf = TRUE) {
     message("Detect files in tar format, extract!")
     process.tar2 <- ProcessTAR(tar.files = all.tar.files2, remove.cf = remove.cf)
   }
+}
+
+# process 10x files: deal with compressed files, identify h5 and MEX format, rename and move
+Process10xFiles <- function(acce, folder, accept.fmt, out.folder, gene2feature) {
+  # deal with compressed files
+  all.files <- list.files(folder, full.names = TRUE)
+  process.compressed.log <- ProcessCompressedFiles(all.files = all.files, remove.cf = TRUE)
+  # identify accept files in given format
+  if ("MEX" %in% accept.fmt) {
+    valid.pat.mex <- "barcodes.*.tsv$|genes.*.tsv$|matrix.*.mtx$|features.*.tsv$"
+    all.files.mex <- list.files(folder, full.names = TRUE, pattern = valid.pat.mex)
+    gzip.log <- sapply(
+      all.files.mex,
+      function(x) {
+        R.utils::gzip(filename = x, remove = TRUE)
+      }
+    )
+    # sample name is after, rename
+    valid.pat.gz <- "barcodes.+.tsv.gz$|genes.+.tsv.gz$|matrix.+.mtx.gz$|features.+.tsv.gz$"
+    all.files.gz <- list.files(folder, full.names = TRUE, pattern = valid.pat.gz)
+    if (length(all.files.gz) > 0) {
+      rename.log <- sapply(all.files.gz, function(x) {
+        x.new <- gsub(pattern = "(.*)(barcodes|genes|matrix|features)(.*)(.tsv.gz|.mtx.gz)", replacement = "\\1\\3\\2\\4", x = x)
+        file.rename(from = x, to = x.new)
+      })
+    }
+    # recognize valid files: barcodes.tsv.gz, genes.tsv.gz, matrix.mtx.gz and features.tsv.gz
+    valid.pat.gz <- "barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$"
+    all.files.gz <- list.files(folder, full.names = TRUE, pattern = valid.pat.gz)
+  } else {
+    all.files.gz <- c()
+  }
+  if ("h5" %in% accept.fmt) {
+    h5.gz.file <- list.files(folder, full.names = TRUE, pattern = "h5.gz$")
+    if (length(h5.gz.file) > 0) {
+      # gunzip file
+      unzip.log <- sapply(
+        h5.gz.file,
+        function(x) {
+          Gunzip(x, overwrite = TRUE)
+        }
+      )
+    }
+    all.files.h5 <- list.files(folder, full.names = TRUE, pattern = "h5$")
+  } else {
+    all.files.h5 <- c()
+  }
+  # prepare out folder
+  if (is.null(out.folder)) {
+    out.folder <- getwd()
+  }
+  out.folder <- file.path(out.folder, acce) # optimize output folder
+  # rename and move files
+  if (length(all.files.gz) > 0) {
+    message("Detect ", length(all.files.gz), " files in MEX(barcode/feature/gene/matrix) format.")
+    # change file name
+    if (gene2feature) {
+      change.name.log <- sapply(all.files.gz, function(x) {
+        if (grepl(pattern = "genes.tsv.gz$", x = x)) {
+          new.name <- gsub(pattern = "genes.tsv.gz$", replacement = "features.tsv.gz", x = x)
+          file.rename(from = x, to = new.name)
+        }
+      })
+      all.files.gz <- list.files(folder, full.names = TRUE, pattern = valid.pat.gz)
+    }
+    # get folder
+    all.sample.folder <- sapply(all.files.gz, function(x) {
+      # get basename and dirname
+      file.name <- basename(x)
+      dir.name <- dirname(x)
+      # remove file type tag
+      file.name <- gsub(pattern = valid.pat.gz, replacement = "", x = file.name)
+      # remove possible _ and .
+      file.name <- gsub(pattern = "[_.]$", replacement = "", x = file.name)
+      file.folder <- file.path(out.folder, file.name)
+    })
+    # create folder and move file
+    move.file.log <- sapply(all.files.gz, function(x) {
+      # get folder name
+      folder.name <- all.sample.folder[x]
+      # create folder
+      if (!dir.exists(folder.name)) {
+        dir.create(path = folder.name, recursive = TRUE)
+      }
+      new.file.name <- gsub(pattern = paste0(".*(barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$)"), replacement = "\\1", x = x)
+      # move file
+      copy.tag <- file.copy(from = x, to = file.path(folder.name, new.file.name))
+      # remove the original file
+      remove.tag <- file.remove(x)
+      copy.tag
+    })
+  }
+  if (length(all.files.h5) > 0) {
+    message("Detect ", length(all.files.h5), " files in h5 format.")
+    # get folder
+    all.sample.folder <- sapply(all.files.h5, function(x) {
+      # get basename and dirname
+      file.name <- basename(x)
+      dir.name <- dirname(x)
+      # remove file type tag
+      file.name <- gsub(pattern = "h5$", replacement = "", x = file.name)
+      # remove possible _ and .
+      file.name <- gsub(pattern = "[_.]$", replacement = "", x = file.name)
+      # remove fix prefix
+      file.name <- gsub(pattern = "filtered_feature_bc_matrix$|filtered_gene_bc_matrix$|raw_feature_bc_matrix$|raw_gene_bc_matrix$", replacement = "", x = file.name)
+      # remove possible _ and .
+      file.name <- gsub(pattern = "[_.]$", replacement = "", x = file.name)
+      file.folder <- file.path(out.folder, file.name)
+    })
+    # create folder and move file
+    move.file.log <- sapply(all.files.h5, function(x) {
+      # get folder name
+      folder.name <- all.sample.folder[x]
+      # create folder
+      if (!dir.exists(folder.name)) {
+        dir.create(path = folder.name, recursive = TRUE)
+      }
+      # move file
+      copy.tag <- file.copy(from = x, to = file.path(folder.name, basename(x)))
+      # remove the original file
+      remove.tag <- file.remove(x)
+      copy.tag
+    })
+  }
+  if (length(all.files.gz) == 0 && length(all.files.h5) == 0) {
+    stop("No valid 10x format (barcode/feature/gene/matrix, h5) files detected! Please check.")
+  }
+  message("Process 10x fiels done! All files are in ", out.folder)
+  return(NULL)
 }
