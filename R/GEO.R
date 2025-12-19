@@ -5,7 +5,7 @@
 #' @param down.supp Logical value, whether to download supplementary files to create count matrix. If TRUE, always
 #' download supplementary files. If FALSE, use \code{ExpressionSet} (If contains non-integer or empty,
 #' download supplementary files automatically). Default: FALSE.
-#' @param supp.idx The index of supplementary files to download. This should be consistent with \code{platform}. Default: 1.
+#' @param supp.idx The index of supplementary files to download. This should be consistent with \code{platform}. Used when \code{supp.type} is 10x/count. Default: 1.
 #' @param timeout Timeout for \code{\link{download.file}}. Default: 3600.
 #' @param data.type The data type of the dataset, choose from "sc" (single-cell) and "bulk" (bulk). Default: "sc".
 #' @param supp.type The type of downloaded supplementary files, choose from count (count matrix file or single count matrix file),
@@ -26,7 +26,7 @@
 #' @param fmu Column of \code{meta.data} contains group information. Used when \code{data.type} is bulk. Default: NULL.
 #' @param ... Parameters for \code{\link{getGEO}}. Used when \code{down.supp} is FALSE.
 #'
-#' @return If \code{load2R} is FALSE, return count matrix. If \code{data.type} is "sc", return Seurat object (if \code{merge} is TRUE) or Seurat object list (if \code{merge} is FALSE).
+#' @return If \code{load2R} is FALSE, return count matrix. If \code{data.type} is "sc", return SeuratObject (if \code{merge} is TRUE), SeuratObject list (if \code{merge} is FALSE), NULL (no SeuratObject detected).
 #' If \code{data.type} is "bulk", return DESeqDataSet.
 #' @importFrom magrittr %>%
 #' @importFrom GEOquery getGEO getGEOSuppFiles
@@ -104,22 +104,58 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
       # if (is.null(pf.count) && supp.type == "10x") {
       if (is.null(pf.count) && (supp.type == "10x" || supp.type == "10xSingle")) {
         message("Loading data to Seurat!")
-        all.samples.folder <- dir(out.folder, full.names = TRUE)
-        # check file
-        valid.samples.folder <- Check10XFiles(folders = all.samples.folder, gene2feature = gene2feature)
-        if (length(valid.samples.folder) == 0) {
-          stop("No valid sample folder detected under ", out.folder, ". Please check!")
+        out.folder <- file.path(out.folder, acce) # optimize output folder
+        seu.list <- list()
+        # check MEX format
+        if ("MEX" %in% accept.fmt) {
+          all.bc.files <- list.files(path = out.folder, pattern = "barcodes.tsv.gz$", recursive = TRUE)
+          if (length(all.bc.files) > 0) {
+            all.samples.folder <- dir(out.folder, full.names = TRUE)
+            # check file
+            valid.samples.folder <- Check10XFiles(folders = all.samples.folder, gene2feature = gene2feature)
+            if (length(valid.samples.folder) > 0) {
+              # load to seurat
+              seu.list.mex <- sapply(valid.samples.folder, function(x) {
+                x.mat <- Seurat::Read10X(data.dir = x)
+                seu.obj <- Seurat::CreateSeuratObject(counts = x.mat, project = basename(x))
+                seu.obj
+              })
+            } else {
+              message("No valid sample folder (matrix.mtx.gz, barcodes.tsv.gz, features.tsv.gz/genes.tsv.gz) detected under ", out.folder, ". Please check!")
+              seu.list.mex <- list()
+            }
+          } else {
+            message("No barcodes.tsv.gz files detected under: ", out.folder, ". Please check!")
+            seu.list.mex <- list()
+          }
+          seu.list <- c(seu.list, seu.list.mex)
         }
-        # load to seurat
-        seu.list <- sapply(valid.samples.folder, function(x) {
-          x.mat <- Seurat::Read10X(data.dir = x)
-          seu.obj <- Seurat::CreateSeuratObject(counts = x.mat, project = basename(x))
-          seu.obj
-        })
-        if (isTRUE(merge)) {
-          seu.obj <- mergeExperiments(seu.list)
+        # check h5 format
+        if ("h5" %in% accept.fmt) {
+          all.h5.files <- list.files(path = out.folder, pattern = "h5$", recursive = TRUE, full.names = TRUE)
+          if (length(all.h5.files) > 0) {
+            # load to seurat
+            seu.list.h5 <- sapply(all.h5.files, function(x) {
+              x.mat <- Seurat::Read10X_h5(filename = x)
+              sample.name <- gsub(pattern = ".h5$", replacement = "", x = basename(x))
+              seu.obj <- Seurat::CreateSeuratObject(counts = x.mat, project = sample.name)
+              seu.obj
+            })
+          } else {
+            message("No h5 files detected under: ", out.folder, ". Please check!")
+            seu.list.h5 <- list()
+          }
+          seu.list <- c(seu.list, seu.list.h5)
+        }
+        if (length(seu.list) > 0) {
+          if (isTRUE(merge)) {
+            seu.obj <- mergeExperiments(seu.list)
+          } else {
+            seu.obj <- seu.list
+          }
         } else {
-          seu.obj <- seu.list
+          message("No SeuratObject detected, please check!")
+          seu.obj <- NULL
         }
       } else if (!is.null(pf.count) && supp.type == "count") {
         seu.obj <- Seurat::CreateSeuratObject(counts = pf.count, project = acce)
@@ -128,6 +164,133 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
     }
   } else {
     return(pf.count)
+  }
+}
+
+#' Download Processed Objects from GEO.
+#'
+#' @param acce GEO accession number.
+#' @param timeout Timeout for \code{\link{download.file}}. Default: 3600.
+#' @param supp.idx The index of supplementary files to download. Default: 1.
+#' @param file.ext The valid file extension for download (ignore case and gz suffix). When NULL, use all files. Default: c("rdata", "rds", "h5ad").
+#' @param out.folder The output folder. Default: NULL (\code{acce} folder under current working directory).
+#'
+#' @return NULL.
+#' @importFrom xml2 read_html xml_text xml_find_all
+#' @importFrom tools file_ext
+#' @importFrom utils untar
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # need users to provide the output folder
+#' # suitable for rdata, rdata.gz, rds, rds.gz
+#' geo.rds.log <- ParseGEOProcessed(
+#'   acce = "GSE285723", supp.idx = 1,
+#'   file.ext = c("rdata", "rds"),
+#'   out.folder = "/path/to/outfoder"
+#' )
+#' geo.rdata.log <- ParseGEOProcessed(
+#'   acce = "GSE311825", supp.idx = 4,
+#'   file.ext = c("rdata", "rds"),
+#'   out.folder = "/path/to/outfoder"
+#' )
+#' # suitable for h5ad, h5ad.gz
+#' geo.h5ad.log <- ParseGEOProcessed(
+#'   acce = "GSE311813", supp.idx = 1,
+#'   file.ext = c("h5ad"),
+#'   out.folder = "/path/to/outfoder"
+#' )
+#' # suitable for loom, loom.gz
+#' geo.loom.log <- ParseGEOProcessed(
+#'   acce = "GSE286325", supp.idx = 1,
+#'   file.ext = c("h5ad"),
+#'   out.folder = "/path/to/outfoder"
+#' )
+#' }
+ParseGEOProcessed <- function(acce, timeout = 3600, supp.idx = 1, file.ext = c("rdata", "rds", "h5ad", "loom"), out.folder = NULL) {
+  # file.ext: ignore case, tar.gz, gz
+  if (is.null(file.ext)) {
+    warning("There is no file extension provided, use all valid (rdata, rds, h5ad and loom).")
+    file.ext <- c("rdata", "rds", "h5ad", "loom")
+  }
+  file.ext <- intersect(file.ext, c("rdata", "rds", "h5ad", "loom"))
+  if (length(file.ext) == 0) {
+    stop("Please provide valid file extension: rdata, rds, h5ad and loom.")
+  }
+  # create tmp folder
+  tmp.folder <- tempdir()
+  # get current timeout
+  if (!is.null(timeout)) {
+    message("Change Timeout to: ", timeout)
+    env.timeout <- getOption("timeout")
+    on.exit(options(timeout = env.timeout)) # restore timeout
+    options(timeout = timeout)
+  }
+  # set output folder
+  if (is.null(out.folder)) {
+    out.folder <- getwd()
+  }
+  out.folder <- file.path(out.folder, acce) # optimize output folder
+  # create folder
+  if (!dir.exists(out.folder)) {
+    dir.create(path = out.folder, recursive = TRUE)
+  }
+  # download supplementary file
+  supp.down.log <- tryCatch(
+    expr = {
+      getGEOSuppFilesInner(GEO = acce, baseDir = tmp.folder, index = supp.idx)
+    },
+    error = function(e) {
+      print(e)
+      stop("Please check the supp.idx or change the timeout with a larger value.")
+    }
+  )
+  supp.file.path <- rownames(supp.down.log)
+  # file unzip
+  fext <- tools::file_ext(supp.file.path)
+  if (fext == "gz") {
+    # gunzip file
+    Gunzip(supp.file.path, overwrite = TRUE)
+    supp.file.path <- gsub(pattern = "\\.gz", replacement = "", x = supp.file.path)
+    # update file extension
+    fext <- tools::file_ext(supp.file.path)
+  }
+  if (fext == "tar") {
+    # untar
+    utils::untar(supp.file.path, exdir = file.path(tmp.folder, acce, "sample"))
+    # unzip, move to given format
+    all.gz.files <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = "gz$")
+    if (length(all.gz.files) > 0) {
+      message("Detect files in gz format, gunzip!")
+      # unzip
+      unzip.log <- sapply(
+        all.gz.files,
+        function(x) {
+          Gunzip(x, overwrite = TRUE)
+        }
+      )
+    }
+    valid.pat <- paste0(file.ext, "$", collapse = "|")
+    all.used.files <- list.files(file.path(tmp.folder, acce, "sample"), full.names = TRUE, pattern = valid.pat, ignore.case = TRUE)
+    if (length(all.used.files) > 0) {
+      rename.log <- sapply(all.used.files, function(x) {
+        # move file
+        copy.tag <- file.copy(from = x, to = file.path(out.folder, basename(x)))
+        # remove the original file
+        remove.tag <- file.remove(x)
+        copy.tag
+      })
+    } else {
+      stop("No file in given format, please check file.ext!")
+    }
+  } else if (tolower(fext) %in% tolower(file.ext)) {
+    # move file
+    copy.tag <- file.copy(from = supp.file.path, to = file.path(out.folder, basename(supp.file.path)))
+    # remove the original file
+    remove.tag <- file.remove(supp.file.path)
+  } else {
+    stop("No file in given format, please check file.ext!")
   }
 }
 
@@ -534,7 +697,7 @@ ExtractGEOExpSupp10x <- function(acce, supp.idx = 1, timeout = 3600,
     utils::untar(supp.file.path, exdir = file.path(tmp.folder, acce, "sample"))
     process.log <- Process10xFiles(acce = acce, folder = file.path(tmp.folder, acce, "sample"), accept.fmt = accept.fmt, out.folder = out.folder, gene2feature = gene2feature)
   } else {
-    stop("Does not support non-tar file for 10x mode!")
+    stop("Does not support non-tar(.gz) file for 10x mode!")
   }
 }
 

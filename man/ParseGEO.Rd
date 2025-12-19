@@ -35,7 +35,7 @@ ParseGEO(
 download supplementary files. If FALSE, use \code{ExpressionSet} (If contains non-integer or empty,
 download supplementary files automatically). Default: FALSE.}
 
-\item{supp.idx}{The index of supplementary files to download. This should be consistent with \code{platform}. Default: 1.}
+\item{supp.idx}{The index of supplementary files to download. This should be consistent with \code{platform}. Used when \code{supp.type} is 10x/count. Default: 1.}
 
 \item{timeout}{Timeout for \code{\link{download.file}}. Default: 3600.}
 
@@ -71,7 +71,7 @@ Used when \code{supp.type} is 10x/10xSingle. Default: FALSE.}
 \item{...}{Parameters for \code{\link{getGEO}}. Used when \code{down.supp} is FALSE.}
 }
 \value{
-If \code{load2R} is FALSE, return count matrix. If \code{data.type} is "sc", return Seurat object (if \code{merge} is TRUE) or Seurat object list (if \code{merge} is FALSE).
+If \code{load2R} is FALSE, return count matrix. If \code{data.type} is "sc", return SeuratObject (if \code{merge} is TRUE), SeuratObject list (if \code{merge} is FALSE), NULL (no SeuratObject detected).
 If \code{data.type} is "bulk", return DESeqDataSet.
 }
 \description{

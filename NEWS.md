@@ -11,6 +11,7 @@
   * Sample name is after the fixed name (GEO, 10x)
 * Change the way of downloading supplemental files with index from GEO.
 * Extract metadata from supplemental files (GEO).
+* Added `ParseGEOProcessed` to download processed objects from GEO.
 
 -------------------
 
