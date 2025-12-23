@@ -1,7 +1,7 @@
 Package: GEfetch2R
 Type: Package
 Title: Access and Format Single-Cell RNA-Seq Datasets from Public Resources 
-Version: 0.7.2
+Version: 0.7.3
 Authors@R: 
     person(given = "Yabing",
            family = "Song",

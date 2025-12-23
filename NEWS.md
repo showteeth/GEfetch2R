@@ -1,3 +1,10 @@
+# GEfetch2R 0.7.3
+
+## Major changes
+* Added `LoadRData` to load objects, count matrix, and metadata from RData.
+
+-------------------
+
 # GEfetch2R 0.7.2
 
 ## Major changes
