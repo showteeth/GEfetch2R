@@ -51,28 +51,81 @@ LoadRData <- function(rdata, accept.fmt = c(
     x.class
   }) %>% as.data.frame()
   colnames(obj.class) <- "Class"
-  message("The object classes stored in RData: ", paste(unique(obj.class$Class), collapse = ", "))
+  message("The object classes stored in RData: ", paste(unique(obj.class$Class), collapse = ", "), ".")
   if (show.object) {
     print(obj.class)
   }
   # filter class
   valid.obj <- obj.class[obj.class$Class %in% accept.fmt, , drop = FALSE]
-  if (length(valid.obj) > 0) {
-    message("Detect ", nrow(valid.obj), " object in given format(s): ", paste(accept.fmt, collapse = ", "))
+  if (nrow(valid.obj) > 0) {
+    message("Detect ", nrow(valid.obj), " object(s) in given format(s): ", paste(accept.fmt, collapse = ", "), ".")
     obj.count.list <- list()
     for (nm in rownames(valid.obj)) {
+      nm.class <- valid.obj[nm, "Class"]
       if (return.obj) {
-        message("Load object to global environment!")
+        message("Load object: ", nm, " (", nm.class, ")", " to global environment!")
         assign(nm, get(nm, envir = load.env), envir = globalenv())
       }
-      message("Extract count matrix and metadata (if available) from object!")
-      nm.class <- valid.obj[nm, "Class"]
+      message("Extract count matrix and metadata (if available) from: ", nm, " (", nm.class, ").")
       obj.count.list[[nm]] <- ExtractObject(obj = get(nm, envir = load.env), obj.class = nm.class, slot = slot)
     }
     return(obj.count.list)
   } else {
-    message("No valid object in given format(s): ", paste(accept.fmt, collapse = ", "), ". Please check accept.fmt!")
-    return(NULL)
+    message("No valid object in given format(s): ", paste(accept.fmt, collapse = ", "), ". Now we will guess the type!")
+    message("The slot parameter does not work here!")
+    obj.count.list <- list()
+    obj.meta.list <- list()
+    for (nm in rownames(obj.class)) {
+      nm.class <- obj.class[nm, "Class"]
+      if (return.obj) {
+        message("Load object: ", nm, " (", nm.class, ")", " to global environment!")
+        assign(nm, get(nm, envir = load.env), envir = globalenv())
+      }
+      nm.obj <- get(nm, envir = load.env)
+      if (nm.class %in% c("matrix, array", "data.frame")) {
+        nm.obj <- as.data.frame(nm.obj)
+        nm.obj.colclass <- sapply(nm.obj, class)
+        nm.obj.colclass.stat <- table(nm.obj.colclass)
+        if (ncol(nm.obj) >= 3) {
+          if (length(nm.obj.colclass.stat) == 1 && ("numeric" == names(nm.obj.colclass.stat) || "integer" == names(nm.obj.colclass.stat))) {
+            message(nm, " has ", ncol(nm.obj), " columns and each column is numerical! Most likely a count matrix!")
+            obj.count.list[[nm]] <- nm.obj
+          } else if (all(nm.obj.colclass[2:length(nm.obj.colclass)] == "numeric") || all(nm.obj.colclass[2:length(nm.obj.colclass)] == "integer")) {
+            message(nm, " has ", ncol(nm.obj), " columns, all of which are numerical except for the first column! Maybe a count matrix!")
+            obj.count.list[[nm]] <- nm.obj
+          } else {
+            if (any(grepl(pattern = "sample|name|cell|id|library|well|barcode|index|type|condition|treat|group", x = colnames(nm.obj), ignore.case = TRUE))) {
+              possible.meta.key <- grep(pattern = "sample|name|cell|id|library|well|barcode|index|type|condition|treat|group", x = colnames(nm.obj), ignore.case = TRUE, value = TRUE)
+              message("Detect possible sample metadata keys: ", paste(possible.meta.key, collapse = ", "), " in ", nm, ". Maybe metadata/annotation!")
+              obj.meta.list[[nm]] <- nm.obj
+            } else {
+              message("Can not determine if ", nm, " is a count matrix or metadata/annotation. Load to the global environment, please manually check!")
+              print(str(nm.obj))
+              if (!return.obj) {
+                assign(nm, get(nm, envir = load.env), envir = globalenv())
+              }
+            }
+          }
+        } else if (any(grepl(pattern = "sample|name|cell|id|library|well|barcode|index|type|condition|treat|group", x = colnames(nm.obj), ignore.case = TRUE))) {
+          possible.meta.key <- grep(pattern = "sample|name|cell|id|library|well|barcode|index|type|condition|treat|group", x = colnames(nm.obj), ignore.case = TRUE, value = TRUE)
+          message("Detect possible sample metadata keys: ", paste(possible.meta.key, collapse = ", "), ". Maybe metadata/annotation!")
+          obj.meta.list[[nm]] <- nm.obj
+        } else {
+          message("Can not determine if ", nm, " is metadata/annotation. Load to the global environment, please manually check!")
+          print(str(nm.obj))
+          if (!return.obj) {
+            assign(nm, get(nm, envir = load.env), envir = globalenv())
+          }
+        }
+      } else if (nm.class %in% c("dgCMatrix", "dgRMatrix", "dgTMatrix")) {
+        message(nm, " is a sparse matrix. Most likely a count matrix!")
+        obj.count.list[[nm]] <- nm.obj
+      } else {
+        message(nm, " is ", nm.class, ".")
+        print(head(nm.obj))
+      }
+    }
+    return(list(count = obj.count.list, meta = obj.meta.list))
   }
 }
 
@@ -82,7 +135,7 @@ ExtractObject <- function(obj, obj.class, slot) {
     # v3, v4 (not test on Seurat v5)
     # get all assays
     all.assays <- SeuratObject::Assays(obj)
-    message("Detect Seurat version: ", SeuratObject::Version(obj), ", with assay(s): ", paste(all.assays, collapse = ", "))
+    message("Detect Seurat version: ", SeuratObject::Version(obj), ", with assay(s): ", paste(all.assays, collapse = ", "), ".")
     count.mat.list <- lapply(all.assays, function(x) {
       x.list <- list()
       if ("counts" %in% slot) {
@@ -103,7 +156,7 @@ ExtractObject <- function(obj, obj.class, slot) {
     meta.data <- obj@meta.data
   } else if (obj.class == "seurat") {
     # v2
-    message("Detect Seurat version: ", obj@version)
+    message("Detect Seurat version: ", obj@version, ".")
     count.mat.list <- list()
     if ("counts" %in% slot) {
       count.mat.list[["counts"]] <- obj@raw.data
@@ -125,7 +178,7 @@ ExtractObject <- function(obj, obj.class, slot) {
       main.exp.name <- "main"
     }
     all.exps <- c(main.exp.name, SingleCellExperiment::altExpNames(obj))
-    message("Detect SingleCellExperiment version: ", SingleCellExperiment::objectVersion(obj), ", with experiment(s): ", paste(all.exps, collapse = ", "))
+    message("Detect SingleCellExperiment version: ", SingleCellExperiment::objectVersion(obj), ", with experiment(s): ", paste(all.exps, collapse = ", "), ".")
     all.exps.list <- list(obj)
     if (length(all.exps) > 1) {
       for (altn in SingleCellExperiment::altExpNames(obj)) {
@@ -137,13 +190,13 @@ ExtractObject <- function(obj, obj.class, slot) {
     count.mat.list <- lapply(all.exps, function(x) {
       x.obj <- all.exps.list[[x]]
       x.assays <- SummarizedExperiment::assayNames(x.obj)
-      message("Detect slot(s): ", paste(x.assays, collapse = ", "), " under experiment: ", x)
+      message("Detect slot(s): ", paste(x.assays, collapse = ", "), " under experiment: ", x, ".")
       x.list <- list()
       if ("counts" %in% slot) {
         if ("counts" %in% x.assays) {
           x.list[["counts"]] <- SummarizedExperiment::assay(x.obj, "counts")
         } else {
-          message("No counts detected under experiment: ", x)
+          message("No counts detected under experiment: ", x, ".")
           x.list[["counts"]] <- matrix()
         }
       }
@@ -151,7 +204,7 @@ ExtractObject <- function(obj, obj.class, slot) {
         if ("logcounts" %in% x.assays) {
           x.list[["data"]] <- SummarizedExperiment::assay(x.obj, "logcounts")
         } else {
-          message("No logcounts detected under experiment: ", x)
+          message("No logcounts detected under experiment: ", x, ".")
           x.list[["data"]] <- matrix()
         }
       }
@@ -161,7 +214,7 @@ ExtractObject <- function(obj, obj.class, slot) {
         } else if ("scale.data" %in% x.assays) {
           x.list[["scale.data"]] <- SummarizedExperiment::assay(x.obj, "scale.data")
         } else {
-          message("No scaledata/scale.data detected under experiment: ", x)
+          message("No scaledata/scale.data detected under experiment: ", x, ".")
           x.list[["scale.data"]] <- matrix()
         }
       }
@@ -170,7 +223,7 @@ ExtractObject <- function(obj, obj.class, slot) {
     names(count.mat.list) <- all.exps
     meta.data <- as.data.frame(SingleCellExperiment::colData(obj))
   } else if (obj.class == "CellDataSet") {
-    message("Detect CellDataSet version: ", paste(obj@.__classVersion__$CellDataSet, collapse = "."))
+    message("Detect CellDataSet version: ", paste(obj@.__classVersion__$CellDataSet, collapse = "."), ".")
     count.mat <- Biobase::exprs(obj)
     meta.data <- as.data.frame(Biobase::pData(obj))
     count.mat.list <- list()
@@ -212,7 +265,7 @@ ExtractObject <- function(obj, obj.class, slot) {
       }
     }
   } else if (obj.class == "DESeqDataSet") {
-    message("Detect DESeqDataSet version: ", obj@metadata$version)
+    message("Detect DESeqDataSet version: ", obj@metadata$version, ".")
     count.mat.list <- list()
     if ("counts" %in% slot) {
       count.mat.list[["counts"]] <- DESeq2::counts(obj, normalized = FALSE)
