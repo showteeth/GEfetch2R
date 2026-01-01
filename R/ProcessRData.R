@@ -11,7 +11,7 @@
 #' @return List contains count matrix and metadta or NULL.
 #' @importFrom magrittr %>%
 #' @importFrom SeuratObject Assays Version GetAssayData
-#' @importFrom SingleCellExperiment mainExpName altExpNames objectVersion altExp colData
+#' @importFrom SingleCellExperiment altExpNames objectVersion altExp colData
 #' @importFrom SummarizedExperiment assayNames assay
 #' @importFrom Biobase exprs pData
 #' @importFrom DESeq2 counts
@@ -172,7 +172,12 @@ ExtractObject <- function(obj, obj.class, slot) {
     if (obj.class == "cell_data_set") {
       message("The cell_data_set class is derived from the SingleCellExperiment class!")
     }
-    main.exp.name <- SingleCellExperiment::mainExpName(obj)
+    # mainExpName appears in 1.13.4: https://github.com/drisso/SingleCellExperiment/commit/2989ffd4e28bfd8710749afcb8d219cf76e56020
+    if (packageVersion(pkg = "SingleCellExperiment") >= "1.13.4") {
+      main.exp.name <- SingleCellExperiment::mainExpName(obj)
+    } else {
+      main.exp.name <- NULL
+    }
     if (is.null(main.exp.name)) {
       message("Main experiment name is NULL, use main instead.")
       main.exp.name <- "main"

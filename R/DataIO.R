@@ -153,6 +153,7 @@ ExportSeurat <- function(seu.obj, assay = NULL, reduction = NULL,
 #' @importFrom reticulate use_condaenv
 #' @importFrom SummarizedExperiment assayNames
 #' @importFrom scater logNormCounts
+#' @importFrom SingleCellExperiment altExpNames
 #' @importFrom methods is
 #' @export
 #'
@@ -199,6 +200,10 @@ ImportSeurat <- function(obj = NULL, assay = "RNA", from = c("SCE", "AnnData", "
       message("There is no data assay (data.assay), create with logNormCounts!")
       obj <- scater::logNormCounts(obj)
       data.assay <- "logcounts"
+    }
+    if (length(SingleCellExperiment::altExpNames(x = obj)) != 0) {
+      message("The SingleCellExperiment object does not have any alternative experiment, change assay to NULL!")
+      assay <- NULL
     }
     # convert
     seu.obj <- Seurat::as.Seurat(
