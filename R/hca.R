@@ -1,5 +1,16 @@
-# extract all projects
-ExtractHCAProjects <- function(catalog = NULL) {
+#' Show All Available Catalogs in Human Cell Atlas.
+#'
+#' @return Named vector of catalogs.
+#' @importFrom curl curl_fetch_memory
+#' @importFrom jsonlite fromJSON
+#' @export
+#'
+#' @examples
+#' \donttest{
+#' # all available catalogs
+#' all.hca.catalogs <- ExtractHCACatalogs()
+#' }
+ExtractHCACatalogs <- function() {
   # base urls
   hca.base.url <- "https://service.azul.data.humancellatlas.org"
   # get all catalogs
@@ -8,15 +19,24 @@ ExtractHCAProjects <- function(catalog = NULL) {
   catalog.vec <- sapply(names(catalog.content$catalogs), function(x) {
     if (!catalog.content$catalogs[[x]]$internal) x
   }) %>% unlist()
+  return(catalog.vec)
+}
+
+# extract all projects
+ExtractHCAProjects <- function(catalog = NULL) {
+  # base urls
+  hca.base.url <- "https://service.azul.data.humancellatlas.org"
+  # get all catalogs
+  catalog.vec <- ExtractHCACatalogs()
   if (!is.null(catalog)) {
     catalog.vec <- intersect(catalog, catalog.vec)
     if (length(catalog.vec) == 0) {
-      stop("Please check catalog you proided, choose from: dcp29, dcp30, dcp1, lm2, lm3.")
+      stop("Please check catalog you proided! All available catalogs can be accessed via ExtractHCACatalogs().")
     }
   }
   # get catalog project list
   hca.projects.list <- lapply(catalog.vec, function(x) {
-    cat.prj.url <- paste0(hca.base.url, "/index/projects?catalog=", x, "&size=100")
+    cat.prj.url <- paste0(hca.base.url, "/index/projects?catalog=", x, "&size=75")
     cat.prj <- RecurURLRetrieval(cat.prj.url) %>% as.data.frame()
     cat.prj$catalog <- x
     return(cat.prj)
@@ -30,8 +50,8 @@ ExtractHCAProjects <- function(catalog = NULL) {
 
 #' Show All Available Projects in Human Cell Atlas.
 #'
-#' @param catalog The catalog of the projects. Different catalogs may share some projects. Choose from "dcp29",
-#' "dcp30", "dcp1", "lm2", "lm3", one or multiple values. Default: NULL (all catalogs, remove duplicated projects).
+#' @param catalog The catalog of the projects (one or multiple values). Different catalogs may share some projects.
+#' All available catalogs can be accessed via \code{ExtractHCACatalogs}. Default: NULL (all catalogs, remove duplicated projects).
 #'
 #' @return Dataframe contains all available projects.
 #' @importFrom magrittr %>%
