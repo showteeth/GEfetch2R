@@ -494,7 +494,7 @@ PrepareCELLxGENEUrls <- function(df, fe) {
   return(list(df = valid.df, urls = valid.urls))
 }
 
-# used in hca, recursively extract projects (limit size to 100, get all projects when the size is greater than 100)
+# used in hca, recursively extract projects
 # reference: https://bioconductor.org/packages/release/bioc/html/hca.html
 RecurURLRetrieval <- function(url) {
   url.content <- URLRetrieval(url)

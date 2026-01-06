@@ -139,6 +139,34 @@ ShowHCAProjects <- function(catalog = NULL) {
     x.df.date <- x.df$dates[[1]]
     lastModifiedDate <- HCAPasteColdf(df = x.df.date, col = "lastModifiedDate")
 
+    # uuid, file name and file formats
+    x.df.dataset <- data.frame()
+    if (ncol(x.df.projects$matrices) > 0) {
+      x.mat.df <- HCAExtactData(x.df.projects$matrices)
+      x.mat.df$source <- "matrices"
+      x.df.dataset <- data.table::rbindlist(list(x.df.dataset, x.mat.df), fill = TRUE) %>% as.data.frame()
+    }
+    if (ncol(x.df.projects$contributedAnalyses) > 0) {
+      x.ca.df <- HCAExtactData(x.df.projects$contributedAnalyses)
+      x.ca.df$source <- "contributedAnalyses"
+      x.df.dataset <- data.table::rbindlist(list(x.df.dataset, x.ca.df), fill = TRUE) %>% as.data.frame()
+    }
+    if (nrow(x.df.dataset) > 0) {
+      x.df.dataset <- x.df.dataset[!is.na(x.df.dataset$uuid), ] %>% dplyr::distinct(.data[["uuid"]], .keep_all = TRUE)
+      dataMeta <- HCAPasteColdf(df = x.df.dataset, col = "meta")
+      dataDescription <- HCAPasteColdf(df = x.df.dataset, col = "contentDescription")
+      dataFormat <- HCAPasteColdf(df = x.df.dataset, col = "format")
+      dataName <- HCAPasteColdf(df = x.df.dataset, col = "name")
+      dataUUID <- HCAPasteColdf(df = x.df.dataset, col = "uuid")
+      dataVersion <- HCAPasteColdf(df = x.df.dataset, col = "version")
+    } else {
+      dataMeta <- NA
+      dataDescription <- NA
+      dataFormat <- NA
+      dataName <- NA
+      dataUUID <- NA
+      dataVersion <- NA
+    }
     # return final dataframe
     data.frame(
       projectTitle = projectTitle, projectId = projectId, projectShortname = projectShortname,
@@ -152,7 +180,8 @@ ShowHCAProjects <- function(catalog = NULL) {
       instrumentManufacturerModel = instrumentManufacturerModel, pairedEnd = pairedEnd, cellLineID = cellLineID,
       cellLineType = cellLineType, cellLinemodelOrgan = cellLinemodelOrgan, organoidsID = organoidsID,
       organoidsmodelOrgan = organoidsmodelOrgan, organoidsmodelOrganPart = organoidsmodelOrganPart,
-      lastModifiedDate = lastModifiedDate
+      lastModifiedDate = lastModifiedDate, dataMeta = dataMeta, dataDescription = dataDescription, dataFormat = dataFormat,
+      dataName = dataName, dataUUID = dataUUID, dataVersion = dataVersion
     )
   })
   hca.projects.detail.df <- data.table::rbindlist(hca.projects.detail.list, fill = TRUE) %>% as.data.frame()
@@ -186,6 +215,7 @@ ShowHCAProjects <- function(catalog = NULL) {
 #' Deault: NULL(without filtering).
 #' @param sequencing.type The sequencing instrument type of the projects (e.g. illumina hiseq 2500),
 #' obtain available values with \code{StatDBAttribute}, one or multiple values. Default: NULL (All).
+#' @param remove.nodata Logical value, whether to remove project with no downloadable data. Default: TRUE.
 #'
 #' @return Dataframe contains filtered projects.
 #' @importFrom magrittr %>%
@@ -210,7 +240,7 @@ ShowHCAProjects <- function(catalog = NULL) {
 #' }
 ExtractHCAMeta <- function(all.projects.df, organism = NULL, sex = NULL, organ = NULL, organ.part = NULL, disease = NULL,
                            sample.type = NULL, preservation.method = NULL, protocol = NULL,
-                           suspension.type = NULL, cell.type = NULL, cell.num = NULL, sequencing.type = NULL) {
+                           suspension.type = NULL, cell.type = NULL, cell.num = NULL, sequencing.type = NULL, remove.nodata = TRUE) {
   # all projects detail dataframe
   hca.projects.detail.df <- all.projects.df
   # extract row index under different filter
@@ -240,6 +270,14 @@ ExtractHCAMeta <- function(all.projects.df, organism = NULL, sex = NULL, organ =
   ))
   used.sample.df <- hca.projects.detail.df[valid.idx, ]
   rownames(used.sample.df) <- NULL
+  # remove project with no downloadable data
+  if (remove.nodata) {
+    remove.sample.df <- used.sample.df[is.na(used.sample.df$dataUUID), ]
+    if (nrow(remove.sample.df) > 0) {
+      message("Remove ", nrow(remove.sample.df), " project(s) with no downloadable data!")
+      used.sample.df <- used.sample.df[!is.na(used.sample.df$dataUUID), ]
+    }
+  }
   return(used.sample.df)
 }
 
@@ -291,55 +329,46 @@ ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "t
                      timeout = 3600, quiet = FALSE, parallel = TRUE, use.cores = NULL, return.seu = FALSE, merge = TRUE) {
   # file.ext: ignore case, tar.gz, gz
   if (is.null(file.ext)) {
-    warning("There is no file extension provided, use all valid (rds, rdata, h5, h5ad and loom).")
-    file.ext <- c("rds", "rdata", "h5", "h5ad", "loom")
+    warning("There is no file extension provided, use all valid (rds, rdata, h5, h5ad, loom and tsv).")
+    file.ext <- c("rds", "rdata", "h5", "h5ad", "loom", "tsv")
   }
-  file.ext <- intersect(file.ext, c("rds", "rdata", "h5", "h5ad", "loom"))
+  file.ext <- intersect(file.ext, c("rds", "rdata", "h5", "h5ad", "loom", "tsv"))
   if (length(file.ext) == 0) {
     stop("Please provide valid file extension: rds, rdata, h5, h5ad and loom.")
   }
-  # all available projects
-  hca.projects.df <- ExtractHCAProjects(catalog = NULL)
-  # check entryId exists
-  CheckColumns(df = meta, columns = c("entryId", "catalog"))
-  # filter projects with meta
-  # projects.valid <- merge(hca.projects.df, meta[c("entryId", "catalog")], by = c("entryId", "catalog"))
-  projects.valid <- merge(hca.projects.df, meta[c("entryId", "catalog")], by = c("entryId", "catalog"))
-  # extract data
-  # get projects all datasets
-  projects.datasets.list <- lapply(1:nrow(projects.valid), function(x) {
-    x.df <- projects.valid[x, ]
-    # project
-    x.df.projects <- x.df$projects[[1]]
-    x.dataset.df <- data.frame()
-    if (ncol(x.df.projects$matrices) > 0) {
-      x.mat.df <- HCAExtactData(x.df.projects$matrices)
-      x.mat.df$source <- "matrices"
-      x.dataset.df <- data.table::rbindlist(list(x.dataset.df, x.mat.df), fill = TRUE) %>% as.data.frame()
-    }
-    if (ncol(x.df.projects$contributedAnalyses) > 0) {
-      x.ca.df <- HCAExtactData(x.df.projects$contributedAnalyses)
-      x.ca.df$source <- "contributedAnalyses"
-      x.dataset.df <- data.table::rbindlist(list(x.dataset.df, x.ca.df), fill = TRUE) %>% as.data.frame()
-    }
-    if (nrow(x.dataset.df) > 0) {
-      x.dataset.df$entryId <- x.df$entryId
-      x.dataset.df$catalog <- x.df$catalog
+  # check columns
+  CheckColumns(df = meta, columns = c("dataUUID", "dataFormat", "dataName", "dataMeta", "dataDescription"))
+  # restore project dataset
+  projects.datasets.list <- lapply(1:nrow(meta), function(x) {
+    x.df <- meta[x, ]
+    x.entryId <- x.df$entryId
+    x.catalog <- x.df$catalog
+    x.dataMeta <- strsplit(x = x.df$dataMeta, split = ", ")[[1]]
+    x.dataDescription <- strsplit(x = x.df$dataDescription, split = ", ")[[1]]
+    x.dataUUID <- strsplit(x = x.df$dataUUID, split = ", ")[[1]]
+    x.dataFormat <- strsplit(x = x.df$dataFormat, split = ", ")[[1]]
+    x.dataName <- strsplit(x = x.df$dataName, split = ", ")[[1]]
+    x.data.df <- data.frame(meta = x.dataMeta, contentDescription = x.dataDescription, uuid = x.dataUUID, format = x.dataFormat, name = x.dataName)
+    x.data.df$entryId <- x.entryId
+    x.data.df$catalog <- x.catalog
+    # filter file extension
+    if (nrow(x.data.df) > 0) {
+      x.data.df$entryId <- x.df$entryId
       # filter with file.ext
       file.ext <- c(file.ext, paste0(file.ext, ".tar.gz"), paste0(file.ext, ".gz"))
-      x.dataset.df$lowerformat <- tolower(x.dataset.df$format)
-      x.dataset.valid.df <- x.dataset.df[x.dataset.df$lowerformat %in% file.ext, ]
-      if (nrow(x.dataset.valid.df) == 0) {
+      x.data.df$lowerformat <- tolower(x.data.df$format)
+      x.data.valid.df <- x.data.df[x.data.df$lowerformat %in% file.ext, ]
+      if (nrow(x.data.valid.df) == 0) {
         message(
           "There is no file in entryId: ", x.df$entryId, " with extension: ", paste(file.ext, collapse = ", "), ". Available file.ext: ",
-          paste(unique(x.dataset.df$lowerformat), collapse = ", "), "."
+          paste(unique(x.data.df$lowerformat), collapse = ", "), "."
         )
       }
     } else {
       message("There is no file to download in entryId: ", x.df$entryId, ".")
-      x.dataset.valid.df <- x.dataset.df
+      x.data.valid.df <- x.data.df
     }
-    return(x.dataset.valid.df)
+    return(x.data.valid.df)
   })
   projects.datasets.df <- data.table::rbindlist(projects.datasets.list, fill = TRUE) %>% as.data.frame()
   if (nrow(projects.datasets.df) == 0) {
@@ -348,23 +377,11 @@ ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "t
       paste(file.ext, collapse = ", "), ". Please check the file.ext!"
     )
   } else {
-    # remove unused columns
-    projects.datasets.df$drs_uri <- NULL
-    projects.datasets.df$uuid <- NULL
-    projects.datasets.df <- merge(meta[c(
-      "projectTitle", "projectDescription", "publications",
-      "sampleEntityType", "organPart", "disease", "preservationMethod", "biologicalSex",
-      "nucleicAcidSource", "entryId", "catalog"
-    )], projects.datasets.df, by = c("entryId", "catalog"))
-    projects.datasets.valid.df <- projects.datasets.df %>%
-      dplyr::relocate(dplyr::any_of(c("entryId", "catalog")), .after = dplyr::last_col()) %>%
-      dplyr::select(dplyr::any_of(c("meta", "contentDescription", "name")), dplyr::everything())
-    projects.datasets.valid.df$lowerformat <- NULL
-    # distinct url
-    projects.datasets.valid.df <- projects.datasets.valid.df %>% dplyr::distinct(.data[["url"]], .keep_all = TRUE)
+    # get url with uuid
+    projects.datasets.df$url <- paste0("https://service.azul.data.humancellatlas.org/repository/files/", projects.datasets.df$uuid)
     # add name
-    projects.datasets.valid.df$name <- sapply(1:nrow(projects.datasets.valid.df), function(x) {
-      x.pdvd <- projects.datasets.valid.df[x, ]
+    projects.datasets.df$name <- sapply(1:nrow(projects.datasets.df), function(x) {
+      x.pdvd <- projects.datasets.df[x, ]
       ifelse(is.null(x.pdvd$name),
         paste0(make.names(x.pdvd$meta), ".", x.pdvd$format),
         ifelse(is.na(x.pdvd$name),
@@ -376,9 +393,26 @@ ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "t
         )
       )
     })
+    # add metadata
+    projects.datasets.df <- merge(meta[c(
+      "projectTitle", "projectDescription", "publications",
+      "sampleEntityType", "organPart", "disease", "preservationMethod", "biologicalSex",
+      "nucleicAcidSource", "entryId", "catalog"
+    )], projects.datasets.df, by = c("entryId", "catalog"))
+    projects.datasets.df <- projects.datasets.df %>%
+      dplyr::relocate(dplyr::any_of(c("entryId", "catalog")), .after = dplyr::last_col()) %>%
+      dplyr::select(dplyr::any_of(c("meta", "contentDescription", "name")), dplyr::everything())
+    projects.datasets.df$lowerformat <- NULL
+    # change colnames
+    colnames(projects.datasets.df) <- c(
+      "dataMeta", "dataDescription", "dataName", "projectTitle", "projectDescription",
+      "publications", "sampleEntityType", "organPart", "disease", "preservationMethod",
+      "biologicalSex", "nucleicAcidSource", "dataUUID", "dataFormat", "url",
+      "entryId", "catalog"
+    )
     # prepare download urls
-    download.urls <- projects.datasets.valid.df$url
-    names(download.urls) <- projects.datasets.valid.df$name
+    download.urls <- projects.datasets.df$url
+    names(download.urls) <- projects.datasets.df$dataName
     # prepare output folder
     if (is.null(out.folder)) {
       out.folder <- getwd()
@@ -423,14 +457,15 @@ ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "t
         seu.obj <- LoadRDS2Seurat(out.folder = out.folder, merge = merge)
         return(seu.obj)
       } else {
-        res.list <- list(down.meta = projects.datasets.valid.df, fail.meta = NULL)
+        res.list <- list(down.meta = projects.datasets.df, fail.meta = NULL)
         return(res.list)
       }
     } else {
       message(length(fail.status), " files downloaded failed, please re-run with fail.meta (meta)")
-      fail.entry.id <- projects.datasets.valid.df[fail.status, "entryId"] %>% unique()
+      fail.entry.id <- projects.datasets.df[fail.status, "entryId"] %>% unique()
+      # for re-run
       fail.meta <- meta[meta$entryId %in% fail.entry.id, ]
-      success.meta <- projects.datasets.valid.df[!projects.datasets.valid.df$entryId %in% fail.entry.id, ]
+      success.meta <- projects.datasets.df[!projects.datasets.df$entryId %in% fail.entry.id, ]
       res.list <- list(down.meta = success.meta, fail.meta = fail.meta)
       return(res.list)
     }
