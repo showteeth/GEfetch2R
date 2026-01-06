@@ -1271,3 +1271,11 @@ Process10xFiles <- function(acce, folder, accept.fmt, out.folder, gene2feature) 
   message("Process 10x fiels done! All files are in ", out.folder)
   return(NULL)
 }
+
+# used in CheckAPIs, whether the url exists: https://stackoverflow.com/questions/52911812/check-if-url-exists-in-r
+CheckURL <- function(url_in, t = 2) {
+  con <- url(url_in)
+  check <- suppressWarnings(try(open.connection(con, open = "rt", timeout = t), silent = T)[1])
+  suppressWarnings(try(close.connection(con), silent = T))
+  ifelse(is.null(check), TRUE, FALSE)
+}

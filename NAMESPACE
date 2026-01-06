@@ -3,6 +3,7 @@
 export(AD2SCE)
 export(AD2Seu)
 export(Bam2Fastq)
+export(CheckAPI)
 export(DownloadBam)
 export(DownloadFastq)
 export(DownloadSRA)
