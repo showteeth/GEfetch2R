@@ -104,9 +104,9 @@ ExtractCELLxGENEMeta <- function(all.samples.df, organism = NULL, ethnicity = NU
 #' Download CELLxGENE Datasets and Return SeuratObject.
 #'
 #' @param meta Metadata used to download, can be from \code{ExtractCELLxGENEMeta},
-#' should contain dataset_id, rds_id/h5ad_id (depend on \code{file.ext}) and name columns.
-#' Skip when \code{use.census} is TRUE. Default: NULL.
-#' @param link Vector contains dataset/collection link(s).
+#' should contain dataset_id, rds_id/h5ad_id (depend on \code{file.ext}) and dataset_description columns.
+#' Skip when \code{use.census} is TRUE or \code{link} is not NULL. Default: NULL.
+#' @param link Vector contains dataset/collection link(s). e.g. "https://cellxgene.cziscience.com/e/e12eb8a9-5e8b-4b59-90c8-77d29a811c00.cxg/".
 #' Skip when \code{use.census} is TRUE or \code{meta} is not NULL. Default: NULL.
 #' @param file.ext The valid file extension for download. When NULL, use "rds" and "h5ad". Default: c("rds", "h5ad").
 #' @param out.folder The output folder. Default: NULL (current working directory).
@@ -160,6 +160,14 @@ ExtractCELLxGENEMeta <- function(all.samples.df, organism = NULL, ethnicity = NU
 #' )
 #' # download, need to provide the output folder
 #' ParseCELLxGENE(meta = human.10x.cellxgene.meta, out.folder = "/path/to/output")
+#' # download given collection and dataset
+#' ParseCELLxGENE(
+#'   link = c(
+#'     "https://cellxgene.cziscience.com/collections/77f9d7e9-5675-49c3-abed-ce02f39eef1b",
+#'     "https://cellxgene.cziscience.com/e/e12eb8a9-5e8b-4b59-90c8-77d29a811c00.cxg/"
+#'   ),
+#'   out.folder = "/path/to/output"
+#' )
 #' }
 ParseCELLxGENE <- function(meta = NULL, link = NULL, file.ext = c("rds", "h5ad"), out.folder = NULL, timeout = 3600, quiet = FALSE,
                            parallel = TRUE, use.cores = NULL, return.seu = FALSE, merge = TRUE, use.census = FALSE, census.version = "stable",

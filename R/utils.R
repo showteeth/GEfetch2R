@@ -749,6 +749,149 @@ HCAExtactData <- function(df) {
   return(df.final)
 }
 
+# used in hca, parse dataset information of project
+ParseHCAdataset <- function(project.id) {
+  # get all catalogs
+  catalog.vec <- ExtractHCACatalogs()
+  # get project detail
+  projects.cat.list <- lapply(catalog.vec, function(x) {
+    project.url <- paste0(
+      "https://service.azul.data.humancellatlas.org/index/projects?catalog=", x,
+      "&filters=%7B%0A%20%20%22projectId%22%3A%20%7B%0A%20%20%20%20%22is%22%3A%20%5B%0A%20%20%20%20%20%20%22",
+      project.id, "%22%0A%20%20%20%20%5D%0A%20%20%7D%0A%7D"
+    )
+    projects.list <- URLRetrieval(project.url)
+    projects.info <- projects.list$hits %>% as.data.frame()
+    if (nrow(projects.info) != 0) {
+      projects.info$catalog <- x
+    }
+    return(projects.info)
+  })
+  projects.cat.df <- data.table::rbindlist(projects.cat.list, fill = TRUE) %>% as.data.frame()
+  if (nrow(projects.cat.df) == 0) {
+    stop("Error occurred when accessing project: ", project.id, ". If CheckAPI() returns OK, please check project.id (link) you provided!")
+  }
+  # remove duplicated information in different catalogs
+  projects.cat.df <- projects.cat.df %>% dplyr::distinct(.data[["entryId"]], .keep_all = TRUE)
+  # process the project information
+  projects.cat.final <- ProcessHCAProject(x.df = projects.cat.df)
+  return(projects.cat.final)
+}
+
+# used in hca, process dataset information of project
+ProcessHCAProject <- function(x.df) {
+  # entryid and catalog
+  entryId <- x.df$entryId
+  catalog <- x.df$catalog
+
+  # procotol information
+  x.df.protocol <- x.df$protocols[[1]]
+  workflow <- HCAPasteCol(x.df.protocol, col = "workflow")
+  libraryConstructionApproach <- HCAPasteCol(x.df.protocol, col = "libraryConstructionApproach")
+  nucleicAcidSource <- HCAPasteCol(x.df.protocol, col = "nucleicAcidSource")
+  instrumentManufacturerModel <- HCAPasteCol(x.df.protocol, col = "instrumentManufacturerModel")
+  pairedEnd <- HCAPasteCol(x.df.protocol, col = "pairedEnd")
+
+  # source
+  x.df.source <- x.df$sources[[1]]
+  sourceId <- HCAPasteColdf(x.df.source, col = "sourceId")
+  sourceSpec <- HCAPasteColdf(x.df.source, col = "sourceSpec")
+
+  # project
+  x.df.projects <- x.df$projects[[1]]
+  projectId <- HCAPasteColdf(x.df.projects, col = "projectId")
+  projectTitle <- HCAPasteColdf(x.df.projects, col = "projectTitle")
+  projectShortname <- HCAPasteColdf(x.df.projects, col = "projectShortname")
+  laboratory <- HCAPasteCol(x.df.projects, col = "laboratory")
+  estimatedCellCount <- HCAPasteColdf(x.df.projects, col = "estimatedCellCount")
+  projectDescription <- HCAPasteColdf(x.df.projects, col = "projectDescription")
+  publications <- HCAPasteColdf(x.df.projects$publications[[1]], col = "publicationTitle")
+  accessions <- HCAPasteColdf(x.df.projects$accessions[[1]], col = "accession")
+  accessible <- HCAPasteColdf(x.df.projects, col = "accessible")
+
+  # sample
+  x.df.samples <- x.df$samples[[1]]
+  sampleEntityType <- HCAPasteCol(df = x.df.samples, col = "sampleEntityType")
+  organ <- HCAPasteCol(df = x.df.samples, col = "effectiveOrgan")
+  sampleID <- HCAPasteCol(df = x.df.samples, col = "id")
+  organPart <- HCAPasteCol(df = x.df.samples, col = "organPart")
+  disease <- HCAPasteCol(df = x.df.samples, col = "disease")
+  preservationMethod <- HCAPasteCol(df = x.df.samples, col = "preservationMethod")
+
+  # cell line
+  x.df.cellLines <- x.df$cellLines[[1]]
+  cellLineID <- HCAPasteCol(df = x.df.cellLines, col = "id")
+  cellLineType <- HCAPasteCol(df = x.df.cellLines, col = "cellLineType")
+  cellLinemodelOrgan <- HCAPasteCol(df = x.df.cellLines, col = "modelOrgan")
+
+  # Organism
+  x.df.organisms <- x.df$donorOrganisms[[1]]
+  donorCount <- ifelse(is.null(x.df.organisms$donorCount), "", x.df.organisms$donorCount)
+  developmentStage <- HCAPasteCol(df = x.df.organisms, col = "developmentStage")
+  genusSpecies <- HCAPasteCol(df = x.df.organisms, col = "genusSpecies")
+  biologicalSex <- HCAPasteCol(df = x.df.organisms, col = "biologicalSex")
+
+  # organoids
+  x.df.organoids <- x.df$organoids[[1]]
+  organoidsID <- HCAPasteCol(df = x.df.organoids, col = "id")
+  organoidsmodelOrgan <- HCAPasteCol(df = x.df.organoids, col = "modelOrgan")
+  organoidsmodelOrganPart <- HCAPasteCol(df = x.df.organoids, col = "modelOrganPart")
+
+  # cellSuspensions
+  x.df.cellSuspensions <- x.df$cellSuspensions[[1]]
+  selectedCellType <- HCAPasteCol(df = x.df.cellSuspensions, col = "selectedCellType")
+
+  # date
+  x.df.date <- x.df$dates[[1]]
+  lastModifiedDate <- HCAPasteColdf(df = x.df.date, col = "lastModifiedDate")
+
+  # uuid, file name and file formats
+  x.df.dataset <- data.frame()
+  if (ncol(x.df.projects$matrices) > 0) {
+    x.mat.df <- HCAExtactData(x.df.projects$matrices)
+    x.mat.df$source <- "matrices"
+    x.df.dataset <- data.table::rbindlist(list(x.df.dataset, x.mat.df), fill = TRUE) %>% as.data.frame()
+  }
+  if (ncol(x.df.projects$contributedAnalyses) > 0) {
+    x.ca.df <- HCAExtactData(x.df.projects$contributedAnalyses)
+    x.ca.df$source <- "contributedAnalyses"
+    x.df.dataset <- data.table::rbindlist(list(x.df.dataset, x.ca.df), fill = TRUE) %>% as.data.frame()
+  }
+  if (nrow(x.df.dataset) > 0) {
+    x.df.dataset <- x.df.dataset[!is.na(x.df.dataset$uuid), ] %>% dplyr::distinct(.data[["uuid"]], .keep_all = TRUE)
+    dataMeta <- HCAPasteColdf(df = x.df.dataset, col = "meta")
+    dataDescription <- HCAPasteColdf(df = x.df.dataset, col = "contentDescription")
+    dataFormat <- HCAPasteColdf(df = x.df.dataset, col = "format")
+    dataName <- HCAPasteColdf(df = x.df.dataset, col = "name")
+    dataUUID <- HCAPasteColdf(df = x.df.dataset, col = "uuid")
+    dataVersion <- HCAPasteColdf(df = x.df.dataset, col = "version")
+  } else {
+    dataMeta <- NA
+    dataDescription <- NA
+    dataFormat <- NA
+    dataName <- NA
+    dataUUID <- NA
+    dataVersion <- NA
+  }
+  # return final dataframe
+  project.df <- data.frame(
+    projectTitle = projectTitle, projectId = projectId, projectShortname = projectShortname,
+    projectDescription = projectDescription, publications = publications, laboratory = laboratory,
+    accessions = accessions, accessible = accessible, estimatedCellCount = estimatedCellCount,
+    sampleEntityType = sampleEntityType, organ = organ, organPart = organPart, sampleID = sampleID,
+    disease = disease, preservationMethod = preservationMethod, donorCount = donorCount,
+    developmentStage = developmentStage, genusSpecies = genusSpecies, biologicalSex = biologicalSex,
+    selectedCellType = selectedCellType, catalog = catalog, entryId = entryId, sourceId = sourceId, sourceSpec = sourceSpec,
+    workflow = workflow, libraryConstructionApproach = libraryConstructionApproach, nucleicAcidSource = nucleicAcidSource,
+    instrumentManufacturerModel = instrumentManufacturerModel, pairedEnd = pairedEnd, cellLineID = cellLineID,
+    cellLineType = cellLineType, cellLinemodelOrgan = cellLinemodelOrgan, organoidsID = organoidsID,
+    organoidsmodelOrgan = organoidsmodelOrgan, organoidsmodelOrganPart = organoidsmodelOrganPart,
+    lastModifiedDate = lastModifiedDate, dataMeta = dataMeta, dataDescription = dataDescription, dataFormat = dataFormat,
+    dataName = dataName, dataUUID = dataUUID, dataVersion = dataVersion
+  )
+  return(project.df)
+}
+
 # used in CELLxGENE, Zenodo
 LoadRDS2Seurat <- function(out.folder, merge, obs.value.filter = NULL, obs.keys = NULL, include.genes = NULL) {
   rds.files <- list.files(path = out.folder, pattern = "rds$", full.names = TRUE, ignore.case = TRUE)

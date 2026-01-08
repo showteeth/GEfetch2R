@@ -73,116 +73,7 @@ ShowHCAProjects <- function(catalog = NULL) {
   # get project detail information
   hca.projects.detail.list <- lapply(1:nrow(hca.projects.df), function(x) {
     x.df <- hca.projects.df[x, ]
-
-    # entryid and catalog
-    entryId <- x.df$entryId
-    catalog <- x.df$catalog
-
-    # procotol information
-    x.df.protocol <- x.df$protocols[[1]]
-    workflow <- HCAPasteCol(x.df.protocol, col = "workflow")
-    libraryConstructionApproach <- HCAPasteCol(x.df.protocol, col = "libraryConstructionApproach")
-    nucleicAcidSource <- HCAPasteCol(x.df.protocol, col = "nucleicAcidSource")
-    instrumentManufacturerModel <- HCAPasteCol(x.df.protocol, col = "instrumentManufacturerModel")
-    pairedEnd <- HCAPasteCol(x.df.protocol, col = "pairedEnd")
-
-    # source
-    x.df.source <- x.df$sources[[1]]
-    sourceId <- HCAPasteColdf(x.df.source, col = "sourceId")
-    sourceSpec <- HCAPasteColdf(x.df.source, col = "sourceSpec")
-
-    # project
-    x.df.projects <- x.df$projects[[1]]
-    projectId <- HCAPasteColdf(x.df.projects, col = "projectId")
-    projectTitle <- HCAPasteColdf(x.df.projects, col = "projectTitle")
-    projectShortname <- HCAPasteColdf(x.df.projects, col = "projectShortname")
-    laboratory <- HCAPasteCol(x.df.projects, col = "laboratory")
-    estimatedCellCount <- HCAPasteColdf(x.df.projects, col = "estimatedCellCount")
-    projectDescription <- HCAPasteColdf(x.df.projects, col = "projectDescription")
-    publications <- HCAPasteColdf(x.df.projects$publications[[1]], col = "publicationTitle")
-    accessions <- HCAPasteColdf(x.df.projects$accessions[[1]], col = "accession")
-    accessible <- HCAPasteColdf(x.df.projects, col = "accessible")
-
-    # sample
-    x.df.samples <- x.df$samples[[1]]
-    sampleEntityType <- HCAPasteCol(df = x.df.samples, col = "sampleEntityType")
-    organ <- HCAPasteCol(df = x.df.samples, col = "effectiveOrgan")
-    sampleID <- HCAPasteCol(df = x.df.samples, col = "id")
-    organPart <- HCAPasteCol(df = x.df.samples, col = "organPart")
-    disease <- HCAPasteCol(df = x.df.samples, col = "disease")
-    preservationMethod <- HCAPasteCol(df = x.df.samples, col = "preservationMethod")
-
-    # cell line
-    x.df.cellLines <- x.df$cellLines[[1]]
-    cellLineID <- HCAPasteCol(df = x.df.cellLines, col = "id")
-    cellLineType <- HCAPasteCol(df = x.df.cellLines, col = "cellLineType")
-    cellLinemodelOrgan <- HCAPasteCol(df = x.df.cellLines, col = "modelOrgan")
-
-    # Organism
-    x.df.organisms <- x.df$donorOrganisms[[1]]
-    donorCount <- ifelse(is.null(x.df.organisms$donorCount), "", x.df.organisms$donorCount)
-    developmentStage <- HCAPasteCol(df = x.df.organisms, col = "developmentStage")
-    genusSpecies <- HCAPasteCol(df = x.df.organisms, col = "genusSpecies")
-    biologicalSex <- HCAPasteCol(df = x.df.organisms, col = "biologicalSex")
-
-    # organoids
-    x.df.organoids <- x.df$organoids[[1]]
-    organoidsID <- HCAPasteCol(df = x.df.organoids, col = "id")
-    organoidsmodelOrgan <- HCAPasteCol(df = x.df.organoids, col = "modelOrgan")
-    organoidsmodelOrganPart <- HCAPasteCol(df = x.df.organoids, col = "modelOrganPart")
-
-    # cellSuspensions
-    x.df.cellSuspensions <- x.df$cellSuspensions[[1]]
-    selectedCellType <- HCAPasteCol(df = x.df.cellSuspensions, col = "selectedCellType")
-
-    # date
-    x.df.date <- x.df$dates[[1]]
-    lastModifiedDate <- HCAPasteColdf(df = x.df.date, col = "lastModifiedDate")
-
-    # uuid, file name and file formats
-    x.df.dataset <- data.frame()
-    if (ncol(x.df.projects$matrices) > 0) {
-      x.mat.df <- HCAExtactData(x.df.projects$matrices)
-      x.mat.df$source <- "matrices"
-      x.df.dataset <- data.table::rbindlist(list(x.df.dataset, x.mat.df), fill = TRUE) %>% as.data.frame()
-    }
-    if (ncol(x.df.projects$contributedAnalyses) > 0) {
-      x.ca.df <- HCAExtactData(x.df.projects$contributedAnalyses)
-      x.ca.df$source <- "contributedAnalyses"
-      x.df.dataset <- data.table::rbindlist(list(x.df.dataset, x.ca.df), fill = TRUE) %>% as.data.frame()
-    }
-    if (nrow(x.df.dataset) > 0) {
-      x.df.dataset <- x.df.dataset[!is.na(x.df.dataset$uuid), ] %>% dplyr::distinct(.data[["uuid"]], .keep_all = TRUE)
-      dataMeta <- HCAPasteColdf(df = x.df.dataset, col = "meta")
-      dataDescription <- HCAPasteColdf(df = x.df.dataset, col = "contentDescription")
-      dataFormat <- HCAPasteColdf(df = x.df.dataset, col = "format")
-      dataName <- HCAPasteColdf(df = x.df.dataset, col = "name")
-      dataUUID <- HCAPasteColdf(df = x.df.dataset, col = "uuid")
-      dataVersion <- HCAPasteColdf(df = x.df.dataset, col = "version")
-    } else {
-      dataMeta <- NA
-      dataDescription <- NA
-      dataFormat <- NA
-      dataName <- NA
-      dataUUID <- NA
-      dataVersion <- NA
-    }
-    # return final dataframe
-    data.frame(
-      projectTitle = projectTitle, projectId = projectId, projectShortname = projectShortname,
-      projectDescription = projectDescription, publications = publications, laboratory = laboratory,
-      accessions = accessions, accessible = accessible, estimatedCellCount = estimatedCellCount,
-      sampleEntityType = sampleEntityType, organ = organ, organPart = organPart, sampleID = sampleID,
-      disease = disease, preservationMethod = preservationMethod, donorCount = donorCount,
-      developmentStage = developmentStage, genusSpecies = genusSpecies, biologicalSex = biologicalSex,
-      selectedCellType = selectedCellType, catalog = catalog, entryId = entryId, sourceId = sourceId, sourceSpec = sourceSpec,
-      workflow = workflow, libraryConstructionApproach = libraryConstructionApproach, nucleicAcidSource = nucleicAcidSource,
-      instrumentManufacturerModel = instrumentManufacturerModel, pairedEnd = pairedEnd, cellLineID = cellLineID,
-      cellLineType = cellLineType, cellLinemodelOrgan = cellLinemodelOrgan, organoidsID = organoidsID,
-      organoidsmodelOrgan = organoidsmodelOrgan, organoidsmodelOrganPart = organoidsmodelOrganPart,
-      lastModifiedDate = lastModifiedDate, dataMeta = dataMeta, dataDescription = dataDescription, dataFormat = dataFormat,
-      dataName = dataName, dataUUID = dataUUID, dataVersion = dataVersion
-    )
+    ProcessHCAProject(x.df)
   })
   hca.projects.detail.df <- data.table::rbindlist(hca.projects.detail.list, fill = TRUE) %>% as.data.frame()
   return(hca.projects.detail.df)
@@ -283,8 +174,10 @@ ExtractHCAMeta <- function(all.projects.df, organism = NULL, sex = NULL, organ =
 
 #' Download Human Cell Atlas Datasets.
 #'
-#' @param meta Metadata used to download, can be from \code{ExtractHCAMeta},
-#' should contain entryId and name catalog.
+#' @param meta Metadata used to download, can be from \code{ExtractHCAMeta}.
+#' Skip when \code{link} is not NULL. Default: NULL.
+#' @param link Vector contains project link(s), e.g. "https://explore.data.humancellatlas.org/projects/902dc043-7091-445c-9442-d72e163b9879".
+#' Skip when \code{meta} is not NULL. Default: NULL.
 #' @param file.ext The valid file extension for download. When NULL, use "rds", "rdata", "h5", "h5ad", "loom", "tsv".
 #' Default: c("rds", "rdata", "h5", "h5ad", "loom", "tsv").
 #' @param out.folder The output folder. Default: NULL (current working directory).
@@ -324,8 +217,16 @@ ExtractHCAMeta <- function(all.projects.df, organism = NULL, sex = NULL, organ =
 #' )
 #' # download, need users to provide the output folder
 #' ParseHCA(meta = all.human.10x.projects, out.folder = "/path/to/output")
+#' # download given projects
+#' ParseHCA(
+#'   link = c(
+#'     "https://explore.data.humancellatlas.org/projects/902dc043-7091-445c-9442-d72e163b9879",
+#'     "https://explore.data.humancellatlas.org/projects/cdabcf0b-7602-4abf-9afb-3b410e545703"
+#'   ),
+#'   out.folder = "/path/to/output"
+#' )
 #' }
-ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "tsv"), out.folder = NULL,
+ParseHCA <- function(meta = NULL, link = NULL, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "tsv"), out.folder = NULL,
                      timeout = 3600, quiet = FALSE, parallel = TRUE, use.cores = NULL, return.seu = FALSE, merge = TRUE) {
   # file.ext: ignore case, tar.gz, gz
   if (is.null(file.ext)) {
@@ -335,6 +236,17 @@ ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "t
   file.ext <- intersect(file.ext, c("rds", "rdata", "h5", "h5ad", "loom", "tsv"))
   if (length(file.ext) == 0) {
     stop("Please provide valid file extension: rds, rdata, h5, h5ad and loom.")
+  }
+  # check meta
+  if (is.null(meta)) {
+    if (is.null(link)) {
+      stop("The meta and link are NULL, please provide at least one valid value!")
+    } else {
+      projects.vec <- sapply(link, basename)
+      meta.list <- lapply(projects.vec, ParseHCAdataset)
+      meta <- data.table::rbindlist(meta.list, fill = TRUE) %>%
+        as.data.frame()
+    }
   }
   # check columns
   CheckColumns(df = meta, columns = c("dataUUID", "dataFormat", "dataName", "dataMeta", "dataDescription"))

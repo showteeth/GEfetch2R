@@ -218,7 +218,7 @@ CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Brow
       print(as.data.frame(dataset.content))
       warning("Error occurred when accessing API: ", dataset.url)
     } else {
-      "The API to access detailed information of a given dataset is OK!"
+      message("The API to access detailed information of a given dataset is OK!")
     }
   }
   if ("Human Cell Atlas" %in% database) {
@@ -260,6 +260,23 @@ CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Brow
         } else {
           warning("There are no uuids in the first 75 projects, so it is uncertain whether the API is OK.")
         }
+      }
+      # check given project
+      projects.cat.list <- lapply(hca.catalogs, function(x) {
+        project.url <- paste0(
+          "https://service.azul.data.humancellatlas.org/index/projects?catalog=", x,
+          "&filters=%7B%0A%20%20%22projectId%22%3A%20%7B%0A%20%20%20%20%22is%22%3A%20%5B%0A%20%20%20%20%20%20%22",
+          "902dc043-7091-445c-9442-d72e163b9879", "%22%0A%20%20%20%20%5D%0A%20%20%7D%0A%7D"
+        )
+        projects.list <- URLRetrieval(project.url)
+        projects.info <- projects.list$hits %>% as.data.frame()
+        return(projects.info)
+      })
+      projects.cat.df <- data.table::rbindlist(projects.cat.list, fill = TRUE) %>% as.data.frame()
+      if (nrow(projects.cat.df) == 0) {
+        warning("Error occurred when accessing detailed information of a given project via API.")
+      } else {
+        message("The API to access detailed information of a given project is OK!")
       }
     }
   }
