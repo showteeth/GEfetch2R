@@ -6,6 +6,7 @@
 \usage{
 ParseCELLxGENE(
   meta = NULL,
+  link = NULL,
   file.ext = c("rds", "h5ad"),
   out.folder = NULL,
   timeout = 3600,
@@ -28,6 +29,9 @@ ParseCELLxGENE(
 \item{meta}{Metadata used to download, can be from \code{ExtractCELLxGENEMeta},
 should contain dataset_id, rds_id/h5ad_id (depend on \code{file.ext}) and name columns.
 Skip when \code{use.census} is TRUE. Default: NULL.}
+
+\item{link}{Vector contains dataset/collection link(s).
+Skip when \code{use.census} is TRUE or \code{meta} is not NULL. Default: NULL.}
 
 \item{file.ext}{The valid file extension for download. When NULL, use "rds" and "h5ad". Default: c("rds", "h5ad").}
 

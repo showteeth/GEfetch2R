@@ -494,6 +494,93 @@ PrepareCELLxGENEUrls <- function(df, fe) {
   return(list(df = valid.df, urls = valid.urls))
 }
 
+# used in cellxgene, deal with NULL value
+CXGnullCol <- function(value) {
+  if (is.null(value)) {
+    return(NA)
+  } else {
+    return(value)
+  }
+}
+
+# used in cellxgene, parse dataset information of single collection
+ParseCXGcollection <- function(collection_id) {
+  # base url
+  cellxgene.collections.url <- "https://api.cellxgene.cziscience.com/curation/v1/collections/"
+  # single collection url
+  cellxgene.sc.url <- paste0(cellxgene.collections.url, collection_id)
+  cellxgene.sc.content <- URLRetrieval(cellxgene.sc.url)
+  # check collection_id
+  if (length(names(cellxgene.sc.content)) == 4 && all(names(cellxgene.sc.content) == c("detail", "status", "title", "type"))) {
+    print(as.data.frame(cellxgene.sc.content))
+    stop("Error occurred when accessing collection: ", collection_id, ". If CheckAPI() returns OK, please check collection_id (link) you provided!")
+  }
+  cellxgene.sc.datasets <- jsonlite::flatten(cellxgene.sc.content$datasets)
+  colnames(cellxgene.sc.datasets) <- gsub(pattern = "^title$", replacement = "dataset_description", x = colnames(cellxgene.sc.datasets))
+  # prepare metadata
+  cellxgene.sc.df <- data.frame(
+    title = cellxgene.sc.content$name, description = cellxgene.sc.content$description, doi = CXGnullCol(cellxgene.sc.content$doi),
+    contact = CXGnullCol(cellxgene.sc.content$contact_name), contact_email = CXGnullCol(cellxgene.sc.content$contact_email),
+    collection_id = cellxgene.sc.content$collection_id, collection_url = cellxgene.sc.content$collection_url,
+    consortia = paste(unlist(cellxgene.sc.content$consortia), collapse = ", "), curator_name = CXGnullCol(cellxgene.sc.content$curator_name),
+    visibility = cellxgene.sc.content$visibility
+  )
+  cellxgene.sc.df <- cbind(cellxgene.sc.df, cellxgene.sc.datasets) %>% as.data.frame()
+  # modify metadata
+  label.col <- c(
+    "assay", "cell_type", "organism", "self_reported_ethnicity", "sex", "tissue",
+    "disease", "development_stage"
+  )
+  valid.label.col <- intersect(colnames(cellxgene.sc.df), label.col)
+  cellxgene.sc.df <-
+    PasteAttrCXG(
+      df = cellxgene.sc.df,
+      attr = valid.label.col, col = "label"
+    )
+  list.col <- c("batch_condition", "suspension_type", "donor_id")
+  valid.list.col <- intersect(colnames(cellxgene.sc.df), list.col)
+  cellxgene.sc.df <-
+    PasteAttr(df = cellxgene.sc.df, attr = valid.list.col)
+  # add h5ad and rds information
+  cellxgene.sc.list <- lapply(1:nrow(cellxgene.sc.df), function(x) {
+    x.df <- cellxgene.sc.df[x, ]
+    x.df.dataset <- x.df$assets[[1]]
+    # x.df$dataset_id <- unique(x.df.dataset$dataset_id)
+    if ("RDS" %in% unique(x.df.dataset$filetype)) {
+      x.rds.idx <- which(x.df.dataset$filetype == "RDS")
+      x.df$rds_id <- x.df.dataset$url[x.rds.idx]
+    } else {
+      x.df$rds_id <- NA
+    }
+    if ("H5AD" %in% unique(x.df.dataset$filetype)) {
+      x.h5ad.idx <- which(x.df.dataset$filetype == "H5AD")
+      x.df$h5ad_id <- x.df.dataset$url[x.h5ad.idx]
+    } else {
+      x.df$h5ad_id <- NA
+    }
+    x.df
+  })
+  cellxgene.sc.final <- data.table::rbindlist(cellxgene.sc.list, fill = TRUE) %>%
+    as.data.frame()
+  return(cellxgene.sc.final)
+}
+
+# used in cellxgene, parse dataset information
+ParseCXGdataset <- function(dataset_id) {
+  dataset.url <- paste0("https://api.cellxgene.cziscience.com/curation/v1/datasets/", dataset_id, "/versions")
+  dataset.content <- URLRetrieval(dataset.url)
+  # check dataset_id
+  if (length(names(dataset.content)) == 4 && all(names(dataset.content) == c("detail", "status", "title", "type"))) {
+    print(as.data.frame(dataset.content))
+    stop("Error occurred when accessing collection: ", dataset_id, ". If CheckAPI() returns OK, please check dataset_id (link) you provided!")
+  }
+  # get first dataset, newer
+  collection.id <- dataset.content[1, "collection_id"]
+  collection.info <- ParseCXGcollection(collection_id = collection.id)
+  used.collection.info <- collection.info[collection.info$dataset_id == dataset_id, ]
+  return(used.collection.info)
+}
+
 # used in hca, recursively extract projects
 # reference: https://bioconductor.org/packages/release/bioc/html/hca.html
 RecurURLRetrieval <- function(url) {

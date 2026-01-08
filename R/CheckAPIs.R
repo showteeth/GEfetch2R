@@ -169,7 +169,7 @@ CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Brow
     # check record detail
     record.api <- "https://zenodo.org/api/records/7243603"
     record.info <- URLRetrieval(record.api)
-    if (all(intersect(c("status", "message"), names(record.info)) == c("status", "message"))) {
+    if (length(names(record.info)) == 2 && all(names(record.info) == c("status", "message"))) {
       print(as.data.frame(record.info))
       warning("Error occurred when accessing API: ", record.api)
     } else {
@@ -188,7 +188,7 @@ CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Brow
     # check all collections
     collections.url <- "https://api.cellxgene.cziscience.com/curation/v1/collections/"
     collections.info <- URLRetrieval(collections.url)
-    if (all(intersect(c("detail", "status", "title", "type"), names(collections.info)) == c("detail", "status", "title", "type"))) {
+    if (length(names(collections.info)) == 4 && all(names(collections.info) == c("detail", "status", "title", "type"))) {
       print(as.data.frame(collections.info))
       warning("Error occurred when accessing API: ", collections.url)
     } else {
@@ -196,7 +196,7 @@ CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Brow
       # check collection detail
       sg.collections.url <- paste0(collections.url, collections.info$collection_id[1])
       sg.collections.info <- URLRetrieval(sg.collections.url)
-      if (all(intersect(c("detail", "status", "title", "type"), names(sg.collections.info)) == c("detail", "status", "title", "type"))) {
+      if (length(names(sg.collections.info)) == 4 && all(names(sg.collections.info) == c("detail", "status", "title", "type"))) {
         print(as.data.frame(sg.collections.info))
         warning("Error occurred when accessing API: ", sg.collections.url)
       } else {
@@ -209,6 +209,16 @@ CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Brow
           warning("Error occurred when accessing API: ", download.link)
         }
       }
+    }
+    # check dataset
+    dataset.url <- "https://api.cellxgene.cziscience.com/curation/v1/datasets/5fde5c9c-5b1e-4df5-982a-3f8e7635161f/versions"
+    dataset.content <- URLRetrieval(dataset.url)
+    # check dataset_id
+    if (length(names(dataset.content)) == 4 && all(names(dataset.content) == c("detail", "status", "title", "type"))) {
+      print(as.data.frame(dataset.content))
+      warning("Error occurred when accessing API: ", dataset.url)
+    } else {
+      "The API to access detailed information of a given dataset is OK!"
     }
   }
   if ("Human Cell Atlas" %in% database) {
@@ -228,7 +238,7 @@ CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Brow
       # check available projects
       project.url <- paste0("https://service.azul.data.humancellatlas.org/index/projects?catalog=", hca.catalogs[1], "&size=75")
       project.info <- URLRetrieval(project.url)
-      if (all(intersect(c("Code", "Message"), names(project.info)) == c("Code", "Message"))) {
+      if (length(names(project.info)) == 2 && all(names(project.info) == c("Code", "Message"))) {
         print(as.data.frame(project.info))
         warning("Error occurred when accessing API: ", project.url)
       } else {
