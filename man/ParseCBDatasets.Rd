@@ -5,16 +5,8 @@
 \title{Download UCSC Cell Browser Datasets.}
 \usage{
 ParseCBDatasets(
-  sample.df = NULL,
-  all.samples.df = NULL,
-  collection = NULL,
-  sub.collection = NULL,
-  organ = NULL,
-  disease = NULL,
-  organism = NULL,
-  project = NULL,
-  fuzzy.match = TRUE,
-  cell.num = NULL,
+  meta = NULL,
+  link = NULL,
   timeout = 1000,
   obs.value.filter = NULL,
   obs.keys = NULL,
@@ -23,32 +15,12 @@ ParseCBDatasets(
 )
 }
 \arguments{
-\item{sample.df}{Dataframe contains used datasets. Default: NULL.}
+\item{meta}{Metadata used to load, can be obtained with \code{ExtractCBDatasets},
+should contain name, matrixType, matrix, barcode, feature, coords columns.
+Skip when \code{link} is not NULL. Default: NULL.}
 
-\item{all.samples.df}{Dataframe contains all samples metadata, obtained with \code{ShowCBDatasets}. Default: NULL.
-\code{sample.df} and \code{all.samples.df} cannot be both NULL.}
-
-\item{collection}{The collection of the datasets, corresponds to \code{shortLabel} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{sub.collection}{The sub-collection of the datasets, corresponds to \code{subLabel} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{organ}{The organ of the datasets, corresponds to \code{body_parts} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{disease}{The disease of the datasets, corresponds to \code{diseases} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{organism}{The specie of the datasets, corresponds to \code{organisms} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{project}{The project of the datasets, corresponds to \code{projects} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{fuzzy.match}{Logical value, whether to perform fuzzy match with provided attribute values. Default: TRUE.}
-
-\item{cell.num}{Cell number filter. If NULL, no filter; if one value, lower filter; if two values, low and high filter. Deault: NULL.}
+\item{link}{Vector contains dataset/collection link(s), e.g. "https://cells.ucsc.edu/?ds=adult-ureter".
+Skip when \code{meta} is not NULL. Default: NULL.}
 
 \item{timeout}{Maximum request time when loading data online. Default: 1000.}
 
@@ -76,9 +48,11 @@ hbb.sample.df <- ExtractCBDatasets(
   all.samples.df = ucsc.cb.samples, organ = c("brain", "blood"),
   organism = "Human (H. sapiens)", cell.num = c(1000, 2000)
 )
-hbb.sample.seu <- ParseCBDatasets(sample.df = hbb.sample.df)
-# test 10x and matrix load
+hbb.sample.seu <- ParseCBDatasets(meta = hbb.sample.df)
+# 10x and matrix load
 complex.df <- ucsc.cb.samples[c(1, 927, 379), ] # two 10x and one matrix
-complex.seu.list <- ParseCBDatasets(sample.df = test.df, merge = F)
+complex.seu.list <- ParseCBDatasets(meta = complex.df, merge = FALSE)
+# for given dataset
+ureter.seu.list <- ParseCBDatasets(link = "https://cells.ucsc.edu/?ds=adult-ureter", merge = FALSE)
 }
 }

@@ -2,12 +2,15 @@
 
 ## Major changes
 * Added `LoadRData` to load objects, count matrix, and metadata from RData.
+* Added `CheckAPI` to check the availability of APIs.
+* Supported loading and downloading a given dataset/collection/project from `CELLxGENE`, `Human Cell Atlas`, `UCSC Cell Browser`.
+
+-------------------
 
 ## Minor changes
 * Fix bug in `ImportSeurat`.
 * Fix bug in `LoadRData`.
-
--------------------
+* Fix API changes in `CELLxGENE` and `Human Cell Atlas`.
 
 -------------------
 

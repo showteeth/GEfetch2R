@@ -4,50 +4,17 @@
 \alias{ExtractCBComposition}
 \title{Extract Cell Type Composition of UCSC Cell Browser Datasets.}
 \usage{
-ExtractCBComposition(
-  json.folder = NULL,
-  sample.df = NULL,
-  all.samples.df = NULL,
-  collection = NULL,
-  sub.collection = NULL,
-  organ = NULL,
-  disease = NULL,
-  organism = NULL,
-  project = NULL,
-  fuzzy.match = TRUE,
-  cell.num = NULL
-)
+ExtractCBComposition(meta = NULL, link = NULL, json.folder = NULL)
 }
 \arguments{
+\item{meta}{Metadata used to load, can be obtained with \code{ExtractCBDatasets}.
+Skip when \code{link} is not NULL. Default: NULL.}
+
+\item{link}{Vector contains dataset/collection link(s), e.g. "https://cells.ucsc.edu/?ds=adult-ureter".
+Skip when \code{meta} is not NULL. Default: NULL.}
+
 \item{json.folder}{Folder contains datasets json files, same as \code{json.folder} of \code{ShowCBDatasets}.
-Default: NULL (current working directory).}
-
-\item{sample.df}{Dataframe contains used datasets. Default: NULL.}
-
-\item{all.samples.df}{Dataframe contains all samples metadata, obtained with \code{ShowCBDatasets}. Default: NULL.
-\code{sample.df} and \code{all.samples.df} cannot be both NULL.}
-
-\item{collection}{The collection of the datasets, corresponds to \code{shortLabel} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{sub.collection}{The sub-collection of the datasets, corresponds to \code{subLabel} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{organ}{The organ of the datasets, corresponds to \code{body_parts} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{disease}{The disease of the datasets, corresponds to \code{diseases} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{organism}{The specie of the datasets, corresponds to \code{organisms} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{project}{The project of the datasets, corresponds to \code{projects} column
-of \code{all.samples.df}, obtain available values with \code{StatDBAttribute}. Default: NULL (without filtering).}
-
-\item{fuzzy.match}{Logical value, whether to perform fuzzy match with provided attribute values. Default: TRUE.}
-
-\item{cell.num}{Cell number filter. If NULL, no filter; if one value, lower filter; if two values, low and high filter. Deault: NULL.}
+Default: NULL (access json files online).}
 }
 \value{
 Dataframe contains sample information and cell type composition.
@@ -64,6 +31,8 @@ hbb.sample.df <- ExtractCBDatasets(
   all.samples.df = ucsc.cb.samples, organ = c("brain", "blood"),
   organism = "Human (H. sapiens)", cell.num = c(1000, 2000)
 )
-hbb.sample.ct <- ExtractCBComposition(json.folder = NULL, sample.df = hbb.sample.df)
+hbb.sample.ct <- ExtractCBComposition(json.folder = getwd(), meta = hbb.sample.df)
+# for given dataset
+ureter.ct <- ExtractCBComposition(link = "https://cells.ucsc.edu/?ds=adult-ureter")
 }
 }

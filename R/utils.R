@@ -359,6 +359,70 @@ Read10XOnline <- function(matrix.url, barcode.url, feature.url, gene.column = 2,
   return(final.data)
 }
 
+# used in UCSCCellBrowser, extract desc.json
+ParseCBdesc <- function(desc.files) {
+  desc.list <- lapply(names(desc.files), function(x) {
+    sd.json <- jsonlite::fromJSON(txt = desc.files[x])
+    used.attr <- c(
+      "title" = "title", "paper" = "paper_url", "abstract" = "abstract", "unit" = "unitDesc",
+      "coords" = "coordFiles", "methods" = "methods", "geo" = "geo_series"
+    )
+    sd.df <- ExtractDesc(lst = sd.json, attr = used.attr)
+    sd.df$name <- x
+    sd.df
+  })
+  desc.df <- do.call(rbind, desc.list)
+  return(desc.df)
+}
+
+# used in UCSCCellBrowser, extract desc.json
+ParseCBdataset <- function(datasets.files) {
+  datasets.list <- lapply(names(datasets.files), function(x) {
+    x.json <- jsonlite::fromJSON(txt = datasets.files[x])
+    x.file.df <- jsonlite::flatten(as.data.frame(x.json$fileVersions))
+    mat.name <- ifelse("outMatrix.fname" %in% colnames(x.file.df), basename(x.file.df[, "outMatrix.fname"]), "")
+    barcode.name <- ifelse("barcodes.fname" %in% colnames(x.file.df), basename(x.file.df[, "barcodes.fname"]), "")
+    feature.name <- ifelse("features.fname" %in% colnames(x.file.df), basename(x.file.df[, "features.fname"]), "")
+    x.file.df <- data.frame(matrix = mat.name, barcode = barcode.name, feature = feature.name)
+    x.file.df$name <- x
+    x.file.df
+  })
+  datasets.df <- do.call(rbind, datasets.list)
+  return(datasets.df)
+}
+
+# used in UCSCCellBrowser, get dataset information from link
+ParseCBlink <- function(link) {
+  dataset.vec <- gsub(pattern = "https://cells.ucsc.edu/?ds=", replacement = "", x = link, fixed = TRUE)
+  dataset.vec <- gsub(pattern = "&.*$", replacement = "", x = dataset.vec)
+  dataset.name <- gsub(pattern = "+", replacement = "/", x = dataset.vec, fixed = TRUE)
+  # resolve collection and dataset
+  base.url <- "https://cells.ucsc.edu/"
+  dataset.info.list <- lapply(dataset.name, function(x) {
+    x.url <- file.path(base.url, x, "dataset.json")
+    x.json <- jsonlite::fromJSON(txt = x.url)
+    if ("datasets" %in% names(x.json)) {
+      x.df <- data.frame(name = x, isCollection = TRUE)
+      x.samples.df <- ExtractSampleOnline(x.df) %>% as.data.frame()
+      x.samples.df[, c("name", "shortLabel")]
+    } else {
+      data.frame(name = x.json$name, shortLabel = x.json$shortLabel)
+    }
+  })
+  dataset.info.df <- do.call(rbind, dataset.info.list) %>% dplyr::distinct()
+  # add matrix information
+  datasets.files <- file.path(base.url, dataset.info.df$name, "dataset.json")
+  names(datasets.files) <- dataset.info.df$name
+  datasets.df <- ParseCBdataset(datasets.files)
+  datasets.df$matrixType <- ifelse(datasets.df$barcode == "", "matrix", "10x")
+  # add sample information
+  desc.files <- file.path(base.url, datasets.df$name, "desc.json")
+  names(desc.files) <- datasets.df$name
+  desc.df <- ParseCBdesc(desc.files)
+  meta <- merge(datasets.df, desc.df, by = "name") %>% as.data.frame()
+  return(meta)
+}
+
 # used in GEO, check the integrity of 10x files
 Check10XFiles <- function(folders, gene2feature) {
   folders.flag <- sapply(folders, function(x) {
