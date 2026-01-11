@@ -5,7 +5,9 @@
 \title{Parse PanglaoDB Data.}
 \usage{
 ParsePanglaoDB(
-  meta,
+  meta = NULL,
+  sra = NULL,
+  srs = NULL,
   cell.type = "All",
   include.gene = NA,
   exclude.gene = NA,
@@ -13,7 +15,12 @@ ParsePanglaoDB(
 )
 }
 \arguments{
-\item{meta}{Metadata contains "SRA", "SRS", "Tissue", "Protocol", "Species", can be obtained with \code{ExtractPanglaoDBMeta}.}
+\item{meta}{Metadata contains "SRA", "SRS", "Tissue", "Protocol", "Species", can be obtained with \code{ExtractPanglaoDBMeta}.
+Skip when \code{sra} or \code{srs} is not NULL. Default: NULL.}
+
+\item{sra}{The SRA identifier of the datasets. Skip when \code{meta} or \code{srs} is not NULL. Default: NULL.}
+
+\item{srs}{The SRS identifier of the datasets. Skip when \code{meta} or \code{sra} is not NULL. Default: NULL.}
 
 \item{cell.type}{Extract samples with specified cell types. For samples without SRS (notused), this value can only be "All" or "None", or
 these samples will be filtered. Obtain available values with \code{StatDBAttribute}, one or multiple value. Default: "All".}
@@ -38,5 +45,9 @@ hsa.meta <- ExtractPanglaoDBMeta(
   show.cell.type = TRUE, cell.num = c(1000, 2000)
 )
 hsa.seu <- ParsePanglaoDB(hsa.meta, merge = TRUE)
+# load given dataset
+cortex.seu <- ParsePanglaoDB(sra = "SRA598936", srs = "SRS2428405")
+# cortex.seu = ParsePanglaoDB(srs = "SRS2428405")
+# cortex.seu = ParsePanglaoDB(sra = "SRA598936")
 }
 }
