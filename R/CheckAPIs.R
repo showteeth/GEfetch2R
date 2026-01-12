@@ -49,7 +49,7 @@ CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Brow
     GEO.obj <- tryCatch(
       {
         Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 60)
-        GEOquery::getGEO(GEO = "GSE302912")
+        suppressMessages(GEOquery::getGEO(GEO = "GSE302912"))
       },
       error = function(e) {
         warning("Error occurred when accessing GEO object via GEOquery.")

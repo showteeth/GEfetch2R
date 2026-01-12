@@ -281,9 +281,8 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
 #' STAR \code{\link{RunSTAR}} reference.
 #' @param method Mapping methods, choose from CellRanger (10x Genomics) and STAR (Smart-seq2 or bulk RNA-seq).
 #' Default: CellRanger.
-#' @param localcores The max cores used \code{\link{RunCellRanger}}. Default: 4.
+#' @param localcores The max cores/thread used \code{\link{RunCellRanger}}/\code{\link{RunSTAR}}. Default: 4.
 #' @param localmem The max memory (GB) used \code{\link{RunCellRanger}}. Default: 16.
-#' @param thread The number of threads to use \code{\link{RunSTAR}}. Default: 4.
 #' @param out.folder Output folder. Default: NULL (current working directory).
 #' @param st.path Path to \code{STAR} or \code{cellranger}. Default: NULL (conduct automatic detection).
 #' @param st.paras Parameters for \code{STAR} or \code{cellranger}.
@@ -326,7 +325,7 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
 #'   st.paras = "--outBAMsortingThreadN 4 --twopassMode None"
 #' )
 #' }
-Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcores = 4, localmem = 16, thread = 4,
+Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcores = 4, localmem = 16,
                     out.folder = NULL, st.path = NULL, st.paras = "--chemistry=auto --jobmode=local",
                     merge = TRUE, count.col = 2, meta.data = NULL, fmu = NULL) {
   # check parameters
@@ -364,7 +363,7 @@ Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcore
     }
   } else if (method == "STAR") {
     res <- RunSTAR(
-      sample.dir = sample.dir, ref = ref, out.folder = out.folder, thread = thread,
+      sample.dir = sample.dir, ref = ref, out.folder = out.folder, thread = localcores,
       star.path = st.path, star.paras = st.paras
     )
     if (is.null(res)) {

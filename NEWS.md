@@ -11,6 +11,8 @@
 * Fix bug in `ImportSeurat`.
 * Fix bug in `LoadRData`.
 * Fix API changes in `CELLxGENE` and `Human Cell Atlas`.
+* Fix bugs in `ParseCELLxGENE`.
+* Fix bugs in `ExtractRun` when a sample has multiple runs.
 
 -------------------
 

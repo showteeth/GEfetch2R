@@ -10,7 +10,6 @@ Fastq2R(
   method = c("CellRanger", "STAR"),
   localcores = 4,
   localmem = 16,
-  thread = 4,
   out.folder = NULL,
   st.path = NULL,
   st.paras = "--chemistry=auto --jobmode=local",
@@ -29,11 +28,9 @@ STAR \code{\link{RunSTAR}} reference.}
 \item{method}{Mapping methods, choose from CellRanger (10x Genomics) and STAR (Smart-seq2 or bulk RNA-seq).
 Default: CellRanger.}
 
-\item{localcores}{The max cores used \code{\link{RunCellRanger}}. Default: 4.}
+\item{localcores}{The max cores/thread used \code{\link{RunCellRanger}}/\code{\link{RunSTAR}}. Default: 4.}
 
 \item{localmem}{The max memory (GB) used \code{\link{RunCellRanger}}. Default: 16.}
-
-\item{thread}{The number of threads to use \code{\link{RunSTAR}}. Default: 4.}
 
 \item{out.folder}{Output folder. Default: NULL (current working directory).}
 

@@ -22,10 +22,19 @@
 ExtractRun <- function(gsm = NULL, acce = NULL, platform = NULL, parallel = TRUE, ...) {
   # get GSM
   if (is.null(gsm)) {
-    message("Extract all GSM with acce: ", acce, " and platform: ", platform)
+    if (is.null(acce)) {
+      stop("The gsm and acce are NULL, please provide at least one valid value!")
+    }
+    if (is.null(platform)) {
+      message("Extract all GSM with acce: ", acce)
+    } else {
+      message("Extract all GSM with acce: ", acce, " and platform: ", platform)
+    }
     gsm.meta <- ExtractGEOMeta(acce = acce, platform = platform, ...)
     gsm <- gsm.meta$geo_accession
   }
+  # remove duplicates
+  gsm <- unique(gsm)
   # prepare core
   if (parallel) {
     cores.used <- min(parallel::detectCores(), length(gsm))

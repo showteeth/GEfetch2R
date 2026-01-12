@@ -139,8 +139,8 @@ ExtractCELLxGENEMeta <- function(all.samples.df, organism = NULL, ethnicity = NU
 #' @importFrom jsonlite fromJSON flatten
 #' @importFrom parallel detectCores mclapply
 #' @importFrom utils download.file
-#' @importFrom rlang parse_expr
-#' @importFrom dplyr filter
+#' @importFrom rlang parse_expr .data
+#' @importFrom dplyr filter distinct
 #' @importFrom magrittr %>%
 #' @importFrom data.table rbindlist
 #' @importFrom curl curl_fetch_memory
@@ -253,7 +253,8 @@ ParseCELLxGENE <- function(meta = NULL, link = NULL, file.ext = c("rds", "h5ad")
         }
         meta.list <- c(collections.meta.list, datasets.meta.list)
         meta <- data.table::rbindlist(meta.list, fill = TRUE) %>%
-          as.data.frame()
+          as.data.frame() %>%
+          dplyr::distinct(.data[["dataset_id"]], .keep_all = TRUE)
       }
     }
     # check file extension

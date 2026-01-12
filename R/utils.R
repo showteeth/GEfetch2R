@@ -549,17 +549,17 @@ PrepareCELLxGENEUrls <- function(df, fe) {
   CheckColumns(df = df, columns = c("dataset_id", fe.id, "dataset_description"))
   invalid.df <- df[is.na(df[[fe.id]]) | is.na(df$dataset_id) | df$dataset_id == "" | df[[fe.id]] == "", ]
   # message("Detect ", nrow(invalid.df), " invalid metadata (", fe.id, "/dataset_id is empty or NA).")
-  if(nrow(invalid.df) > 0){
+  if (nrow(invalid.df) > 0) {
     message("There is no file in dataset_id: ", paste(invalid.df$dataset_id, collapse = ", "), " with extension ", fe, ".")
   }
   valid.df <- df[!(is.na(df[[fe.id]]) | is.na(df$dataset_id) | df$dataset_id == "" | df[[fe.id]] == ""), ]
-  if(nrow(valid.df) > 0){
+  if (nrow(valid.df) > 0) {
     valid.urls <- df[[fe.id]]
     valid.names <- make.names(valid.df$dataset_description, unique = TRUE)
     valid.filenames <- paste0(valid.names, ".", fe)
     names(valid.urls) <- valid.filenames
-  }else{
-    valid.urls = NULL
+  } else {
+    valid.urls <- NULL
   }
   return(list(df = valid.df, urls = valid.urls))
 }
