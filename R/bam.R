@@ -2,7 +2,7 @@
 #'
 #' @param gsm.df Dataframe contains GSM and Run numbers, obtained from \code{ExtractRun}.
 #' @param out.folder Output folder. Default: NULL (current working directory).
-#' @param download.method Method to download sra files, chosen from "prefetch", "download.file", "ascp".
+#' @param download.method Method to download sra files, chosen from "prefetch", "download.file", "ascp", "wget".
 #' Default: "prefetch".
 #' @param bam.type The source of bam files to download, choose from 10x (e.g. CellRanger) or other.
 #' Used when \code{download.method} is "prefetch". Default: 10x.
@@ -12,15 +12,16 @@
 #' @param samdump.paras Parameters for \code{sam-dump}. Default: "".
 #' @param quiet Logical value, whether to show downloading progress. Used when \code{download.method} is "download.file".
 #' Default: FALSE (show).
-#' @param timeout Maximum request time. Used when \code{download.method} is "download.file". Default: 3600.
+#' @param timeout Maximum request time. Used when \code{download.method} is "download.file" or "wget". Default: 3600.
 #' @param ascp.path Path to ascp (/path/bin/ascp), please ensure that the relative path of asperaweb_id_dsa.openssh file
 #' (/path/bin/ascp/../etc/asperaweb_id_dsa.openssh). Default: NULL (conduct automatic detection).
 #' @param max.rate Max transfer rate. Used when \code{download.method} is "ascp". Default: 300m.
-#' @param rename Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "ascp".
+#' @param wget.path Path to wget. Default: NULL (conduct automatic detection).
+#' @param rename Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "download.file", "ascp" or "wget".
 #' Default: FALSE (show).
-#' @param parallel Logical value, whether to download parallelly. Used when \code{download.method} is "ascp" or "download.file".
+#' @param parallel Logical value, whether to download parallelly. Used when \code{download.method} is "ascp", "wget" or "download.file".
 #' Default: TRUE.
-#' @param use.cores The number of cores used. Used when \code{download.method} is "ascp" or "download.file".
+#' @param use.cores The number of cores used. Used when \code{download.method} is "ascp", "wget" or "download.file".
 #' Default: NULL (the minimum value of \code{nrow(gsm.df)} and \code{parallel::detectCores()}).
 #'
 #' @return Dataframe contains failed runs or NULL.
@@ -46,7 +47,7 @@
 #' GSE138266.down <- DownloadBam(
 #'   gsm.df = GSE138266.runs, download.method = "download.file",
 #'   timeout = 3600, out.folder = "/path/to/output",
-#'   parallel = TRUE, use.cores = 2
+#'   rename = TRUE, parallel = TRUE, use.cores = 2
 #' )
 #' # ascp
 #' GSE138266.down <- DownloadBam(
@@ -55,10 +56,16 @@
 #'   rename = TRUE, out.folder = "/path/to/output",
 #'   parallel = TRUE, use.cores = 2
 #' )
+#' # ascp
+#' GSE138266.down <- DownloadBam(
+#'   gsm.df = GSE138266.runs, download.method = "wget",
+#'   wget.path = "/path/to/wget", rename = TRUE,
+#'   out.folder = "/path/to/output", parallel = TRUE, use.cores = 2
+#' )
 #' }
-DownloadBam <- function(gsm.df, out.folder = NULL, download.method = c("prefetch", "download.file", "ascp"), bam.type = c("10x", "other"),
-                        prefetch.path = NULL, prefetch.paras = "-X 100G", samdump.path = NULL, samdump.paras = "",
-                        quiet = FALSE, timeout = 3600, ascp.path = NULL, max.rate = "300m", rename = TRUE, parallel = TRUE, use.cores = NULL) {
+DownloadBam <- function(gsm.df, out.folder = NULL, download.method = c("prefetch", "download.file", "ascp", "wget"), bam.type = c("10x", "other"),
+                        prefetch.path = NULL, prefetch.paras = "-X 100G", samdump.path = NULL, samdump.paras = "", quiet = FALSE,
+                        timeout = 3600, ascp.path = NULL, max.rate = "300m", wget.path = NULL, rename = TRUE, parallel = TRUE, use.cores = NULL) {
   # check parameters
   bam.type <- match.arg(arg = bam.type)
   download.method <- match.arg(arg = download.method)
@@ -156,8 +163,8 @@ DownloadBam <- function(gsm.df, out.folder = NULL, download.method = c("prefetch
         # same with DownloadSRA
         sf <- file.path(samples.folder[x], gsm.df.x$run)
         DownloadBamSingle(
-          gsm.df = gsm.df.x, out.folder = sf, download.method = download.method,
-          quiet = quiet, timeout = timeout, ascp.path = ascp.path, max.rate = max.rate, rename = rename
+          gsm.df = gsm.df.x, out.folder = sf, download.method = download.method, quiet = quiet,
+          timeout = timeout, ascp.path = ascp.path, max.rate = max.rate, wget.path = wget.path, rename = rename
         )
       }, mc.cores = cores.used)
     } else {
@@ -166,8 +173,8 @@ DownloadBam <- function(gsm.df, out.folder = NULL, download.method = c("prefetch
         # same with DownloadSRA
         sf <- file.path(samples.folder[x], gsm.df.x$run)
         DownloadBamSingle(
-          gsm.df = gsm.df.x, out.folder = sf, download.method = download.method,
-          quiet = quiet, timeout = timeout, ascp.path = ascp.path, max.rate = max.rate, rename = rename
+          gsm.df = gsm.df.x, out.folder = sf, download.method = download.method, quiet = quiet,
+          timeout = timeout, ascp.path = ascp.path, max.rate = max.rate, wget.path = wget.path, rename = rename
         )
       })
     }
@@ -211,8 +218,8 @@ RunSamdump <- function(sra, samdump.path, samdump.paras) {
 }
 
 # download bam from ena
-DownloadBamSingle <- function(gsm.df, out.folder = NULL, download.method = c("download.file", "ascp"),
-                              quiet = FALSE, timeout = 3600, ascp.path = NULL, max.rate = "300m", rename = TRUE) {
+DownloadBamSingle <- function(gsm.df, out.folder = NULL, download.method = c("download.file", "ascp", "wget"),
+                              quiet = FALSE, timeout = 3600, ascp.path = NULL, max.rate = "300m", wget.path = NULL, rename = TRUE) {
   # prepare output folder
   if (!dir.exists(out.folder)) {
     dir.create(path = out.folder, recursive = TRUE)
@@ -230,7 +237,7 @@ DownloadBamSingle <- function(gsm.df, out.folder = NULL, download.method = c("do
     run.files.name <- gsub(pattern = ".bam.([0-9]+)$", replacement = "_\\1.bam", x = run.files.name)
     run.files.name <- gsub(pattern = ".bam.([0-9]+).bai$", replacement = "_\\1.bam.bai", x = run.files.name)
     # prepare urls
-    if (download.method == "download.file") {
+    if (download.method %in% c("download.file", "wget")) {
       download.urls <- run.files.ftp
     } else if (download.method == "ascp") {
       download.urls <- gsub(pattern = ftp.url.prefix, replacement = ascp.url.prefix, x = run.files.ftp)
@@ -239,7 +246,7 @@ DownloadBamSingle <- function(gsm.df, out.folder = NULL, download.method = c("do
     download.res <- DownloadMethod(
       rn = gsm.df$run, url.vec = download.urls, name.vec = run.files.name,
       out.folder = out.folder, download.method = download.method, quiet = quiet,
-      timeout = timeout, ascp.path = ascp.path, max.rate = max.rate, rename = rename
+      timeout = timeout, ascp.path = ascp.path, max.rate = max.rate, wget.path = wget.path, rename = rename
     )
     return(download.res)
   }

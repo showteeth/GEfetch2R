@@ -18,7 +18,7 @@
 #' @examples
 #' \dontrun{
 #' RunCellRanger(
-#'   sample.dir = "/path/to/fastq",
+#'   sample.dir = "/path/to/fastq", # GSMXXXX
 #'   ref = "/path/to/cellranger_tiny_ref/3.0.0",
 #'   out.folder = "/path/to/results",
 #'   cr.path = "/path/to/cellranger-x.x.x/cellranger"
@@ -26,12 +26,19 @@
 #' }
 RunCellRanger <- function(sample.dir, ref, localcores = 4, localmem = 16, out.folder = NULL,
                           cr.path = NULL, cr.paras = "--chemistry=auto --jobmode=local") {
-  # check the path
-  if (!dir.exists(sample.dir)) {
-    stop(sample.dir, " doesn't exist, please check and re-run!")
+  # check valid sample dir
+  dir.ext.flag <- dir.exists(sample.dir)
+  if (!all(dir.ext.flag)) {
+    old.sample.dir <- sample.dir
+    sample.dir <- sample.dir[dir.ext.flag]
+    if (length(sample.dir) == 0) {
+      stop("The provided sample.dir: ", paste0(old.sample.dir, collapse = ", "), " doesn't exist, please check and re-run!")
+    } else {
+      message("Valid sample.dir: ", paste(sample.dir, collapse = ", "), ". Invalid sample.dir: ", paste(setdiff(old.sample.dir, sample.dir), collapse = ", "))
+    }
   }
-  sample.fq.dir <- dir(path = sample.dir, full.names = TRUE)
-  all.sample.cr <- sapply(sample.fq.dir, function(x) {
+  # sample.fq.dir <- dir(path = sample.dir, full.names = TRUE)
+  all.sample.cr <- sapply(sample.dir, function(x) {
     RunCellRangerSingle(
       fq.dir = x, transcriptome = ref, localcores = localcores,
       localmem = localmem, out.folder = out.folder,
@@ -89,37 +96,42 @@ RunCellRangerSingle <- function(fq.dir, transcriptome, localcores = 4, localmem 
       fq1.file <- grep(pattern = ".*_S[0-9]_L[0-9]{3}_R1_[0-9]{3}.fastq.gz", x = fq.files, value = T)
       fq2.file <- grep(pattern = ".*_S[0-9]_L[0-9]{3}_R2_[0-9]{3}.fastq.gz", x = fq.files, value = T)
       if (length(fq1.file) > 0 && length(fq2.file) > 0) {
-        sample.id <- basename(fq.dir)
-        # merge multiple run as a single sample
-        sample.name <- paste0(dir(path = fq.dir), collapse = ",")
-        # sample.name <- basename(fq.dir)
-        # check additional paras
-        if (grepl(pattern = "--id|--transcriptome|--fastqs|--sample|--localcores|--localmem", cr.paras)) {
-          message(
-            cr.paras, " overlaps with built-in paras (--id, --transcriptome, --fastqs, --sample,",
-            " --localcores, --localmem), please check and re-run!"
-          )
-        }
-        # cellranger command
-        cr.cmd <- paste0(
-          "cd ", out.folder, " && ", cr.path, " count --id=", sample.id, " --transcriptome=", transcriptome,
-          " --fastqs=", fq.dir, " --sample=", sample.name, " --localcores=", localcores,
-          " --localmem=", localmem, " ", cr.paras
-        )
-        # run command
-        message(paste("Calling CellRanger:", cr.cmd))
-        cr.status <- system(cr.cmd, intern = TRUE)
-        cr.status.code <- attr(cr.status, "status")
-        if (!is.null(cr.status.code)) {
-          cr.status.msg <- paste(cr.status, collapse = " ")
-          warning(
-            "Run CellRanger error on: ", sample.name, ". Error message :",
-            cr.status.msg, " .Please check and re-run!"
-          )
-          return(sample.name)
+        if (length(fq1.file) != length(fq2.file)) {
+          message("The number of R1 and R2 fastq.gz files under ", fq.dir, " is differ , please check and re-run!")
+          return(basename(fq.dir))
         } else {
-          message("Finish CellRanger: ", sample.name)
-          return(NULL)
+          sample.id <- basename(fq.dir)
+          # merge multiple run as a single sample
+          sample.name <- paste0(dir(path = fq.dir), collapse = ",")
+          # sample.name <- basename(fq.dir)
+          # check additional paras
+          if (grepl(pattern = "--id|--transcriptome|--fastqs|--sample|--localcores|--localmem", cr.paras)) {
+            message(
+              cr.paras, " overlaps with built-in paras (--id, --transcriptome, --fastqs, --sample,",
+              " --localcores, --localmem), please check and re-run!"
+            )
+          }
+          # cellranger command
+          cr.cmd <- paste0(
+            "cd ", out.folder, " && ", cr.path, " count --id=", sample.id, " --transcriptome=", transcriptome,
+            " --fastqs=", fq.dir, " --sample=", sample.name, " --localcores=", localcores,
+            " --localmem=", localmem, " ", cr.paras
+          )
+          # run command
+          message(paste("Calling CellRanger:", cr.cmd))
+          cr.status <- system(cr.cmd, intern = TRUE)
+          cr.status.code <- attr(cr.status, "status")
+          if (!is.null(cr.status.code)) {
+            cr.status.msg <- paste(cr.status, collapse = " ")
+            warning(
+              "Run CellRanger error on: ", sample.name, ". Error message :",
+              cr.status.msg, " .Please check and re-run!"
+            )
+            return(sample.name)
+          } else {
+            message("Finish CellRanger: ", sample.name)
+            return(NULL)
+          }
         }
       } else {
         message("There is no R1 or R2 fastq.gz files under ", fq.dir, " , please check and re-run!")
@@ -153,12 +165,19 @@ RunCellRangerSingle <- function(fq.dir, transcriptome, localcores = 4, localmem 
 #' }
 RunSTAR <- function(sample.dir, ref, out.folder = NULL, thread = 4, star.path = NULL,
                     star.paras = "--outBAMsortingThreadN 4 --twopassMode None") {
-  # check the path
-  if (!dir.exists(sample.dir)) {
-    stop(sample.dir, " doesn't exist, please check and re-run!")
+  # check valid sample dir
+  dir.ext.flag <- dir.exists(sample.dir)
+  if (!all(dir.ext.flag)) {
+    old.sample.dir <- sample.dir
+    sample.dir <- sample.dir[dir.ext.flag]
+    if (length(sample.dir) == 0) {
+      stop("The provided sample.dir: ", paste0(old.sample.dir, collapse = ", "), " doesn't exist, please check and re-run!")
+    } else {
+      message("Valid sample.dir: ", paste(sample.dir, collapse = ", "), ". Invalid sample.dir: ", paste(setdiff(old.sample.dir, sample.dir), collapse = ", "))
+    }
   }
-  sample.fq.dir <- dir(path = sample.dir, full.names = TRUE)
-  all.sample.star <- sapply(sample.fq.dir, function(x) {
+  # sample.fq.dir <- dir(path = sample.dir, full.names = TRUE)
+  all.sample.star <- sapply(sample.dir, function(x) {
     RunSTARSingle(
       fq.dir = x, ref = ref, out.folder = out.folder, thread = thread,
       star.path = star.path, star.paras = star.paras
@@ -207,17 +226,23 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
     message(fq.dir, " doesn't exist, please check and re-run!")
     return(basename(fq.dir))
   } else {
-    fq.files <- list.files(path = fq.dir, pattern = "fastq.gz$")
+    # fq.files <- list.files(path = fq.dir, pattern = "fastq.gz$")
+    fq.files <- list.files(path = fq.dir, pattern = "fastq.gz$", recursive = TRUE, full.names = TRUE)
     if (length(fq.files) == 0) {
       message("There is no fastq.gz files under ", fq.dir, " , please check and re-run!")
       return(basename(fq.dir))
     } else {
+      # GSMXXXX
       sample.name <- basename(fq.dir)
       out.folder <- file.path(out.folder, sample.name, "")
-      # prepare reads
-      pair.r1 <- grep(pattern = paste0(sample.name, "_1.fastq.gz"), x = fq.files, value = T)
-      pair.r2 <- grep(pattern = paste0(sample.name, "_2.fastq.gz"), x = fq.files, value = T)
-      single.read <- grep(pattern = paste0(sample.name, ".fastq.gz"), x = fq.files, value = T)
+      # run: SRRXXXX
+      sub.samples <- dir(path = fq.dir)
+      r1.pattern <- paste(paste0(sub.samples, "_1.fastq.gz"), collapse = "|")
+      r2.pattern <- paste(paste0(sub.samples, "_2.fastq.gz"), collapse = "|")
+      single.pattern <- paste(paste0(sub.samples, ".fastq.gz"), collapse = "|")
+      pair.r1 <- grep(pattern = r1.pattern, x = fq.files, value = T)
+      pair.r2 <- grep(pattern = r2.pattern, x = fq.files, value = T)
+      single.read <- grep(pattern = single.pattern, x = fq.files, value = T)
       # check additional paras
       if (grepl(pattern = "--runThreadN|--genomeDir|--readFilesIn|--outSAMtype|--readFilesCommand|--quantMode|--outFileNamePrefix", star.paras)) {
         message(
@@ -226,22 +251,33 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
         )
       }
       # prepare command
-      if (length(pair.r1) == 1 && length(pair.r2) == 1) {
-        message("Detected pair-end fastqs!")
+      if (length(pair.r1) == length(pair.r2)) {
+        if (length(pair.r1) > 1) {
+          message(sample.name, " has multiple runs: ", paste(sub.samples, collapse = ", "))
+          pair.r1 <- paste(pair.r1, collapse = ",")
+          pair.r2 <- paste(pair.r2, collapse = ",")
+        } else {
+          message(sample.name, " has single run: ", paste(sub.samples, collapse = ", "))
+        }
         # STAR command
         star.cmd <- paste(
           star.path, "--runThreadN", thread, "--genomeDir", ref,
-          "--readFilesIn", file.path(fq.dir, pair.r1), file.path(fq.dir, pair.r2),
+          "--readFilesIn", pair.r1, pair.r2,
           "--outSAMtype BAM SortedByCoordinate --readFilesCommand zcat --quantMode GeneCounts",
           "--outFileNamePrefix", out.folder, star.paras, "&& mv",
           paste0(out.folder, "ReadsPerGene.out.tab"), paste0(out.folder, sample.name, ".txt")
         )
-      } else if (length(single.read) == 1) {
-        message("Detected single-end fastq!")
+      } else if (length(single.read) > 0) {
+        if (length(single.read) > 1) {
+          message(sample.name, " has multiple runs: ", paste(sub.samples, collapse = ", "))
+          single.read <- paste(single.read, collapse = ",")
+        } else {
+          message(sample.name, " has single run: ", paste(sub.samples, collapse = ", "))
+        }
         # STAR command
         star.cmd <- paste(
           star.path, "--runThreadN", thread, "--genomeDir", ref,
-          "--readFilesIn", file.path(fq.dir, single.read),
+          "--readFilesIn", single.read,
           "--outSAMtype BAM SortedByCoordinate --readFilesCommand zcat --quantMode GeneCounts",
           "--outFileNamePrefix", out.folder, star.paras, "&& mv",
           paste0(out.folder, "ReadsPerGene.out.tab"), paste0(out.folder, sample.name, ".txt")
@@ -249,8 +285,8 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
       } else {
         message(
           "There is no valid fastq.gz files under ", fq.dir,
-          ". For pair-end,the fastq files should be: ", paste0(sample.name, "_[12].fastq.gz"),
-          ". For single-end, the fastq file should be: ", paste0(sample.name, ".fastq.gz"),
+          ". For pair-end,the fastq files should be: ", paste0(sample.name, sub.samples, "_[12].fastq.gz"),
+          ". For single-end, the fastq file should be: ", paste0(sample.name, sub.samples, ".fastq.gz"),
           ". Please check and re-run!"
         )
         return(sample.name)
@@ -298,7 +334,6 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
 #' @importFrom Seurat Read10X CreateSeuratObject
 #' @importFrom methods new
 #' @importFrom data.table fread
-#' @importFrom magrittr %>%
 #' @importFrom stats formula
 #' @importFrom DESeq2 DESeqDataSetFromMatrix
 #' @export

@@ -1088,10 +1088,38 @@ ParseENAxml <- function(run, df.type = c("fastq", "bam")) {
 }
 
 # download files with url (download.file and ascp)
-DownloadMethod <- function(rn, url.vec, name.vec = NULL, out.folder = NULL, download.method = c("download.file", "ascp"),
-                           quiet = FALSE, timeout = 3600, ascp.path = NULL, max.rate = "300m", rename = FALSE) {
+DownloadMethod <- function(rn, url.vec, name.vec = NULL, out.folder = NULL, download.method = c("download.file", "ascp", "wget"),
+                           quiet = FALSE, timeout = 3600, ascp.path = NULL, max.rate = "300m", wget.path = NULL, rename = FALSE) {
   # download
-  if (download.method == "download.file") {
+  if (download.method == "wget") {
+    # get wget path
+    if (is.null(wget.path)) {
+      # specify wget path
+      wget.path <- Sys.which("wget")
+      if (wget.path == "") {
+        stop("Can not find wget automatically, please specify the path!")
+      }
+    } else {
+      wget.path <- wget.path
+    }
+    # wget
+    wget.cmd <- paste(wget.path, "-t 20 -nv -c -T", timeout, url.vec, "-P", out.folder)
+    wget.cmd <- paste(wget.cmd, collapse = " && ")
+    message(paste("Calling wget:", wget.cmd))
+    wget.status <- system(wget.cmd, intern = TRUE)
+    wget.status.code <- attr(wget.status, "status")
+    if (!is.null(wget.status.code)) {
+      warning("Run wget error: ", rn, ". Re-run to continue downloading!")
+      return(rn)
+    } else {
+      message("Download successful: ", rn)
+      # rename file
+      if (isTRUE(rename)) {
+        file.rename(file.path(out.folder, basename(url.vec)), file.path(out.folder, name.vec))
+      }
+      return(NULL)
+    }
+  } else if (download.method == "download.file") {
     # set timeout
     env.timeout <- getOption("timeout")
     on.exit(options(timeout = env.timeout)) # restore timeout
@@ -1125,8 +1153,9 @@ DownloadMethod <- function(rn, url.vec, name.vec = NULL, out.folder = NULL, down
     ascp.status <- system(ascp.cmd, intern = TRUE)
     ascp.status.code <- attr(ascp.status, "status")
     if (!is.null(ascp.status.code)) {
-      warning("Run ascp error: ", rn)
-      do.call(file.remove, list(list.files(out.folder, full.names = TRUE, pattern = "partial$|aspera-ckpt$")))
+      warning("Run ascp error: ", rn, ". Re-run to continue downloading!")
+      # for continue download
+      # do.call(file.remove, list(list.files(out.folder, full.names = TRUE, pattern = "partial$|aspera-ckpt$")))
       return(rn)
     } else {
       message("Download successful: ", rn)

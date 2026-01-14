@@ -4,6 +4,7 @@
 * Added `LoadRData` to load objects, count matrix, and metadata from RData.
 * Added `CheckAPI` to check the availability of APIs.
 * Supported loading and downloading a given dataset/collection/project from `CELLxGENE`, `Human Cell Atlas`, `UCSC Cell Browser`, `PanglaoDB`.
+* Supported multiple runs in `RunCellRanger`, `RunSTAR`, `Fastq2R` .
 
 -------------------
 
@@ -13,6 +14,8 @@
 * Fix API changes in `CELLxGENE` and `Human Cell Atlas`.
 * Fix bugs in `ParseCELLxGENE`.
 * Fix bugs in `ExtractRun` when a sample has multiple runs.
+* Fix bugs in `Fastq2R` when a sample has multiple runs.
+* Add `wget` in `DownloadBam`, `DownloadFastq` and `DownloadSRA`.
 
 -------------------
 

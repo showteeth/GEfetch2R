@@ -42,7 +42,7 @@ Run CellRanger on Downloaded FASTQ Files.
 \examples{
 \dontrun{
 RunCellRanger(
-  sample.dir = "/path/to/fastq",
+  sample.dir = "/path/to/fastq", # GSMXXXX
   ref = "/path/to/cellranger_tiny_ref/3.0.0",
   out.folder = "/path/to/results",
   cr.path = "/path/to/cellranger-x.x.x/cellranger"
