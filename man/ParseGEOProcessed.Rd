@@ -52,7 +52,7 @@ geo.h5ad.log <- ParseGEOProcessed(
 # suitable for loom, loom.gz
 geo.loom.log <- ParseGEOProcessed(
   acce = "GSE286325", supp.idx = 1,
-  file.ext = c("h5ad"),
+  file.ext = c("loom"),
   out.folder = "/path/to/outfoder"
 )
 }

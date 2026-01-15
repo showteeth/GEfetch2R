@@ -428,3 +428,190 @@ Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcore
     }
   }
 }
+
+#' Extract Run, Distinguish RNA-seq Type, Download Fastq, Perform Read Mapping, Load Output to R.
+#'
+#' @param gsm GSM number. Default: NULL (use \code{acce}).
+#' @param acce GEO accession number. Default: NULL (use \code{gsm}).
+#' \code{acce} and \code{gsm} cannot be both NULL.
+#' @param star.ref Path of folder containing STAR reference,
+#' used when bulk RNA-seq or Smart-seq2 scRNA-seq/mini-bulk RNA-seq. Default: NULL.
+#' @param cellranger.ref Path of folder containing 10x-compatible transcriptome reference,
+#' used when 10x Genomics scRNA-seq. Default: NULL.
+#' @param out.folder Output folder. Default: NULL (current working directory).
+#' @param timeout Maximum request time. Default: 36000000.
+#' @param star.path Path to \code{STAR}. Default: NULL (conduct automatic detection).
+#' @param cellranger.path Path to cellranger. Default: NULL (conduct automatic detection).
+#' @param download.method Method to download fastq files, chosen from "download.file", "ascp" and "wget". Default: "wget".
+#' @param ascp.path Path to ascp (/path/bin/ascp), please ensure that the relative path of asperaweb_id_dsa.openssh file
+#' (/path/bin/ascp/../etc/asperaweb_id_dsa.openssh). Default: NULL (conduct automatic detection).
+#' @param wget.path Path to wget. Default: NULL (conduct automatic detection).
+#' @param star.paras Parameters for \code{STAR}.
+#' Default: "--outBAMsortingThreadN 4 --twopassMode None".
+#' @param cellranger.paras Parameters for \code{cellranger}.
+#' Default: "--chemistry=auto --jobmode=local".
+#' @param localcores Number of cores used, same as \code{localcores} for \code{cellranger} and \code{runThreadN} for \code{STAR}.
+#' Default: 4.
+#' @param localmem Set max GB the pipeline may request at one time. Default: 16.
+#' @param count.col Column contains used count data (2: unstranded; 3: \code{stranded=yes}; 4: \code{stranded=reverse}),
+#' use when bulk RNA-seq or Smart-seq2 scRNA-seq/mini-bulk RNA-seq. Default: 2.
+#'
+#' @return List of R objects.
+#' @importFrom magrittr %>%
+#' @importFrom GEOquery getGEO
+#' @importFrom Biobase annotation experimentData pData phenoData notes sampleNames exprs
+#' @importFrom parallel detectCores mclapply
+#' @importFrom GEOfastq crawl_gsms
+#' @importFrom curl curl_fetch_memory
+#' @importFrom data.table fread
+#' @importFrom tidyr separate_rows
+#' @importFrom dplyr filter
+#' @importFrom rlang .data
+#' @importFrom utils download.file read.table
+#' @importFrom Seurat Read10X CreateSeuratObject
+#' @importFrom methods new
+#' @importFrom stats formula
+#' @importFrom DESeq2 DESeqDataSetFromMatrix
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # only bulk/Smart-seq2 RNA-seq
+#' GSE127942.list <- DownloadFastq2R(
+#'   acce = "GSE127942", star.ref = "/path/to/ref", out.folder = "/path/to/output",
+#'   star.path = "/path/to/STAR", timeout = 3600000
+#' )
+#' # 10x Genomics scRNA-seq
+#' GSE282929.list <- DownloadFastq2R(
+#'   acce = "GSE282929", cellranger.ref = "/path/to/cellranger/ref",
+#'   cellranger.path = "/path/to/cellranger",
+#'   out.folder = "/path/to/output", timeout = 3600000
+#' )
+#' # mixture of 10x Genomics scRNA-seq and bulk RNA-seq
+#' GSE305141.list <- DownloadFastq2R(
+#'   acce = "GSE305141", star.ref = "/path/to/star/ref", cellranger.ref = "/path/to/cellranger/ref",
+#'   star.path = "/path/to/STAR", cellranger.path = "/path/to/cellranger",
+#'   out.folder = "/path/to/output", timeout = 3600000
+#' )
+#' # given GSM number
+#' GSE127942.list <- DownloadFastq2R(
+#'   gsm = c("GSM3656922", "GSM3656923"), star.ref = "/path/to/ref", out.folder = "/path/to/output",
+#'   star.path = "/path/to/STAR", timeout = 3600000
+#' )
+#' }
+DownloadFastq2R <- function(gsm = NULL, acce = NULL, star.ref = NULL, cellranger.ref = NULL, out.folder = NULL,
+                            timeout = 36000000, star.path = NULL, cellranger.path = NULL,
+                            download.method = c("wget", "download.file", "ascp"), ascp.path = NULL, wget.path = NULL,
+                            star.paras = "--outBAMsortingThreadN 4 --twopassMode None",
+                            cellranger.paras = "--chemistry=auto --jobmode=local",
+                            localcores = 4, localmem = 16, count.col = 2) {
+  # check parameter
+  download.method <- match.arg(arg = download.method)
+  # check ref
+  if (is.null(star.ref) && is.null(cellranger.ref)) {
+    stop("The star.ref and cellranger.ref are NULL, please provide at least one valid value!")
+  }
+  message("Step1: extract runs with GEO accession number or GSM number.")
+  run.df <- suppressMessages(ExtractRun(gsm = gsm, acce = acce, timeout = 36000))
+  message("Step2: distinguish bulk RNA-seq, 10x Genomics scRNA-seq, and Smart-seq2.")
+  run.type.list <- DistinguishRNA(geo.runs = run.df)
+  # check ref
+  if ((nrow(run.type.list$bulk.rna) > 0) || (nrow(run.type.list$scrna.ss2) > 0)) {
+    if (is.null(star.ref)) {
+      stop("Detected bulk RNA-seq or Smart-seq2 scRNA-seq/mini-bulk RNA-seq datasets/runs, please provide star.ref!")
+    }
+  }
+  if (nrow(run.type.list$scrna.10x) > 0) {
+    if (is.null(cellranger.ref)) {
+      stop("Detected 10x Genomics scRNA-seq datasets/runs, please provide cellranger.ref!")
+    }
+  }
+  # download and mapping
+  if (is.null(out.folder)) {
+    out.folder <- getwd()
+  }
+  # create fastq output folder
+  fq.out.folder <- file.path(out.folder, "fastq")
+  mapping.folder <- file.path(out.folder, "mapping")
+  dir.create(path = fq.out.folder, showWarnings = FALSE, recursive = TRUE)
+  dir.create(path = mapping.folder, showWarnings = FALSE, recursive = TRUE)
+  # output list
+  out.li <- list()
+  if (nrow(run.type.list$bulk.rna) > 0) {
+    bulk.fq.folder <- file.path(fq.out.folder, "bulkRNAseq")
+    message("Step3: Download ", nrow(run.type.list$bulk.rna), " bulk RNA-seq datasets/runs to: ", bulk.fq.folder)
+    bulk.down <- DownloadFastq(
+      gsm.df = run.type.list$bulk.rna, out.folder = bulk.fq.folder, download.method = download.method,
+      ascp.path = ascp.path, quiet = TRUE, wget.path = wget.path,
+      timeout = timeout, parallel = FALSE, use.cores = NULL,
+      format.10x = FALSE, remove.raw = FALSE
+    )
+    if (!is.null(bulk.down)) {
+      warning("Error occured when downloading bulk RNA-seq datasets/runs, skip subsequent mapping and loading processes.")
+      bulk.deobj <- NULL
+    } else {
+      message("Step4: read mapping and load to R (DESeq2).")
+      bulk.mapping.folder <- file.path(mapping.folder, "bulkRNAseq")
+      bulk.gsm.folders <- unique(file.path(bulk.fq.folder, run.type.list$bulk.rna$gsm_name))
+      bulk.deobj <- Fastq2R(
+        sample.dir = bulk.gsm.folders, ref = star.ref, method = "STAR",
+        out.folder = bulk.mapping.folder, st.path = star.path, st.paras = star.paras,
+        localcores = localcores, count.col = count.col, meta.data = NULL, fmu = NULL
+      )
+    }
+    out.li$bulk.rna <- bulk.deobj
+  }
+  if (nrow(run.type.list$scrna.10x) > 0) {
+    fq.10x.folder <- file.path(fq.out.folder, "10x")
+    message("Step3: Download ", nrow(run.type.list$scrna.10x), " 10x Genomics scRNA-seq datasets/runs to: ", fq.10x.folder)
+    sc.10x.down <- DownloadFastq(
+      gsm.df = run.type.list$scrna.10x, out.folder = fq.10x.folder, download.method = download.method,
+      ascp.path = ascp.path, quiet = TRUE, wget.path = wget.path,
+      timeout = timeout, parallel = FALSE, use.cores = NULL,
+      format.10x = TRUE, remove.raw = TRUE
+    )
+    if (!is.null(sc.10x.down)) {
+      warning("Error occured when downloading 10x Genomics scRNA-seq datasets/runs, skip subsequent mapping and loading processes.")
+      sc.10x.down <- NULL
+    } else {
+      message("Step4: read mapping and load to R (Seurat).")
+      sc.10x.mapping.folder <- file.path(mapping.folder, "10x")
+      sc.10x.gsm.folders <- unique(file.path(fq.10x.folder, run.type.list$scrna.10x$gsm_name))
+      sc.10x.seu <- Fastq2R(
+        sample.dir = sc.10x.gsm.folders, ref = cellranger.ref, method = "CellRanger",
+        out.folder = sc.10x.mapping.folder, st.path = cellranger.path, st.paras = cellranger.paras,
+        localcores = localcores, localmem = localmem, merge = FALSE
+      )
+    }
+    out.li$scrna.10x <- sc.10x.seu
+  }
+  if (nrow(run.type.list$scrna.ss2) > 0) {
+    ss2.fq.folder <- file.path(fq.out.folder, "smartseq2")
+    message("Step3: Download ", nrow(run.type.list$scrna.ss2), " Smart-seq2 scRNA-seq/mini-bulk RNA-seq datasets/runs to: ", ss2.fq.folder)
+    ss2.down <- DownloadFastq(
+      gsm.df = run.type.list$scrna.ss2, out.folder = ss2.fq.folder, download.method = download.method,
+      ascp.path = ascp.path, quiet = TRUE, wget.path = wget.path,
+      timeout = timeout, parallel = FALSE, use.cores = NULL,
+      format.10x = FALSE, remove.raw = FALSE
+    )
+    if (!is.null(ss2.down)) {
+      warning("Error occured when downloading Smart-seq2 scRNA-seq/mini-bulk RNA-seq datasets/runs, skip subsequent mapping and loading processes.")
+      ss2.deobj <- NULL
+    } else {
+      message("Step4: read mapping and load to R (DESeq2).")
+      ss2.mapping.folder <- file.path(mapping.folder, "smartseq2")
+      ss2.gsm.folders <- unique(file.path(ss2.fq.folder, run.type.list$scrna.ss2$gsm_name))
+      ss2.deobj <- Fastq2R(
+        sample.dir = ss2.gsm.folders, ref = star.ref, method = "STAR",
+        out.folder = ss2.mapping.folder, st.path = star.path, st.paras = star.paras,
+        localcores = localcores, count.col = 2, meta.data = NULL, fmu = NULL
+      )
+    }
+    out.li$scrna.ss2 <- ss2.deobj
+  }
+  if ((nrow(run.type.list$bulk.rna)) == 0 && (nrow(run.type.list$scrna.10x)) == 0 && (nrow(run.type.list$scrna.ss2)) == 0) {
+    message("Nothing to be done (no bulk RNA-seq, Smart-seq2 scRNA-seq/mini-bulk RNA-seq, 10x Genomics scRNA-seq datasets/runs detected).")
+  }
+  return(out.li)
+}

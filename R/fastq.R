@@ -73,6 +73,7 @@ ExtractRun <- function(gsm = NULL, acce = NULL, platform = NULL, parallel = TRUE
 #' @param ascp.path Path to ascp (/path/bin/ascp), please ensure that the relative path of asperaweb_id_dsa.openssh file
 #' (/path/bin/ascp/../etc/asperaweb_id_dsa.openssh). Default: NULL (conduct automatic detection).
 #' @param max.rate Max transfer rate. Used when \code{download.method} is "ascp". Default: 300m.
+#' @param wget.path Path to wget. Default: NULL (conduct automatic detection).
 #' @param rename Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "ascp" or "wget".
 #' Default: FALSE (show).
 #' @param parallel Logical value, whether to download parallelly. Used when \code{download.method} is "ascp" or "download.file".
@@ -528,6 +529,7 @@ GetFastqLen <- function(fq.file) {
 #' @param max.rate Max transfer rate. Used when \code{download.method} is "ascp". Default: 300m.
 #' @param parallel Logical value, whether to download parallelly. Default: TRUE.
 #' @param use.cores The number of cores used. Default: NULL (the minimum value of \code{nrow(gsm.df)} and \code{parallel::detectCores()}).
+#' @param wget.path Path to wget. Default: NULL (conduct automatic detection).
 #' @param format.10x Logical value, whether to format split fastqs to 10x standard format. Default: TRUE.
 #' @param remove.raw Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: FALSE.
 #'

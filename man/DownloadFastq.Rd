@@ -40,6 +40,8 @@ Default: FALSE (show).}
 
 \item{use.cores}{The number of cores used. Default: NULL (the minimum value of \code{nrow(gsm.df)} and \code{parallel::detectCores()}).}
 
+\item{wget.path}{Path to wget. Default: NULL (conduct automatic detection).}
+
 \item{format.10x}{Logical value, whether to format split fastqs to 10x standard format. Default: TRUE.}
 
 \item{remove.raw}{Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: FALSE.}

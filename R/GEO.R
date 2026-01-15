@@ -204,7 +204,7 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
 #' # suitable for loom, loom.gz
 #' geo.loom.log <- ParseGEOProcessed(
 #'   acce = "GSE286325", supp.idx = 1,
-#'   file.ext = c("h5ad"),
+#'   file.ext = c("loom"),
 #'   out.folder = "/path/to/outfoder"
 #' )
 #' }

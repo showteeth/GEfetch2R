@@ -44,6 +44,8 @@ Default: FALSE (show).}
 
 \item{max.rate}{Max transfer rate. Used when \code{download.method} is "ascp". Default: 300m.}
 
+\item{wget.path}{Path to wget. Default: NULL (conduct automatic detection).}
+
 \item{rename}{Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "ascp" or "wget".
 Default: FALSE (show).}
 
