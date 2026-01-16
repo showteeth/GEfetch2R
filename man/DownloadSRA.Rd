@@ -46,7 +46,7 @@ Default: FALSE (show).}
 
 \item{wget.path}{Path to wget. Default: NULL (conduct automatic detection).}
 
-\item{rename}{Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "ascp" or "wget".
+\item{rename}{Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "download.file", "ascp" or "wget".
 Default: FALSE (show).}
 
 \item{parallel}{Logical value, whether to download parallelly. Used when \code{download.method} is "ascp" or "download.file".
@@ -74,7 +74,7 @@ GSE186003.down <- DownloadSRA(
 GSE186003.down <- DownloadSRA(
   gsm.df = GSE186003.runs, download.method = "download.file",
   timeout = 3600, out.folder = "/path/to/output",
-  parallel = TRUE, use.cores = 2
+  rename = TRUE, parallel = TRUE, use.cores = 2
 )
 # ascp
 GSE186003.down <- DownloadSRA(

@@ -434,6 +434,8 @@ Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcore
 #' @param gsm GSM number. Default: NULL (use \code{acce}).
 #' @param acce GEO accession number. Default: NULL (use \code{gsm}).
 #' \code{acce} and \code{gsm} cannot be both NULL.
+#' @param force.type Force the RNA-seq type, used when failing to automatically identify the RNA-seq type. Available value: "10x", "Smart-seq2", "bulk".
+#' If not NULL, skip automatic identification of RNA-seq type. Default: NULL.
 #' @param star.ref Path of folder containing STAR reference,
 #' used when bulk RNA-seq or Smart-seq2 scRNA-seq/mini-bulk RNA-seq. Default: NULL.
 #' @param cellranger.ref Path of folder containing 10x-compatible transcriptome reference,
@@ -500,7 +502,7 @@ Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcore
 #'   star.path = "/path/to/STAR", timeout = 3600000
 #' )
 #' }
-DownloadFastq2R <- function(gsm = NULL, acce = NULL, star.ref = NULL, cellranger.ref = NULL, out.folder = NULL,
+DownloadFastq2R <- function(gsm = NULL, acce = NULL, force.type = NULL, star.ref = NULL, cellranger.ref = NULL, out.folder = NULL,
                             timeout = 36000000, star.path = NULL, cellranger.path = NULL,
                             download.method = c("wget", "download.file", "ascp"), ascp.path = NULL, wget.path = NULL,
                             star.paras = "--outBAMsortingThreadN 4 --twopassMode None",
@@ -514,8 +516,34 @@ DownloadFastq2R <- function(gsm = NULL, acce = NULL, star.ref = NULL, cellranger
   }
   message("Step1: extract runs with GEO accession number or GSM number.")
   run.df <- suppressMessages(ExtractRun(gsm = gsm, acce = acce, timeout = 36000))
-  message("Step2: distinguish bulk RNA-seq, 10x Genomics scRNA-seq, and Smart-seq2.")
-  run.type.list <- DistinguishRNA(geo.runs = run.df)
+  if (is.null(force.type)) {
+    message("Step2: distinguish bulk RNA-seq, 10x Genomics scRNA-seq, and Smart-seq2 automatically.")
+    run.type.list <- DistinguishRNA(geo.runs = run.df)
+  } else {
+    message("Step2: the RNA-seq type is manually specified!")
+    valid.force.type <- intersect(force.type, c("10x", "Smart-seq2", "bulk"))
+    if (length(valid.force.type) == 0) {
+      stop("There is no valid force.type, available values: ", paste(c("10x", "Smart-seq2", "bulk"), collapse = ", "))
+    } else {
+      if (length(valid.force.type) > 1) {
+        message("Multiple force.type detected, use the first: ", valid.force.type[1])
+        valid.force.type <- valid.force.type[1]
+      }
+      if (valid.force.type == "10x") {
+        run.type.list$bulk.rna <- data.frame()
+        run.type.list$scrna.ss2 <- data.frame()
+        run.type.list$scrna.10x <- run.df
+      } else if (valid.force.type == "Smart-seq2") {
+        run.type.list$bulk.rna <- data.frame()
+        run.type.list$scrna.10x <- data.frame()
+        run.type.list$scrna.ss2 <- run.df
+      } else if (valid.force.type == "bulk") {
+        run.type.list$scrna.ss2 <- data.frame()
+        run.type.list$scrna.10x <- data.frame()
+        run.type.list$bulk.rna <- run.df
+      }
+    }
+  }
   # check ref
   if ((nrow(run.type.list$bulk.rna) > 0) || (nrow(run.type.list$scrna.ss2) > 0)) {
     if (is.null(star.ref)) {

@@ -9,7 +9,9 @@ ParseGEOProcessed(
   timeout = 3600,
   supp.idx = 1,
   file.ext = c("rdata", "rds", "h5ad", "loom"),
-  out.folder = NULL
+  out.folder = NULL,
+  return.seu = FALSE,
+  merge = TRUE
 )
 }
 \arguments{
@@ -24,7 +26,8 @@ ParseGEOProcessed(
 \item{out.folder}{The output folder. Default: NULL (\code{acce} folder under current working directory).}
 }
 \value{
-NULL.
+SeuratObject (\code{return.seu} is TRUE, rds in \code{file.ext}) or
+NULL (\code{return.seu} is FALSE or rds not in \code{file.ext}).
 }
 \description{
 Download Processed Objects from GEO.
@@ -33,9 +36,10 @@ Download Processed Objects from GEO.
 \dontrun{
 # need users to provide the output folder
 # suitable for rdata, rdata.gz, rds, rds.gz
-geo.rds.log <- ParseGEOProcessed(
+# return SeuratObject when return.seu = TRUE
+GSE285723.seu <- ParseGEOProcessed(
   acce = "GSE285723", supp.idx = 1,
-  file.ext = c("rdata", "rds"),
+  file.ext = c("rdata", "rds"), return.seu = TRUE,
   out.folder = "/path/to/outfoder"
 )
 geo.rdata.log <- ParseGEOProcessed(

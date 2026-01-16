@@ -74,7 +74,7 @@ ExtractRun <- function(gsm = NULL, acce = NULL, platform = NULL, parallel = TRUE
 #' (/path/bin/ascp/../etc/asperaweb_id_dsa.openssh). Default: NULL (conduct automatic detection).
 #' @param max.rate Max transfer rate. Used when \code{download.method} is "ascp". Default: 300m.
 #' @param wget.path Path to wget. Default: NULL (conduct automatic detection).
-#' @param rename Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "ascp" or "wget".
+#' @param rename Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "download.file", "ascp" or "wget".
 #' Default: FALSE (show).
 #' @param parallel Logical value, whether to download parallelly. Used when \code{download.method} is "ascp" or "download.file".
 #' Default: TRUE.
@@ -103,7 +103,7 @@ ExtractRun <- function(gsm = NULL, acce = NULL, platform = NULL, parallel = TRUE
 #' GSE186003.down <- DownloadSRA(
 #'   gsm.df = GSE186003.runs, download.method = "download.file",
 #'   timeout = 3600, out.folder = "/path/to/output",
-#'   parallel = TRUE, use.cores = 2
+#'   rename = TRUE, parallel = TRUE, use.cores = 2
 #' )
 #' # ascp
 #' GSE186003.down <- DownloadSRA(
@@ -283,7 +283,7 @@ DownloadSRAfromENA <- function(gsm.df, out.folder = NULL, download.method = c("d
 #' @param split.cmd.threads Threads, used when \code{split.cmd.path} is path to parallel-fastq-dump or fasterq-dump.
 #' Default: NULL (1).
 #' @param format.10x Logical value, whether to format split fastqs to 10x standard format. Default: TRUE.
-#' @param remove.raw Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: FALSE.
+#' @param remove.raw Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: TRUE.
 #'
 #' @return NULL or paths of failed sras.
 #' @importFrom utils read.table
@@ -301,11 +301,11 @@ DownloadSRAfromENA <- function(gsm.df, out.folder = NULL, download.method = c("d
 #'   sra.folder = "/path/to/output",
 #'   split.cmd.path = "/path/to/parallel-fastq-dump",
 #'   sratools.path = "/path/to/sra/bin", fastq.type = "10x",
-#'   split.cmd.threads = 4
+#'   split.cmd.threads = 4, remove.raw = TRUE
 #' )
 #' }
 SplitSRA <- function(sra.folder = NULL, sra.path = NULL, fastq.type = c("10x", "other"), split.cmd.path = NULL, sratools.path = NULL,
-                     split.cmd.paras = NULL, split.cmd.threads = NULL, format.10x = TRUE, remove.raw = FALSE) {
+                     split.cmd.paras = NULL, split.cmd.threads = NULL, format.10x = TRUE, remove.raw = TRUE) {
   # check parameters
   fastq.type <- match.arg(arg = fastq.type)
 
@@ -531,7 +531,7 @@ GetFastqLen <- function(fq.file) {
 #' @param use.cores The number of cores used. Default: NULL (the minimum value of \code{nrow(gsm.df)} and \code{parallel::detectCores()}).
 #' @param wget.path Path to wget. Default: NULL (conduct automatic detection).
 #' @param format.10x Logical value, whether to format split fastqs to 10x standard format. Default: TRUE.
-#' @param remove.raw Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: FALSE.
+#' @param remove.raw Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: TRUE.
 #'
 #' @return Dataframe contains failed \code{gsm.df} of NULL.
 #' @importFrom curl curl_fetch_memory
@@ -551,23 +551,25 @@ GetFastqLen <- function(fq.file) {
 #' GSE130636.runs <- GSE130636.runs[GSE130636.runs$run %in% c("SRR9004325", "SRR9004326"), ]
 #' # use download.file
 #' download.file.res <- DownloadFastq(
-#'   gsm.df = gsm.df, out.folder = "/path/to/output",
+#'   gsm.df = gsm.df, out.folder = "/path/to/output", remove.raw = TRUE,
 #'   download.method = "download.file", parallel = TRUE, use.cores = 2
 #' )
 #' # use ascp
 #' ascp.res <- DownloadFastq(
-#'   gsm.df = gsm.df, out.folder = "/home/songyabing/data/projects/tmp/GEfetch2R",
-#'   download.method = "ascp", ascp.path = "~/.aspera/connect/bin/ascp", parallel = TRUE, use.cores = 2
+#'   gsm.df = gsm.df, out.folder = "/path/to/output", remove.raw = TRUE,
+#'   download.method = "ascp", ascp.path = "~/.aspera/connect/bin/ascp",
+#'   parallel = TRUE, use.cores = 2
 #' )
 #' # use wget
 #' wget.res <- DownloadFastq(
-#'   gsm.df = gsm.df, out.folder = "/home/songyabing/data/projects/tmp/GEfetch2R",
-#'   download.method = "wget", wget.path = "/usr/bin/wget", parallel = TRUE, use.cores = 2
+#'   gsm.df = gsm.df, out.folder = "/path/to/output", remove.raw = TRUE,
+#'   download.method = "wget", wget.path = "/usr/bin/wget",
+#'   parallel = TRUE, use.cores = 2
 #' )
 #' }
 DownloadFastq <- function(gsm.df, out.folder = NULL, download.method = c("download.file", "ascp", "wget"), quiet = FALSE,
                           timeout = 3600, ascp.path = NULL, max.rate = "300m", parallel = TRUE, use.cores = NULL,
-                          wget.path = NULL, format.10x = TRUE, remove.raw = FALSE) {
+                          wget.path = NULL, format.10x = TRUE, remove.raw = TRUE) {
   # check parameter
   download.method <- match.arg(arg = download.method)
   # check dataframe

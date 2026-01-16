@@ -1543,7 +1543,7 @@ Process10xFiles <- function(acce, folder, accept.fmt, out.folder, gene2feature) 
       # remove file type tag
       file.name <- gsub(pattern = valid.pat.gz, replacement = "", x = file.name)
       # remove possible _ and .
-      file.name <- gsub(pattern = "[_-.]$", replacement = "", x = file.name)
+      file.name <- gsub(pattern = "[_\\-\\.]$", replacement = "", x = file.name)
       file.folder <- file.path(out.folder, file.name)
     })
     # create folder and move file

@@ -7,6 +7,7 @@
 DownloadFastq2R(
   gsm = NULL,
   acce = NULL,
+  force.type = NULL,
   star.ref = NULL,
   cellranger.ref = NULL,
   out.folder = NULL,
@@ -28,6 +29,9 @@ DownloadFastq2R(
 
 \item{acce}{GEO accession number. Default: NULL (use \code{gsm}).
 \code{acce} and \code{gsm} cannot be both NULL.}
+
+\item{force.type}{Force the RNA-seq type, used when failing to automatically identify the RNA-seq type. Available value: "10x", "Smart-seq2", "bulk".
+If not NULL, skip automatic identification of RNA-seq type. Default: NULL.}
 
 \item{star.ref}{Path of folder containing STAR reference,
 used when bulk RNA-seq or Smart-seq2 scRNA-seq/mini-bulk RNA-seq. Default: NULL.}

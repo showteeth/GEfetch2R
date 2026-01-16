@@ -175,7 +175,8 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
 #' @param file.ext The valid file extension for download (ignore case and gz suffix). When NULL, use all files. Default: c("rdata", "rds", "h5ad").
 #' @param out.folder The output folder. Default: NULL (\code{acce} folder under current working directory).
 #'
-#' @return NULL.
+#' @return SeuratObject (\code{return.seu} is TRUE, rds in \code{file.ext}) or
+#' NULL (\code{return.seu} is FALSE or rds not in \code{file.ext}).
 #' @importFrom xml2 read_html xml_text xml_find_all
 #' @importFrom tools file_ext
 #' @importFrom utils untar
@@ -185,9 +186,10 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
 #' \dontrun{
 #' # need users to provide the output folder
 #' # suitable for rdata, rdata.gz, rds, rds.gz
-#' geo.rds.log <- ParseGEOProcessed(
+#' # return SeuratObject when return.seu = TRUE
+#' GSE285723.seu <- ParseGEOProcessed(
 #'   acce = "GSE285723", supp.idx = 1,
-#'   file.ext = c("rdata", "rds"),
+#'   file.ext = c("rdata", "rds"), return.seu = TRUE,
 #'   out.folder = "/path/to/outfoder"
 #' )
 #' geo.rdata.log <- ParseGEOProcessed(
@@ -208,7 +210,8 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
 #'   out.folder = "/path/to/outfoder"
 #' )
 #' }
-ParseGEOProcessed <- function(acce, timeout = 3600, supp.idx = 1, file.ext = c("rdata", "rds", "h5ad", "loom"), out.folder = NULL) {
+ParseGEOProcessed <- function(acce, timeout = 3600, supp.idx = 1, file.ext = c("rdata", "rds", "h5ad", "loom"),
+                              out.folder = NULL, return.seu = FALSE, merge = TRUE) {
   # file.ext: ignore case, tar.gz, gz
   if (is.null(file.ext)) {
     warning("There is no file extension provided, use all valid (rdata, rds, h5ad and loom).")
@@ -281,6 +284,13 @@ ParseGEOProcessed <- function(acce, timeout = 3600, supp.idx = 1, file.ext = c("
         remove.tag <- file.remove(x)
         copy.tag
       })
+      # load RDS file to Seurat
+      if (isTRUE(return.seu)) {
+        seu.obj <- LoadRDS2Seurat(out.folder = out.folder, merge = merge)
+        return(seu.obj)
+      } else {
+        return(NULL)
+      }
     } else {
       stop("No file in given format, please check file.ext!")
     }
@@ -289,6 +299,13 @@ ParseGEOProcessed <- function(acce, timeout = 3600, supp.idx = 1, file.ext = c("
     copy.tag <- file.copy(from = supp.file.path, to = file.path(out.folder, basename(supp.file.path)))
     # remove the original file
     remove.tag <- file.remove(supp.file.path)
+    # load RDS file to Seurat
+    if (isTRUE(return.seu)) {
+      seu.obj <- LoadRDS2Seurat(out.folder = out.folder, merge = merge)
+      return(seu.obj)
+    } else {
+      return(NULL)
+    }
   } else {
     stop("No file in given format, please check file.ext!")
   }

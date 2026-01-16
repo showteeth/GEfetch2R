@@ -16,7 +16,7 @@ DownloadFastq(
   use.cores = NULL,
   wget.path = NULL,
   format.10x = TRUE,
-  remove.raw = FALSE
+  remove.raw = TRUE
 )
 }
 \arguments{
@@ -44,7 +44,7 @@ Default: FALSE (show).}
 
 \item{format.10x}{Logical value, whether to format split fastqs to 10x standard format. Default: TRUE.}
 
-\item{remove.raw}{Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: FALSE.}
+\item{remove.raw}{Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: TRUE.}
 }
 \value{
 Dataframe contains failed \code{gsm.df} of NULL.
@@ -59,18 +59,20 @@ GSE130636.runs <- ExtractRun(acce = "GSE130636", platform = "GPL20301")
 GSE130636.runs <- GSE130636.runs[GSE130636.runs$run \%in\% c("SRR9004325", "SRR9004326"), ]
 # use download.file
 download.file.res <- DownloadFastq(
-  gsm.df = gsm.df, out.folder = "/path/to/output",
+  gsm.df = gsm.df, out.folder = "/path/to/output", remove.raw = TRUE,
   download.method = "download.file", parallel = TRUE, use.cores = 2
 )
 # use ascp
 ascp.res <- DownloadFastq(
-  gsm.df = gsm.df, out.folder = "/home/songyabing/data/projects/tmp/GEfetch2R",
-  download.method = "ascp", ascp.path = "~/.aspera/connect/bin/ascp", parallel = TRUE, use.cores = 2
+  gsm.df = gsm.df, out.folder = "/path/to/output", remove.raw = TRUE,
+  download.method = "ascp", ascp.path = "~/.aspera/connect/bin/ascp",
+  parallel = TRUE, use.cores = 2
 )
 # use wget
 wget.res <- DownloadFastq(
-  gsm.df = gsm.df, out.folder = "/home/songyabing/data/projects/tmp/GEfetch2R",
-  download.method = "wget", wget.path = "/usr/bin/wget", parallel = TRUE, use.cores = 2
+  gsm.df = gsm.df, out.folder = "/path/to/output", remove.raw = TRUE,
+  download.method = "wget", wget.path = "/usr/bin/wget",
+  parallel = TRUE, use.cores = 2
 )
 }
 }
