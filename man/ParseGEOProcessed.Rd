@@ -24,6 +24,12 @@ ParseGEOProcessed(
 \item{file.ext}{The valid file extension for download (ignore case and gz suffix). When NULL, use all files. Default: c("rdata", "rds", "h5ad").}
 
 \item{out.folder}{The output folder. Default: NULL (\code{acce} folder under current working directory).}
+
+\item{return.seu}{Logical value, whether to load downloaded datasets to Seurat. Valid when rds in \code{file.ext} and all
+datasets download successfully. Default: FALSE.}
+
+\item{merge}{Logical value, whether to merge Seurat list when there are multiple rds files,
+used when \code{return.seu} is TRUE. Default: FALSE.}
 }
 \value{
 SeuratObject (\code{return.seu} is TRUE, rds in \code{file.ext}) or

@@ -174,12 +174,20 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
 #' @param supp.idx The index of supplementary files to download. Default: 1.
 #' @param file.ext The valid file extension for download (ignore case and gz suffix). When NULL, use all files. Default: c("rdata", "rds", "h5ad").
 #' @param out.folder The output folder. Default: NULL (\code{acce} folder under current working directory).
+#' @param return.seu Logical value, whether to load downloaded datasets to Seurat. Valid when rds in \code{file.ext} and all
+#' datasets download successfully. Default: FALSE.
+#' @param merge Logical value, whether to merge Seurat list when there are multiple rds files,
+#' used when \code{return.seu} is TRUE. Default: FALSE.
 #'
 #' @return SeuratObject (\code{return.seu} is TRUE, rds in \code{file.ext}) or
 #' NULL (\code{return.seu} is FALSE or rds not in \code{file.ext}).
 #' @importFrom xml2 read_html xml_text xml_find_all
 #' @importFrom tools file_ext
 #' @importFrom utils untar
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+#' @importFrom rlang parse_expr
+#' @importFrom methods new
 #' @export
 #'
 #' @examples
