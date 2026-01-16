@@ -1103,7 +1103,7 @@ DownloadMethod <- function(rn, url.vec, name.vec = NULL, out.folder = NULL, down
       wget.path <- wget.path
     }
     # wget
-    wget.cmd <- paste(wget.path, "-t 20 -nv -c -T", timeout, url.vec, "-P", out.folder)
+    wget.cmd <- paste(wget.path, "-t 20 -nv -c -T", format(timeout, scientific = F), url.vec, "-P", out.folder)
     wget.cmd <- paste(wget.cmd, collapse = " && ")
     message(paste("Calling wget:", wget.cmd))
     wget.status <- system(wget.cmd, intern = TRUE)
