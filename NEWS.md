@@ -16,6 +16,7 @@
 * Fix bugs in `ExtractRun` when a sample has multiple runs.
 * Fix bugs in `Fastq2R` when a sample has multiple runs.
 * Add `wget` in `DownloadBam`, `DownloadFastq` and `DownloadSRA`.
+* Fix bug in `ParseGEO` when 10X data contains more than one type.
 
 -------------------
 

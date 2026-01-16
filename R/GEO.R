@@ -117,6 +117,15 @@ ParseGEO <- function(acce, platform = NULL, down.supp = FALSE, supp.idx = 1, tim
               # load to seurat
               seu.list.mex <- sapply(valid.samples.folder, function(x) {
                 x.mat <- Seurat::Read10X(data.dir = x)
+                if (class(x.mat) == "list") {
+                  if ("Gene Expression" %in% names(x.mat)) {
+                    message("10X data contains more than one type: ", paste(names(x.mat), collapse = ", "), ". Load Gene Expression to Seurat!")
+                    x.mat <- x.mat[["Gene Expression"]]
+                  } else {
+                    message("10X data contains more than one type: ", paste(names(x.mat), collapse = ", "), ", and no 'Gene Expression', load the first element!")
+                    x.mat <- x.mat[[1]]
+                  }
+                }
                 seu.obj <- Seurat::CreateSeuratObject(counts = x.mat, project = basename(x))
                 seu.obj
               })
