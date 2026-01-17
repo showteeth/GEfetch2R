@@ -434,6 +434,7 @@ Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcore
 #' @param gsm GSM number. Default: NULL (use \code{acce}).
 #' @param acce GEO accession number. Default: NULL (use \code{gsm}).
 #' \code{acce} and \code{gsm} cannot be both NULL.
+#' @param skip.gsm Vector of GSM numbers to skip. Default: NULL.
 #' @param force.type Force the RNA-seq type, used when failing to automatically identify the RNA-seq type. Available value: "10x", "Smart-seq2", "bulk".
 #' If not NULL, skip automatic identification of RNA-seq type. Default: NULL.
 #' @param star.ref Path of folder containing STAR reference,
@@ -502,8 +503,8 @@ Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcore
 #'   star.path = "/path/to/STAR", timeout = 3600000
 #' )
 #' }
-DownloadFastq2R <- function(gsm = NULL, acce = NULL, force.type = NULL, star.ref = NULL, cellranger.ref = NULL, out.folder = NULL,
-                            timeout = 36000000, star.path = NULL, cellranger.path = NULL,
+DownloadFastq2R <- function(gsm = NULL, acce = NULL, skip.gsm = NULL, force.type = NULL, star.ref = NULL, cellranger.ref = NULL,
+                            out.folder = NULL, timeout = 36000000, star.path = NULL, cellranger.path = NULL,
                             download.method = c("wget", "download.file", "ascp"), ascp.path = NULL, wget.path = NULL,
                             star.paras = "--outBAMsortingThreadN 4 --twopassMode None",
                             cellranger.paras = "--chemistry=auto --jobmode=local",
@@ -516,6 +517,10 @@ DownloadFastq2R <- function(gsm = NULL, acce = NULL, force.type = NULL, star.ref
   }
   message("Step1: extract runs with GEO accession number or GSM number.")
   run.df <- suppressMessages(ExtractRun(gsm = gsm, acce = acce, timeout = 36000))
+  if (!is.null(skip.gsm)) {
+    message("Skip gsm(s): ", paste(skip.gsm, collapse = ", "))
+    run.df <- run.df[!(run.df$gsm_name %in% skip.gsm), ]
+  }
   if (is.null(force.type)) {
     message("Step2: distinguish bulk RNA-seq, 10x Genomics scRNA-seq, and Smart-seq2 automatically.")
     run.type.list <- DistinguishRNA(geo.runs = run.df)

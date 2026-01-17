@@ -18,6 +18,7 @@
 * Add `wget` in `DownloadBam`, `DownloadFastq` and `DownloadSRA`.
 * Fix bug in `ParseGEO` when 10X data contains more than one type.
 * Fix bug in scientific notation (`36000000` -> `3.6e+07`).
+* Add `skip.gsm` in `DownloadFastq2R` to control used `GSM`.
 
 -------------------
 

@@ -7,6 +7,7 @@
 DownloadFastq2R(
   gsm = NULL,
   acce = NULL,
+  skip.gsm = NULL,
   force.type = NULL,
   star.ref = NULL,
   cellranger.ref = NULL,
@@ -29,6 +30,8 @@ DownloadFastq2R(
 
 \item{acce}{GEO accession number. Default: NULL (use \code{gsm}).
 \code{acce} and \code{gsm} cannot be both NULL.}
+
+\item{skip.gsm}{Vector of GSM numbers to skip. Default: NULL.}
 
 \item{force.type}{Force the RNA-seq type, used when failing to automatically identify the RNA-seq type. Available value: "10x", "Smart-seq2", "bulk".
 If not NULL, skip automatic identification of RNA-seq type. Default: NULL.}
