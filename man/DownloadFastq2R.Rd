@@ -92,7 +92,7 @@ GSE282929.list <- DownloadFastq2R(
 )
 # mixture of 10x Genomics scRNA-seq and bulk RNA-seq
 GSE305141.list <- DownloadFastq2R(
-  acce = "GSE305141", star.ref = "/path/to/star/ref", cellranger.ref = "/path/to/cellranger/ref",
+  acce = "GSE305141", skip.gsm = "SRR34932939", star.ref = "/path/to/star/ref", cellranger.ref = "/path/to/cellranger/ref",
   star.path = "/path/to/STAR", cellranger.path = "/path/to/cellranger",
   out.folder = "/path/to/output", timeout = 3600000
 )

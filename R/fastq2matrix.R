@@ -341,7 +341,7 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
 #' @examples
 #' \dontrun{
 #' # run CellRanger (10x Genomics)
-#' # the sample.dir corresponding to sra.folder (SplitSRA) or out.folder (DownloadFastq)
+#' # the sample.dir corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
 #' seu <- Fastq2R(
 #'   sample.dir = "/path/to/fastq",
 #'   ref = "/path/to/10x/ref",
@@ -493,7 +493,7 @@ Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcore
 #' )
 #' # mixture of 10x Genomics scRNA-seq and bulk RNA-seq
 #' GSE305141.list <- DownloadFastq2R(
-#'   acce = "GSE305141", star.ref = "/path/to/star/ref", cellranger.ref = "/path/to/cellranger/ref",
+#'   acce = "GSE305141", skip.gsm = "SRR34932939", star.ref = "/path/to/star/ref", cellranger.ref = "/path/to/cellranger/ref",
 #'   star.path = "/path/to/STAR", cellranger.path = "/path/to/cellranger",
 #'   out.folder = "/path/to/output", timeout = 3600000
 #' )
@@ -606,7 +606,7 @@ DownloadFastq2R <- function(gsm = NULL, acce = NULL, skip.gsm = NULL, force.type
     )
     if (!is.null(sc.10x.down)) {
       warning("Error occured when downloading 10x Genomics scRNA-seq datasets/runs, skip subsequent mapping and loading processes.")
-      sc.10x.down <- NULL
+      sc.10x.seu <- NULL
     } else {
       message("Step4: read mapping and load to R (Seurat).")
       sc.10x.mapping.folder <- file.path(mapping.folder, "10x")

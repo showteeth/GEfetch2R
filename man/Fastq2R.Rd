@@ -57,7 +57,7 @@ Pipe FASTQ files to SeuratObject and DESeqDataSet.
 \examples{
 \dontrun{
 # run CellRanger (10x Genomics)
-# the sample.dir corresponding to sra.folder (SplitSRA) or out.folder (DownloadFastq)
+# the sample.dir corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
 seu <- Fastq2R(
   sample.dir = "/path/to/fastq",
   ref = "/path/to/10x/ref",
