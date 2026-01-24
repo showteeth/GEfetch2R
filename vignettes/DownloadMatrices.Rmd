@@ -1,7 +1,14 @@
 ---
 title: "DownloadMatrices"
-output: html_document
-date: "2023-07-23"
+output: 
+  html_document:
+    toc_depth: 4
+    toc_float: true
+fig_caption: TRUE
+vignette: >
+  %\VignetteIndexEntry{GEfetch2R}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -28,7 +35,7 @@ Until now, the public resources supported and the returned values:
     <td>GEO</td>
     <td>https://www.ncbi.nlm.nih.gov/geo/</td>
     <td>count matrix</td>
-    <td>SeuratObject or count matrix for bulk RNA-seq</td>
+    <td>SeuratObject (scRNA-seq) or DESeqDataSet (bulk RNA-seq)</td>
   </tr>
   <tr>
     <td>PanglaoDB</td>
@@ -47,79 +54,217 @@ Until now, the public resources supported and the returned values:
 
 <hr />
 
-## GEO
+## Check API
 
-[GEO is an international public repository that archives and freely distributes microarray, next-generation sequencing, and other forms of high-throughput functional genomics data submitted by the research community.](https://www.ncbi.nlm.nih.gov/geo/info/overview.html) It provides a very convenient way for users to explore and select interested scRNA-seq datasets. 
+Check the availability of APIs used:
 
-```{r echo=FALSE, results='hide',message=FALSE}
-library(GEfetch2R)
-load("/Volumes/soyabean/GEfetch2R/GEfetch2R_scrna-seq_download.RData")
-```
-
-### Extract metadata
-
-`GEfetch2R` provides `ExtractGEOMeta` to extract sample metadata, including sample title, source name/tissue, description, cell type, treatment, paper title, paper abstract, organism, protocol, data processing methods, et al.
-
-```{r geo_meta, eval=FALSE}
-# library
-library(GEfetch2R)
-
-# extract metadata of specified platform
-GSE200257.meta <- ExtractGEOMeta(acce = "GSE200257", platform = "GPL24676")
-# set VROOM_CONNECTION_SIZE to avoid error: Error: The size of the connection buffer (786432) was not large enough
-Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 60)
-# extract metadata of all platforms
-GSE94820.meta <- ExtractGEOMeta(acce = "GSE94820", platform = NULL)
-```
-
-Show the metadata:
-```{r geo_meta_show, eval=FALSE}
-head(GSE94820.meta)
+```{r check_api_matrix, eval=FALSE}
+CheckAPI(database = c("GEO", "PanglaoDB", "UCSC Cell Browser"))
+# start checking APIs to access GEO!
+# The API to access the GEO object is OK!
+# trying URL 'https://ftp.ncbi.nlm.nih.gov/geo/series/GSE302nnn/GSE302912/suppl//GSE302912_counts.csv.gz?tool=geoquery'
+# Content type 'application/x-gzip' length 332706 bytes (324 KB)
+# ==================================================
+# downloaded 324 KB
+#
+# The API to access supplementary files is OK!
+# start checking APIs to access PanglaoDB!
+# The API to access all available samples is OK!
+# Processing given dataset(s): SRA429320, SRS1467249
+# The API to access cell type composition is OK!
+#   |++++++++++++++++++++++++++++++++++++++++++++++++++| 100% elapsed=01m 00s
+# start checking APIs to access UCSC Cell Browser!
+# The API to access all available projects is OK!
+# The API to access detailed information of a given dataset is OK!
+# The API to access the available data of a given dataset is OK!
+# The API to access available files is OK!
 ```
 
 <hr />
 
-### Download matrix and load to Seurat
+## GEO
 
-After manually check the extracted metadata, users can **download count matrix** and **load the count matrix** to Seurat with `ParseGEO`. 
+[GEO is an international public repository that archives and freely distributes microarray, next-generation sequencing, and other forms of high-throughput functional genomics data submitted by the research community.](https://www.ncbi.nlm.nih.gov/geo/info/overview.html) It provides a very convenient way for users to explore and select interested scRNA-seq datasets. 
 
-For count matrix, `ParseGEO` supports downloading the matrix from **supplementary files** and extracting from `ExpressionSet`, users can control the source by specifying `down.supp` or detecting automatically (`ParseGEO` will extract the count matrix from `ExpressionSet` first, if the count matrix is NULL or contains non-integer values, `ParseGEO` will download supplementary files). While the supplementary files have two main types: single count matrix file containing all cells and CellRanger-style outputs (barcode, matrix, feature/gene), users are required to choose the type of supplementary files with `supp.type`.
+### Extract metadata
 
-With the count matrix, `ParseGEO` will load the matrix to Seurat automatically. If multiple samples available, users can choose to merge the SeuratObject with `merge`.
+`ExtractGEOMeta` provides two ways to extract sample metadata:
+
+* **user-provided sample metadata when uploading to GEO (applicable to all GEO accessions)**, including sample title, source name/tissue, description, cell type, treatment, paper title, paper abstract, organism, protocol, data processing methods, et al:
+
+```{r geo_meta, eval=FALSE}
+# library
+library(tidyverse)
+library(GEfetch2R)
+
+# set VROOM_CONNECTION_SIZE to avoid error: Error: The size of the connection buffer (786432) was not large enough
+Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 60)
+# extract metadata
+GSE297431.meta <- ExtractGEOMeta(acce = "GSE297431")
+GSE297431.meta[1:3, c("title", "geo_accession", "source_name_ch1", "description", "cell type")]
+#                        title geo_accession source_name_ch1                       description
+# 1  MOS_mutant_M3_replicate_4    GSM8991251          Oocyte   Library name: Plate1_mut_A1_S70
+# 2  MOS_mutant_M3_replicate_5    GSM8991252          Oocyte Library name: Plate1_mut_A11_S135
+# 3 MOS_mutant_M1_replicate_10    GSM8991253          Oocyte Library name: Plate1_mut_A12_S141
+#   cell type
+# 1    Oocyte
+# 2    Oocyte
+# 3    Oocyte
+```
+
+* **metadata in supplementary file**:
+
+```{r geo_meta_supp, eval=FALSE}
+GSE297431.meta.supp <- ExtractGEOMeta(
+  acce = "GSE297431", down.supp = TRUE,
+  supp.idx = 2 # specify the index of used supplementary file
+)
+head(GSE297431.meta.supp)
+#             Sample_ID  Batch  Plate   Type Growths Class
+# 1   Plate1_mut_A1_S70 batch2 Plate1 mutant       3    M3
+# 2 Plate1_mut_A11_S135 batch2 Plate1 mutant       3    M3
+# 3 Plate1_mut_A12_S141 batch2 Plate1 mutant       1    M1
+# 4   Plate1_mut_A2_S77 batch2 Plate1 mutant       1    M1
+# 5   Plate1_mut_A3_S84 batch2 Plate1 mutant       2    M2
+# 6   Plate1_mut_A4_S91 batch2 Plate1 mutant       2    M2
+```
+
+<hr />
+
+### Download matrix and load to Seurat/DESeq2
+
+After manually check the extracted metadata, users can **download count matrix** and **load the count matrix** to `Seurat`/`DESeq2` with `ParseGEO`. 
+
+For count matrix, `ParseGEO` supports downloading the matrix from **supplementary files** and extracting from `ExpressionSet`, users can control the source by specifying `down.supp` or detecting automatically (`ParseGEO` will extract the count matrix from `ExpressionSet` first, if the count matrix is `NULL` or contains non-integer values, `ParseGEO` will download supplementary files). 
+
+#### Smart-seq2 scRNA-seq or Bulk RNA-seq
+
+For Smart-seq2 scRNA-seq or bulk RNA-seq, the supplementary files have two formats:
+
+* single file (`csv(.gz)`/`tsv(.gz)`/`txt(.gz)`/`tab(.gz)`/`xlsx(.gz)`/`xls(.gz)`) contain the count matrix of all samples, e.g. [GSE297431-Smart-seq2](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE297431)
+* (gzip) archive (contain `csv(.gz)`/`tsv(.gz)`/`txt(.gz)`/`tab(.gz)`/`xlsx(.gz)`/`xls(.gz)` files) contain the count matrix of every sample, e.g. [GSE241004](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE241004)
+
+```{r geo_parse_bulk, eval=FALSE}
+# single file (Smart-seq2)
+GSE297431.seu <- ParseGEO(
+  acce = "GSE297431",
+  supp.idx = 1, # specify the index of used supplementary file
+  down.supp = TRUE, supp.type = "count"
+)
+GSE297431.seu
+# An object of class Seurat
+# 21564 features across 107 samples within 1 assay
+# Active assay: RNA (21564 features, 0 variable features)
+
+# gzip archive of files (Smart-seq2)
+GSE241004.seu <- ParseGEO(
+  acce = "GSE241004",
+  supp.idx = 1, # specify the index of used supplementary file
+  down.supp = TRUE, supp.type = "count"
+)
+GSE241004.seu
+# An object of class Seurat
+# 61911 features across 30 samples within 1 assay
+# Active assay: RNA (61911 features, 0 variable features)
+
+# gzip archive of files (bulk RNA-seq)
+GSE223226.dds <- ParseGEO(
+  acce = "GSE223226",
+  supp.idx = 1, # specify the index of used supplementary file
+  down.supp = TRUE, supp.type = "count",
+  data.type = "bulk" # set data.type = "bulk", return DESeqDataSet
+)
+GSE223226.dds
+# class: DESeqDataSet
+# dim: 32525 20
+# metadata(1): version
+# assays(1): counts
+# rownames(32525): __alignment_not_unique __ambiguous ... ENSDARG00000117826
+#   ENSDARG00000117827
+# rowData names(0):
+# colnames(20): GSM6943634.x GSM6943634.y ... GSM6943643.x GSM6943643.y
+# colData names(1): condition
+```
+
+<hr />
+
+#### scRNA-seq
+
+For 10x Genomics (or similiar) scRNA-seq, the supplementary files have two formats:
+
+* `h5(.gz)` file(s) or `barcodes.tsv(.gz)`/`genes.tsv(.gz)`, `matrix.mtx(.gz)`, `features.tsv(.gz)` files contain the count matrix, e.g. [GSE278892](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE278892)
+* archive (`tar(.gz)`), the files in archive can be in `zip`, `tar(.gz)`, `h5(.gz)` format, or separate files (`barcodes.tsv(.gz)`/`genes.tsv(.gz)`, `matrix.mtx(.gz)`, `features.tsv(.gz)`), e.g. [GSE271836-h5](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE271836), [GSE292908-separate files](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE292908), [GSE253859-zip](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE253859), [GSE274058-tar.gz](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE274058)
+
+With the count matrix, `ParseGEO` will load the matrix to `Seurat` automatically. If multiple samples available, users can choose to merge the `SeuratObject` with `merge`.
 
 ```{r geo_parse, eval=FALSE}
-# cellranger out
-GSE200257.seu <- ParseGEO(
-  acce = "GSE200257", platform = NULL, supp.idx = 1,
-  down.supp = TRUE, supp.type = "10x",
-  out.folder = "/Volumes/soyabean/GEfetch2R/dwonload_geo"
+# separate files
+GSE278892.seu <- ParseGEO(
+  acce = "GSE278892", down.supp = TRUE,
+  supp.type = "10xSingle", timeout = 36000,
+  out.folder = "~/gefetch2r/doc/download_geo"
 )
-# count matrix
-GSE94820.seu <- ParseGEO(
-  acce = "GSE94820", platform = NULL,
-  supp.idx = 1, down.supp = TRUE,
-  supp.type = "count"
+GSE278892.seu
+# An object of class Seurat
+# 22548 features across 6079 samples within 1 assay
+# Active assay: RNA (22548 features, 0 variable features)
+
+# archive of files
+GSE292908.seu <- ParseGEO(
+  acce = "GSE292908", down.supp = TRUE,
+  supp.type = "10x", timeout = 36000,
+  supp.idx = 1, # specify the index of used supplementary file
+  out.folder = "~/gefetch2r/doc/download_geo"
 )
-```
+GSE292908.seu
+# An object of class Seurat
+# 32285 features across 16062 samples within 1 assay
+# Active assay: RNA (32285 features, 0 variable features)
 
-Show the `GSE200257.seu`:
-```{r geo_parse_show1, eval=FALSE}
-# for cellranger output
-GSE200257.seu
+# # The structure of downloaded count matrix for 10x
+# tree ~/gefetch2r/doc/download_geo
+# ~/gefetch2r/doc/download_geo
+# ├── GSE278892
+# │   └── GSE278892_BFPRFP
+# │       ├── barcodes.tsv.gz
+# │       ├── features.tsv.gz
+# │       └── matrix.mtx.gz
+# └── GSE292908
+#     ├── GSM8869153_2151R_CTX
+#     │   ├── barcodes.tsv.gz
+#     │   ├── features.tsv.gz
+#     │   └── matrix.mtx.gz
+#     ├── GSM8869154_2151R_CTX_SNDX_ms6352
+#     │   ├── barcodes.tsv.gz
+#     │   ├── features.tsv.gz
+#     │   └── matrix.mtx.gz
+#     ├── GSM8869155_2151R_IgG
+#     │   ├── barcodes.tsv.gz
+#     │   ├── features.tsv.gz
+#     │   └── matrix.mtx.gz
+#     ├── GSM8869156_2151R_SNDX_ms6352
+#     │   ├── barcodes.tsv.gz
+#     │   ├── features.tsv.gz
+#     │   └── matrix.mtx.gz
+#     ├── GSM8869157_T12_CTX
+#     │   ├── barcodes.tsv.gz
+#     │   ├── features.tsv.gz
+#     │   └── matrix.mtx.gz
+#     ├── GSM8869158_T12_CTX_SNDX_ms6352
+#     │   ├── barcodes.tsv.gz
+#     │   ├── features.tsv.gz
+#     │   └── matrix.mtx.gz
+#     ├── GSM8869159_T12_IgG
+#     │   ├── barcodes.tsv.gz
+#     │   ├── features.tsv.gz
+#     │   └── matrix.mtx.gz
+#     └── GSM8869160_T12_SNDX_ms6352
+#         ├── barcodes.tsv.gz
+#         ├── features.tsv.gz
+#         └── matrix.mtx.gz
+#
+# 11 directories, 27 files
 ```
-
-Show the `GSE94820.seu`:
-```{r geo_parse_show2, eval=FALSE}
-# for count matrix
-GSE94820.seu
-```
-
-The structure of downloaded count matrix for 10x:
-```{bash geo_parse_structure}
-tree /Volumes/soyabean/GEfetch2R/dwonload_geo
-```
-
-**For bulk RNA-seq**, set `data.type = "bulk"` in `ParseGEO`, this will return count matrix.
 
 <hr />
 
@@ -129,20 +274,70 @@ tree /Volumes/soyabean/GEfetch2R/dwonload_geo
 
 Since [PanglaoDB](https://panglaodb.se/about.html) is no longer maintained, `GEfetch2R` has cached all metadata and cell type composition and use these cached data by default to accelerate, users can access the cached data with `PanglaoDBMeta` (all metadata) and `PanglaoDBComposition` (all cell type composition).
 
-### Summary attributes
+### Given dataset
 
-`GEfetch2R` provides `StatDBAttribute` to summary attributes of [PanglaoDB](https://panglaodb.se/index.html):
+With `SRA` or `SRS` accession, user can access the **cell type composition** and **count matrix**:
 
-```{r panglaodb_summary}
-# use cached metadata
-StatDBAttribute(df = PanglaoDBMeta, filter = c("species", "protocol"), database = "PanglaoDB")
+```{r panglaodb_given, eval=FALSE}
+# cell type composition
+lung.composition <- ExtractPanglaoDBComposition(sra = "SRA570744")
+head(lung.composition)
+#           SRA        SRS          Tissue     Protocol      Species Cluster Cells
+# 2.1 SRA570744 SRS2253536 Lung mesenchyme 10x chromium Mus musculus       0  1606
+# 2.2 SRA570744 SRS2253536 Lung mesenchyme 10x chromium Mus musculus       1   874
+# 2.3 SRA570744 SRS2253536 Lung mesenchyme 10x chromium Mus musculus       2   762
+# 2.4 SRA570744 SRS2253536 Lung mesenchyme 10x chromium Mus musculus       3   627
+# 2.5 SRA570744 SRS2253536 Lung mesenchyme 10x chromium Mus musculus       4   400
+# 2.6 SRA570744 SRS2253536 Lung mesenchyme 10x chromium Mus musculus       5    74
+#               Cell Type
+# 2.1         Fibroblasts
+# 2.2         Fibroblasts
+# 2.3 Smooth muscle cells
+# 2.4         Fibroblasts
+# 2.5 Smooth muscle cells
+# 2.6   Mesothelial cells、
+
+# count matrix
+lung.seu <- ParsePanglaoDB(sra = "SRA570744", srs = "SRS2253536")
+lung.seu
+# $SRS2253536
+# An object of class Seurat
+# 23411 features across 4374 samples within 1 assay
+# Active assay: RNA (23411 features, 0 variable features)
 ```
 
 <hr />
 
-### Extract metadata
+### Filter samples based on metadata
 
-`GEfetch2R` provides `ExtractPanglaoDBMeta` to select interested datasets with specified **species**, **protocol**, **tissue** and **cell number** (The available values of these attributes can be obtained with `StatDBAttribute`). User can also choose to whether to add cell type annotation to every dataset with `show.cell.type`.
+#### Summary attributes
+
+`GEfetch2R` provides `StatDBAttribute` to summary attributes of [PanglaoDB](https://panglaodb.se/index.html):
+
+```{r panglaodb_summary, eval=FALSE}
+# use cached metadata
+StatDBAttribute(df = PanglaoDBMeta, filter = c("species", "protocol"), database = "PanglaoDB")
+# $species
+#          Value  Num     Key
+# 1 Mus musculus 1063 species
+# 2 Homo sapiens  305 species
+#
+# $protocol
+#           Value  Num      Key
+# 1  10x chromium 1046 protocol
+# 2      drop-seq  204 protocol
+# 3 microwell-seq   74 protocol
+# 4    Smart-seq2   26 protocol
+# 5   C1 Fluidigm   16 protocol
+# 6       CEL-seq    1 protocol
+# 7       inDrops    1 protocol
+```
+
+<hr />
+
+#### Filter metadata
+
+`GEfetch2R` provides `ExtractPanglaoDBMeta` to filter interested datasets with specified **species**, **protocol**, **tissue** and **cell number** (The available values of these attributes can be obtained with `StatDBAttribute`). User can also choose to whether to add cell type annotation to every dataset with `show.cell.type`.
 
 `GEfetch2R` uses cached metadata and cell type composition by default, users can change this by setting `local.data = FALSE`.
 
@@ -151,102 +346,173 @@ hsa.meta <- ExtractPanglaoDBMeta(
   species = "Homo sapiens", protocol = c("Smart-seq2", "10x chromium"),
   show.cell.type = TRUE, cell.num = c(1000, 2000)
 )
-```
-
-Show the metadata:
-```{r panglaodb_meta_show}
 head(hsa.meta)
+#         SRA        SRS                             Tissue     Protocol      Species Cells
+# 1 SRA550660 SRS2089635 Peripheral blood mononuclear cells 10x chromium Homo sapiens  1860
+# 2 SRA550660 SRS2089636 Peripheral blood mononuclear cells 10x chromium Homo sapiens  1580
+# 3 SRA550660 SRS2089638 Peripheral blood mononuclear cells 10x chromium Homo sapiens  1818
+# 4 SRA605365 SRS2492922            Nasal airway epithelium 10x chromium Homo sapiens  1932
+# 5 SRA608611 SRS2517316                   Lung progenitors 10x chromium Homo sapiens  1077
+# 6 SRA608353 SRS2517519           Hepatocellular carcinoma 10x chromium Homo sapiens  1230
+#                                                                      CellType CellNum
+# 1                                                           Unknown, NK cells    1860
+# 2                              Unknown, T cells, Plasmacytoid dendritic cells    1580
+# 3 Unknown, Gamma delta T cells, Dendritic cells, Plasmacytoid dendritic cells    1818
+# 4       Luminal epithelial cells, Basal cells, Keratinocytes, Ependymal cells    1932
+# 5                                           Unknown, Hepatocytes, Basal cells    1077
+# 6                                        Unknown, Hepatocytes, Foveolar cells    1230
 ```
 
 <hr />
 
-### Extract cell type composition
+#### Extract cell type composition
 
 `GEfetch2R` provides `ExtractPanglaoDBComposition` to extract cell type annotation and composition (use cached data by default to accelerate, users can change this by setting `local.data = FALSE`).
 
 ```{r panglaodb_celltype, eval=FALSE}
 hsa.composition <- ExtractPanglaoDBComposition(
-  species = "Homo sapiens",
-  protocol = c("Smart-seq2", "10x chromium")
+  meta = hsa.meta
 )
-```
-
-Show the extracted cell type annotation and composition:
-```{r panglaodb_celltype_show}
 head(hsa.composition)
+#            SRA        SRS           Tissue     Protocol      Species Cluster Cells   Cell Type
+# 13.1 SRA608611 SRS2517316 Lung progenitors 10x chromium Homo sapiens       0   214     Unknown
+# 13.2 SRA608611 SRS2517316 Lung progenitors 10x chromium Homo sapiens       1   210 Hepatocytes
+# 13.3 SRA608611 SRS2517316 Lung progenitors 10x chromium Homo sapiens       2   175 Basal cells
+# 13.4 SRA608611 SRS2517316 Lung progenitors 10x chromium Homo sapiens       3   121 Basal cells
+# 13.5 SRA608611 SRS2517316 Lung progenitors 10x chromium Homo sapiens       4    81     Unknown
+# 13.6 SRA608611 SRS2517316 Lung progenitors 10x chromium Homo sapiens       5    80     Unknown
 ```
 
 <hr />
 
-### Download matrix and load to Seurat
+#### Download matrix and load to Seurat
 
-After manually check the extracted metadata, `GEfetch2R` provides `ParsePanglaoDB` to **download count matrix** and **load the count matrix** to Seurat. With available cell type annotation, uses can filter datasets without specified cell type with `cell.type`. Users can also include/exclude cells expressing specified genes with `include.gene`/`exclude.gene`. 
+After manually check the extracted metadata, `GEfetch2R` provides `ParsePanglaoDB` to **download count matrix** and **load the count matrix** to `Seurat`. With available cell type annotation, uses can filter datasets without specified cell type with `cell.type`. Users can also include/exclude cells expressing specified genes with `include.gene`/`exclude.gene`. 
 
-With the count matrix, `ParsePanglaoDB` will load the matrix to Seurat automatically. If multiple datasets available, users can choose to merge the SeuratObject with `merge`.
+With the count matrix, `ParsePanglaoDB` will load the matrix to `Seurat` automatically. If multiple datasets available, users can choose to merge the `SeuratObject` with `merge`.
 
 ```{r panglaodb_parse, eval=FALSE}
 hsa.seu <- ParsePanglaoDB(hsa.meta[1:3, ], merge = TRUE)
-```
-
-Show the returned `SeuratObject`:
-```{r panglaodb_parse_show}
 hsa.seu
+# An object of class Seurat
+# 25917 features across 4996 samples within 1 assay
+# Active assay: RNA (25917 features, 0 variable features)
 ```
 
 <hr />
 
 ## UCSC Cell Browser
 
-The [UCSC Cell Browser](https://cells.ucsc.edu/?#) is a web-based tool that allows scientists to interactively visualize scRNA-seq datasets. It contains **1267 single cell datasets** from **25 different species**. And, it is **organized with the hierarchical structure**, which can help users quickly locate the datasets they are interested in.
+The [UCSC Cell Browser](https://cells.ucsc.edu/?#) is a web-based tool that allows scientists to interactively visualize scRNA-seq datasets. It contains **1427 single cell datasets** from **37 different species**. And, it is **organized with the hierarchical structure**, which can help users quickly locate the datasets they are interested in.
 
-### Show available datasets
+### Given dataset
+
+With the collection or dataset link(s), user can access the **cell type composition** and **count matrix**:
+
+```{r cb_given, eval=FALSE}
+# extract cell type composition
+ut.sample.ct <- ExtractCBComposition(link = c(
+  "https://cells.ucsc.edu/?ds=adult-ureter", # collection
+  "https://cells.ucsc.edu/?ds=adult-testis" # dataset
+))
+ut.sample.ct[1:5, c("title", "CellType", "Num")]
+#                                               title                    CellType  Num
+# 1 The adult human testis transcriptional cell atlas                       Sperm 1885
+# 2 The adult human testis transcriptional cell atlas        Elongated Spermatids  775
+# 3 The adult human testis transcriptional cell atlas                Leydig cells  605
+# 4 The adult human testis transcriptional cell atlas Early Primary Spermatocytes  557
+# 5 The adult human testis transcriptional cell atlas            Round Spermatids  444
+
+# extract count matrix and load to Seurat
+ut.seu <- ParseCBDatasets(link = c(
+  "https://cells.ucsc.edu/?ds=adult-ureter", # collection
+  "https://cells.ucsc.edu/?ds=adult-testis" # dataset
+), merge = TRUE)
+ut.seu
+# An object of class Seurat
+# 43370 features across 79053 samples within 1 assay
+# Active assay: RNA (43370 features, 0 variable features)
+```
+
+<hr />
+
+### Filter samples based on metadata
+
+#### Show available datasets
 
 `GEfetch2R` provides `ShowCBDatasets` to show all available datasets. Due to the large number of datasets, `ShowCBDatasets` enables users to perform *lazy load* of dataset json files instead of downloading the json files online (time-consuming!!!). This *lazy load* requires users to provide `json.folder` to save json files and set `lazy = TRUE` (for the first time of run, `ShowCBDatasets` will download current json files to `json.folder`, for next time of run, with `lazy = TRUE`, `ShowCBDatasets` will load the downloaded json files from `json.folder`.). And, `ShowCBDatasets` supports updating the local datasets with `update = TRUE`.
 
 ```{r cb_show, eval=FALSE}
 # first time run, the json files are stored under json.folder
-# ucsc.cb.samples = ShowCBDatasets(lazy = TRUE, json.folder = "/Volumes/soyabean/GEfetch2R/cell_browser/json", update = TRUE)
+# ucsc.cb.samples = ShowCBDatasets(lazy = TRUE, json.folder = "~/gefetch2r/doc/cell_browser/json", update = TRUE)
 
 # second time run, load the downloaded json files
-ucsc.cb.samples <- ShowCBDatasets(lazy = TRUE, json.folder = "/Volumes/soyabean/GEfetch2R/cell_browser/json", update = FALSE)
+ucsc.cb.samples <- ShowCBDatasets(lazy = TRUE, json.folder = "~/gefetch2r/doc/cell_browser/json", update = FALSE)
 
 # always read online
 # ucsc.cb.samples = ShowCBDatasets(lazy = FALSE)
 ```
 
-Show the metadata:
-```{r cb_show_show}
-head(ucsc.cb.samples)
-```
-
 The number of datasets and all available species:
 
-```{r cb_show_detail}
+```{r cb_show_detail, eval=FALSE}
 # the number of datasets
 nrow(ucsc.cb.samples)
+# 1427
 
 # available species
-unique(unlist(sapply(unique(gsub(pattern = "\\|parent", replacement = "", x = ucsc.cb.samples$organisms)), function(x) {
+unlist(sapply(unique(gsub(pattern = "\\|parent", replacement = "", x = ucsc.cb.samples$organisms)), function(x) {
   unlist(strsplit(x = x, split = ", "))
-})))
+})) %>%
+  tolower() %>%
+  unique()
+#  [1] "human (h. sapiens)"                      "mouse (m. musculus)"
+#  [3] "rhesus macaque (m. mulatta)"             "chimp (p. troglodytes)"
+#  [5] "brine shrimp (a. franciscana)"           "canis lupus familiaris"
+#  [7] "dog (c. familiaris)"                     "canis familiaris"
+#  [9] "sea squirt (c. intestinalis)"            "sea squirt (c. robusta)"
+# [11] "macaque (m. fascicularis)"               "rabbit (o. cuniculus)"
+# [13] "rat (r. norvegicus)"                     "pig (s. scrofa)"
+# [15] "ferret (m. putorius furo)"               "opossum (m. domestica)"
+# [17] "sugar glider (p. breviceps)"             "zebrafish (d. rerio)"
+# [19] "fruit fly (d. melanogaster)"             "horse (e. caballus)"
+# [21] "freshwater hydra (h. vulgaris)"          "capitellid worm (c. teleta)"
+# [23] "freshwater sponge (s. lacustris)"        "colonial hydroid (h. symbiolongicarpus)"
+# [25] "western clawed frog (x. tropicalis)"     "marmoset (c. jacchus)"
+# [27] "mosquito (a. aegypti)"                   "pacific oyster (crassostrea gigas)"
+# [29] "freshwater worm (p. leidyi)"             "bonobo (p. paniscus)"
+# [31] "blood fluke (s. mansoni)"                "starlet sea anemone (n. vectensis)"
+# [33] "nematostella vectensis"                  "sea urchin (s. purpuratus)"
+# [35] "mouse lemur (t. microcebus)"             "human-mouse xenograft"
+# [37] "african clawed frog (x. laevis)"
 ```
 
 <hr />
 
-### Summary attributes
+#### Summary attributes
 
 `GEfetch2R` provides `StatDBAttribute` to summary attributes of [UCSC Cell Browser](https://cells.ucsc.edu/?#):
 
-```{r cb_summary}
+```{r cb_summary, eval=FALSE}
 StatDBAttribute(
   df = ucsc.cb.samples, filter = c("organism", "organ"),
   database = "UCSC", combine = TRUE
-)
+) %>% head()
+# # A tibble: 6 × 3
+# # Groups:   organisms [2]
+#   organisms           body_parts   Num
+#   <chr>               <chr>      <int>
+# 1 human (h. sapiens)  eye          350
+# 2 human (h. sapiens)  retina       348
+# 3 human (h. sapiens)  brain        198
+# 4 mouse (m. musculus) brain        107
+# 5 human (h. sapiens)  lung          72
+# 6 human (h. sapiens)  cortex        50
 ```
 
 <hr />
 
-### Extract metadata
+#### Filter metadata
 
 `GEfetch2R` provides `ExtractCBDatasets` to filter metadata with **collection**, **sub-collection**, **organ**, **disease status**, **organism**, **project** and **cell number** (The available values of these attributes can be obtained with `StatDBAttribute` except **cell number**). All attributes except cell number support fuzzy match with `fuzzy.match`, this is useful when selecting datasets.
 
@@ -255,55 +521,64 @@ hbb.sample.df <- ExtractCBDatasets(
   all.samples.df = ucsc.cb.samples, organ = c("skeletal muscle"),
   organism = "Human (H. sapiens)", cell.num = c(1000, 2000)
 )
-```
-
-Show the metadata:
-```{r cb_extract_show}
-head(hbb.sample.df)
+hbb.sample.df[1:5, c("title", "body_parts", "diseases", "organisms", "sampleCount")]
+#                                title                     body_parts       diseases
+# 1 Embryonic Week 7-8 Myogenic Subset muscle, skeletal muscle|parent Healthy|parent
+# 2   Fetal Week 12-14 Hindlimb Muscle muscle, skeletal muscle|parent Healthy|parent
+# 3         HX Protocol Week 4 Culture muscle, skeletal muscle|parent Healthy|parent
+# 4 HX Protocol Week 6 Myogenic Subset muscle, skeletal muscle|parent Healthy|parent
+# 5 HX Protocol Week 8 Myogenic Subset muscle, skeletal muscle|parent Healthy|parent
+#                   organisms sampleCount
+# 1 Human (H. sapiens)|parent        1448
+# 2 Human (H. sapiens)|parent        1545
+# 3 Human (H. sapiens)|parent        1562
+# 4 Human (H. sapiens)|parent        1598
+# 5 Human (H. sapiens)|parent        1350
 ```
 
 <hr />
 
-### Extract cell type composition
+#### Extract cell type composition
 
 `GEfetch2R` provides `ExtractCBComposition` to extract cell type annotation and composition.
 
 ```{r cb_celltype, eval=FALSE}
 hbb.sample.ct <- ExtractCBComposition(
-  json.folder = "/Volumes/soyabean/GEfetch2R/cell_browser/json",
-  sample.df = hbb.sample.df
+  json.folder = "~/gefetch2r/doc/cell_browser/json",
+  meta = hbb.sample.df
 )
-```
-
-Show the extracted cell type annotation and composition:
-```{r cb_celltype_show}
-head(hbb.sample.ct)
+hbb.sample.ct[1:5, c("title", "CellType", "Num")]
+#                                title  CellType Num
+# 1 Embryonic Week 7-8 Myogenic Subset        MP 785
+# 2 Embryonic Week 7-8 Myogenic Subset        MB 303
+# 3 Embryonic Week 7-8 Myogenic Subset SkM.Mesen 264
+# 4 Embryonic Week 7-8 Myogenic Subset        MC  96
+# 5   Fetal Week 12-14 Hindlimb Muscle       MSC 822
 ```
 
 <hr />
 
-### Load the online datasets to Seurat
+#### Load the online datasets to Seurat
 
-After manually check the extracted metadata, `GEfetch2R` provides `ParseCBDatasets` to **load the online count matrix** to Seurat. All the attributes available in `ExtractCBDatasets` are also same here. Please note that the loading process provided by `ParseCBDatasets` will load the online count matrix instead of downloading it to local. If multiple datasets available, users can choose to merge the SeuratObject with `merge`.
+After manually check the extracted metadata, `GEfetch2R` provides `ParseCBDatasets` to **load the online count matrix** to `Seurat`. All the attributes available in `ExtractCBDatasets` are also same here. Please note that the loading process provided by `ParseCBDatasets` will load the online count matrix instead of downloading it to local. If multiple datasets available, users can choose to merge the `SeuratObject` with `merge`.
 
 `ParseCBDatasets` supports **extracting subset with metadata and gene**:
 
 ```{r cb_parse, eval=FALSE}
 # parse the whole datasets
-hbb.sample.seu <- ParseCBDatasets(sample.df = hbb.sample.df)
+hbb.sample.seu <- ParseCBDatasets(meta = hbb.sample.df)
 # subset metadata and gene
 hbb.sample.seu <- ParseCBDatasets(
-  sample.df = hbb.sample.df, obs.value.filter = "Cell.Type == 'MP' & Phase == 'G2M'",
+  meta = hbb.sample.df, obs.value.filter = "Cell.Type == 'MP' & Phase == 'G2M'",
   include.genes = c(
     "PAX7", "MYF5", "C1QTNF3", "MYOD1", "MYOG", "RASSF4", "MYH3", "MYL4",
     "TNNT3", "PDGFRA", "OGN", "COL3A1"
   )
 )
-```
-
-Show the returned `SeuratObject`:
-```{r cb_parse_show}
 hbb.sample.seu
+# An object of class Seurat
+# 14 features across 5684 samples within 1 assay
+# Active assay: RNA (14 features, 0 variable features)
 ```
 
 <hr />

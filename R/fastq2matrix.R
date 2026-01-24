@@ -97,7 +97,7 @@ RunCellRangerSingle <- function(fq.dir, transcriptome, localcores = 4, localmem 
       fq2.file <- grep(pattern = ".*_S[0-9]_L[0-9]{3}_R2_[0-9]{3}.fastq.gz", x = fq.files, value = T)
       if (length(fq1.file) > 0 && length(fq2.file) > 0) {
         if (length(fq1.file) != length(fq2.file)) {
-          message("The number of R1 and R2 fastq.gz files under ", fq.dir, " is differ , please check and re-run!")
+          message("The number of R1 and R2 fastq.gz files under ", fq.dir, " is differ, please check and re-run!")
           return(basename(fq.dir))
         } else {
           sample.id <- basename(fq.dir)
@@ -312,7 +312,7 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
 
 #' Pipe FASTQ files to SeuratObject and DESeqDataSet.
 #'
-#' @param sample.dir Directory contains all samples.
+#' @param sample.dir Vector of path to samples (contain fastq files), e.g. c("path/to/GSM1111", "path/to/GSM2222","path/to/GSM3333").
 #' @param ref Path of folder containing 10x-compatible transcriptome \code{\link{RunCellRanger}}
 #' STAR \code{\link{RunSTAR}} reference.
 #' @param method Mapping methods, choose from CellRanger (10x Genomics) and STAR (Smart-seq2 or bulk RNA-seq).
@@ -341,7 +341,7 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
 #' @examples
 #' \dontrun{
 #' # run CellRanger (10x Genomics)
-#' # the sample.dir corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
+#' # the sample.dir (can be a vector) corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
 #' seu <- Fastq2R(
 #'   sample.dir = "/path/to/fastq",
 #'   ref = "/path/to/10x/ref",
@@ -350,7 +350,7 @@ RunSTARSingle <- function(fq.dir, ref, out.folder = NULL, thread = 4, star.path 
 #'   st.path = "/path/to/cellranger"
 #' )
 #' # run STAR (Smart-seq2 or bulk RNA-seq)
-#' # the sample.dir corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
+#' # the sample.dir (can be a vector) corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
 #' deobj <- Fastq2R(
 #'   sample.dir = "/path/to/fastq",
 #'   ref = "/path/to/star/ref",
@@ -382,7 +382,7 @@ Fastq2R <- function(sample.dir, ref, method = c("CellRanger", "STAR"), localcore
       # load to seurat
       seu.list <- sapply(valid.samples.folder, function(x) {
         x.mat <- Seurat::Read10X(data.dir = x)
-        seu.obj <- Seurat::CreateSeuratObject(counts = x.mat, project = basename(x))
+        seu.obj <- Seurat::CreateSeuratObject(counts = x.mat, project = basename(dirname(dirname(x))))
         seu.obj
       })
       # merge SeuratObject

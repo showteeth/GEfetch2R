@@ -19,6 +19,10 @@
 * Fix bug in `ParseGEO` when 10X data contains more than one type.
 * Fix bug in scientific notation (`36000000` -> `3.6e+07`).
 * Add `skip.gsm` in `DownloadFastq2R` to control used `GSM`.
+* Fix bug in `Bam2Fastq`.
+* Fix bug in `ImportSeurat`.
+* Fix bug in `Fastq2R` when loading to `Seurat`.
+* Change `PanglanDB` to `PanglaoDB` (spelling mistake).
 
 -------------------
 

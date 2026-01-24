@@ -1,7 +1,14 @@
 ---
 title: "DownloadObjects"
-output: html_document
-date: "2023-07-23"
+output: 
+  html_document:
+    toc_depth: 4
+    toc_float: true
+fig_caption: TRUE
+vignette: >
+  %\VignetteIndexEntry{GEfetch2R}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -10,12 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-`GEfetch2R` provides functions for users to download processed single-cell RNA-seq data from [Zenodo](https://zenodo.org/), [CELLxGENE](https://cellxgene.cziscience.com/) and [Human Cell Atlas](https://www.humancellatlas.org/), including `RDS`, `RData`, `h5ad`, `h5`, `loom` objects. 
-
-```{r echo=FALSE, results='hide',message=FALSE}
-library(GEfetch2R)
-load("/Volumes/soyabean/GEfetch2R/GEfetch2R_scrna-seq_download.RData")
-```
+`GEfetch2R` provides functions for users to download processed single-cell RNA-seq data from [GEO](https://www.ncbi.nlm.nih.gov/geo/), [Zenodo](https://zenodo.org/), [CELLxGENE](https://cellxgene.cziscience.com/) and [Human Cell Atlas](https://www.humancellatlas.org/), including files in `RDS`, `RData`, `h5ad`, `h5`, `loom` formats. 
 
 Until now, the public resources supported and the returned values:
 
@@ -29,6 +31,12 @@ Until now, the public resources supported and the returned values:
   </tr>
 </thead>
 <tbody>
+  <tr>
+    <td>GEO</td>
+    <td>https://www.ncbi.nlm.nih.gov/geo/</td>
+    <td>rds, rdata, h5ad, loom</td>
+    <td>SeuratObject(rds) or failed datasets</td>
+  </tr>
   <tr>
     <td>Zenodo</td>
     <td>https://zenodo.org/</td>
@@ -52,6 +60,126 @@ Until now, the public resources supported and the returned values:
 
 <hr />
 
+## Check API
+
+Check the availability of APIs used:
+
+```{r check_api_matrix, eval=FALSE}
+CheckAPI(database = c("GEO", "Zenodo", "CELLxGENE", "Human Cell Atlas"))
+# start checking APIs to access GEO!
+# The API to access the GEO object is OK!
+# trying URL 'https://ftp.ncbi.nlm.nih.gov/geo/series/GSE302nnn/GSE302912/suppl//GSE302912_counts.csv.gz?tool=geoquery'
+# Content type 'application/x-gzip' length 332706 bytes (324 KB)
+# ==================================================
+# downloaded 324 KB
+#
+# The API to access supplementary files is OK!
+# start checking APIs to access Zenodo!
+# The API to access detailed information of a given doi is OK!
+# The API to access available files is OK!
+# start checking APIs to access CELLxGENE!
+# The API to access all available collections is OK!
+# The API to access detailed information of a given collection is OK!
+# The API to access available files is OK!
+# The API to access detailed information of a given dataset is OK!
+# start checking APIs to access Human Cell Atlas!
+# The API to access all available catalogs is OK!
+# The API to access all available projects is OK!
+# The API to access available files is OK!
+# The API to access detailed information of a given project is OK!
+```
+
+<hr />
+
+## GEO
+
+[GEO is an international public repository that archives and freely distributes microarray, next-generation sequencing, and other forms of high-throughput functional genomics data submitted by the research community.](https://www.ncbi.nlm.nih.gov/geo/info/overview.html) It provides a very convenient way for users to explore and select interested scRNA-seq datasets. **Nowadays, in addition to the count matrix, GEO includes processed objects uploaded by users as supplementary files**.
+
+### Extract metadata
+
+`ExtractGEOMeta` provides two ways to extract sample metadata:
+
+* **user-provided sample metadata when uploading to GEO (applicable to all GEO accessions)**, including sample title, source name/tissue, description, cell type, treatment, paper title, paper abstract, organism, protocol, data processing methods, et al:
+
+```{r geo_obj_meta, eval=FALSE}
+# library
+library(tidyverse)
+library(GEfetch2R)
+
+# set VROOM_CONNECTION_SIZE to avoid error: Error: The size of the connection buffer (786432) was not large enough
+Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 60)
+# extract metadata
+GSE285723.meta <- ExtractGEOMeta(acce = "GSE285723")
+GSE285723.meta[1:3, c("title", "geo_accession", "source_name_ch1", "description", "cell type")]
+#     title geo_accession source_name_ch1           description  cell type
+# 1   DRA-F    GSM8707297            Lung   Library name: DRA-F Homogenate
+# 2   DRA-M    GSM8707298            Lung   Library name: DRA-M Homogenate
+# 3 DRAO3-F    GSM8707299            Lung Library name: DRAO3-F Homogenate
+```
+
+* **metadata in supplementary file**:
+
+```{r geo_obj_meta_supp, eval=FALSE}
+# example
+GSE297431.meta.supp <- ExtractGEOMeta(
+  acce = "GSE297431", down.supp = TRUE,
+  supp.idx = 2 # specify the index of used supplementary file
+)
+head(GSE297431.meta.supp)
+#             Sample_ID  Batch  Plate   Type Growths Class
+# 1   Plate1_mut_A1_S70 batch2 Plate1 mutant       3    M3
+# 2 Plate1_mut_A11_S135 batch2 Plate1 mutant       3    M3
+# 3 Plate1_mut_A12_S141 batch2 Plate1 mutant       1    M1
+# 4   Plate1_mut_A2_S77 batch2 Plate1 mutant       1    M1
+# 5   Plate1_mut_A3_S84 batch2 Plate1 mutant       2    M2
+# 6   Plate1_mut_A4_S91 batch2 Plate1 mutant       2    M2
+```
+
+<hr />
+
+### Download object and load to R
+
+After downloading the metadata, users can **download the specified objects** with `ParseGEOProcessed`. The format of downloaded objects are controlled by `file.ext` (choose from `"rds"`, `"rdata"`, `"h5ad"` and `"loom"`). 
+
+The processed objects in the supplementary files are in two forms:
+
+* single file (`rds(.gz)`/`rdata(.gz)`/`h5ad(.gz)`/`loom(.gz)`) contain the processed object, e.g. [GSE285723-RDS.gz](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE285723)
+* (gzip) archive (contain `rds(.gz)`/`rdata(.gz)`/`h5ad(.gz)`/`loom(.gz)` files) contain the processed objects, e.g. [GSE298041-RDS in tar.gz](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE298041)
+
+```{r geo_parse_obj, eval=FALSE}
+# return SeuratObject
+GSE285723.seu <- ParseGEOProcessed(
+  acce = "GSE285723", supp.idx = 1,
+  file.ext = c("rdata", "rds"), return.seu = T, timeout = 36000000,
+  out.folder = "~/gefetch2r/doc/download_geoObj"
+)
+GSE285723.seu
+# An object of class Seurat
+# 56055 features across 49806 samples within 2 assays
+# Active assay: SCT (23770 features, 3000 variable features)
+#  1 other assay present: RNA
+#  4 dimensional reductions calculated: pca, harmony, umap, tsne
+
+# download h5ad objects
+GSE311813.h5ad.log <- ParseGEOProcessed(
+  acce = "GSE311813", supp.idx = 1,
+  file.ext = c("h5ad"),
+  out.folder = "~/gefetch2r/doc/download_geoObj"
+)
+
+# # The structure of downloaded objects
+# tree ~/gefetch2r/doc/download_geoObj
+# ~/gefetch2r/doc/download_geoObj
+# ├── GSE285723
+# │   └── GSE285723_Final_Ballinger.RDS
+# └── GSE311813
+#     └── GSM9332642_merged_raw.ARS.vivo.clean.labelled.h5ad
+
+# 2 directories, 2 files
+```
+
+<hr />
+
 ## Zenodo
 
 [Zenodo](https://zenodo.org/) contains various types of processed objects, such as `SeuratObject` which has been clustered and annotated, `AnnData` which contains processed results generated by `scanpy`.
@@ -61,91 +189,180 @@ Until now, the public resources supported and the returned values:
 `GEfetch2R` provides `ExtractZenodoMeta` to extract dataset metadata, including dataset title, description, available files and corresponding md5. Please note that when the dataset is restricted access, the returned dataframe will be empty.
 
 ```{r zenodo_meta, eval=FALSE}
-# library
-library(GEfetch2R)
-
 # single doi
 zebrafish.df <- ExtractZenodoMeta(doi = "10.5281/zenodo.7243603")
+zebrafish.df
+#                              title
+# 1 zebrafish scRNA data set objects
+# 2 zebrafish scRNA data set objects
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                description
+# 1 <p>Combined and converted scRNA data from http://tome.gs.washington.edu/ (Qiu et al. 2022), see a detailed description of the study here: https://www.nature.com/articles/s41588-022-01018-x</p>\n\n<p>Data were downloaded from http://tome.gs.washington.edu/ as R rds files, combined into a single Seurat object and converted into loom and AnnData (h5ad) files to be able to analyse with e.g. python scanpy package.</p>\n\n<p>If you use this data, please cite Farrel et al. 2018, Wagner et al. 2018 and Qiu et al. 2022.</p>
+# 2 <p>Combined and converted scRNA data from http://tome.gs.washington.edu/ (Qiu et al. 2022), see a detailed description of the study here: https://www.nature.com/articles/s41588-022-01018-x</p>\n\n<p>Data were downloaded from http://tome.gs.washington.edu/ as R rds files, combined into a single Seurat object and converted into loom and AnnData (h5ad) files to be able to analyse with e.g. python scanpy package.</p>\n\n<p>If you use this data, please cite Farrel et al. 2018, Wagner et al. 2018 and Qiu et al. 2022.</p>
+#                                                                         url             filename
+# 1  https://zenodo.org/api/records/7243603/files/zebrafish_data.h5ad/content  zebrafish_data.h5ad
+# 2 https://zenodo.org/api/records/7243603/files/zebrafish_data.RData/content zebrafish_data.RData
+#                                md5   license
+# 1 124f2229128918b411a7dc7931558f97 cc-by-4.0
+# 2 a08c3ebd285b370fcf34cf2f8f9bdb59 cc-by-4.0
+
+
 # vector dois
 multi.dois <- ExtractZenodoMeta(doi = c("1111", "10.5281/zenodo.7243603", "10.5281/zenodo.7244441"))
-```
-
-Show the metadata:
-```{r zenodo_meta_show}
-# single doi
-zebrafish.df
-# vector dois
 multi.dois
+#                              title
+# 1 zebrafish scRNA data set objects
+# 2 zebrafish scRNA data set objects
+# 3      frog scRNA data set objects
+# 4      frog scRNA data set objects
+#                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                description
+# 1 <p>Combined and converted scRNA data from http://tome.gs.washington.edu/ (Qiu et al. 2022), see a detailed description of the study here: https://www.nature.com/articles/s41588-022-01018-x</p>\n\n<p>Data were downloaded from http://tome.gs.washington.edu/ as R rds files, combined into a single Seurat object and converted into loom and AnnData (h5ad) files to be able to analyse with e.g. python scanpy package.</p>\n\n<p>If you use this data, please cite Farrel et al. 2018, Wagner et al. 2018 and Qiu et al. 2022.</p>
+# 2 <p>Combined and converted scRNA data from http://tome.gs.washington.edu/ (Qiu et al. 2022), see a detailed description of the study here: https://www.nature.com/articles/s41588-022-01018-x</p>\n\n<p>Data were downloaded from http://tome.gs.washington.edu/ as R rds files, combined into a single Seurat object and converted into loom and AnnData (h5ad) files to be able to analyse with e.g. python scanpy package.</p>\n\n<p>If you use this data, please cite Farrel et al. 2018, Wagner et al. 2018 and Qiu et al. 2022.</p>
+# 3                     <p>Combined and converted scRNA data from http://tome.gs.washington.edu/ (Qiu et al. 2022), see a detailed description of the study here: https://www.nature.com/articles/s41588-022-01018-x</p>\n\n<p>Data were downloaded from http://tome.gs.washington.edu/ as R rds files, combined into a single Seurat object and converted into loom and AnnData (h5ad) files to be able to analyse with e.g. python scanpy package.</p>\n\n<p>If you use this data, please cite Briggs et al. 2018 and Qiu et al. 2022.</p>
+# 4                     <p>Combined and converted scRNA data from http://tome.gs.washington.edu/ (Qiu et al. 2022), see a detailed description of the study here: https://www.nature.com/articles/s41588-022-01018-x</p>\n\n<p>Data were downloaded from http://tome.gs.washington.edu/ as R rds files, combined into a single Seurat object and converted into loom and AnnData (h5ad) files to be able to analyse with e.g. python scanpy package.</p>\n\n<p>If you use this data, please cite Briggs et al. 2018 and Qiu et al. 2022.</p>
+#                                                                         url             filename
+# 1  https://zenodo.org/api/records/7243603/files/zebrafish_data.h5ad/content  zebrafish_data.h5ad
+# 2 https://zenodo.org/api/records/7243603/files/zebrafish_data.RData/content zebrafish_data.RData
+# 3       https://zenodo.org/api/records/7244441/files/frog_data.h5ad/content       frog_data.h5ad
+# 4      https://zenodo.org/api/records/7244441/files/frog_data.RData/content      frog_data.RData
+#                                md5   license
+# 1 124f2229128918b411a7dc7931558f97 cc-by-4.0
+# 2 a08c3ebd285b370fcf34cf2f8f9bdb59 cc-by-4.0
+# 3 7be7d6ff024ab2c8579b4d0edb2428e3 cc-by-4.0
+# 4 c80f46320c0cff9e341bed195f12c3b1 cc-by-4.0
 ```
 
 <hr />
 
 ### Download object and load to R
 
-After manually check the extracted metadata, users can **download the specified objects** with `ParseZenodo`. The downloaded objects are controlled by `file.ext` and **the provided object formats should be in lower case (e.g. rds/rdata/h5ad).**
+After manually check the extracted metadata, users can **download the specified objects** with `ParseZenodo`. The format of downloaded objects are controlled by `file.ext` and **the provided object formats should be in lower case (e.g. rds/rdata/h5ad).**
 
-The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds`). If dataframe, users can re-run `ParseZenodo` by setting `doi.df` to the returned value.
+The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds` and `return.seu = TRUE`). If dataframe, users can re-run `ParseZenodo` by setting `doi.df` to the returned value.
 
 ```{r zenodo_parse, eval=FALSE}
 # download objects
 multi.dois.parse <- ParseZenodo(
   doi = c("1111", "10.5281/zenodo.7243603", "10.5281/zenodo.7244441"),
-  file.ext = c("rdata"),
-  out.folder = "/Volumes/soyabean/GEfetch2R/download_zenodo"
+  file.ext = c("rdata"), timeout = 36000000,
+  out.folder = "~/gefetch2r/doc/download_zenodo"
 )
 
 # return SeuratObject
 sinle.doi.parse.seu <- ParseZenodo(
   doi = "10.5281/zenodo.8011282",
-  file.ext = c("rds"), return.seu = TRUE,
-  out.folder = "/Volumes/soyabean/GEfetch2R/download_zenodo"
+  file.ext = c("rds"), return.seu = TRUE, timeout = 36000000,
+  out.folder = "~/gefetch2r/doc/download_zenodo"
 )
-```
-
-Show the returned `SeuratObject`:
-```{r zenodo_parse_show}
 sinle.doi.parse.seu
-```
+# An object of class Seurat
+# 19594 features across 9219 samples within 2 assays
+# Active assay: RNA (17594 features, 0 variable features)
+#  1 other assay present: integrated
+#  2 dimensional reductions calculated: pca, umap
 
-
-The structure of downloaded objects:
-```{bash zenodo_parse_structure}
-tree /Volumes/soyabean/GEfetch2R/download_zenodo
+# # The structure of downloaded objects
+# tree ~/gefetch2r/doc/download_zenodo
+# ~/gefetch2r/doc/download_zenodo
+# ├── frog_data.RData
+# ├── PyMTM_immune_scRNA.rds
+# └── zebrafish_data.RData
 ```
 
 <hr />
 
 ## CELLxGENE
 
-The [CELLxGENE](https://cellxgene.cziscience.com/) is a web server contains **1598** single-cell datasets, users can explore, download and upload own datasets. The downloaded datasets provided by [CELLxGENE](https://cellxgene.cziscience.com/) have two formats: `h5ad (AnnData v0.8)` and `rds (Seurat v4)`.
+The [CELLxGENE](https://cellxgene.cziscience.com/) is a web server contains **2043** single-cell datasets, users can explore, download and upload own datasets. The downloaded datasets provided by [CELLxGENE](https://cellxgene.cziscience.com/) have two formats: `h5ad (AnnData v0.8)` and `rds (Seurat v4)`.
+
+[CELLxGENE](https://cellxgene.cziscience.com/) does not support downloading `SeuratObject` in [versions after 2025](https://cellxgene.cziscience.com/docs/03__Download%20Published%20Data).Fortunately, we have downloaded all the [CELLxGENE](https://cellxgene.cziscience.com/) datasets in **May 2025** and stored in [all.cellxgene.datasets.rds](https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/all.cellxgene.datasets.rds). The `all.cellxgene.datasets.rds` contains the `SeuratObject` for downloading. However, this does not apply to the case of a given dataset.
 
 [CELLxGENE](https://cellxgene.cziscience.com/) provides an R package ([cellxgene.census](https://github.com/chanzuckerberg/cellxgene-census)) to access the data, but sometimes it's not timely updated. `GEfetch2R` also supports users to access [CELLxGENE](https://cellxgene.cziscience.com/) via [cellxgene.census](https://github.com/chanzuckerberg/cellxgene-census) (`use.census = TRUE`).
 
-### Show available datasets
+### Given dataset
+
+With the collection or dataset link(s), user can download the `h5ad` objects:
+
+With the collection or dataset link(s), users can **download the `h5ad` objects** with `ParseCELLxGENE`.
+
+The returned value is `NULL` or a dataframe containing failed objects. If dataframe, users can re-run `ParseCELLxGENE` by setting `meta` to the returned value.
+
+```{r cellxgene_given, eval=FALSE}
+cellxgene.given.h5ad <- ParseCELLxGENE(
+  link = c(
+    "https://cellxgene.cziscience.com/collections/77f9d7e9-5675-49c3-abed-ce02f39eef1b", # collection
+    "https://cellxgene.cziscience.com/e/e12eb8a9-5e8b-4b59-90c8-77d29a811c00.cxg/" # dataset
+  ),
+  timeout = 36000000,
+  out.folder = "~/gefetch2r/doc/download_cellxgene"
+)
+# The structure of downloaded objects
+# tree ~/gefetch2r/doc/download_cellxgene
+# ~/gefetch2r/doc/download_cellxgene
+# ├── Human.Immune.Health.Atlas.B.and.Plasma.cells.h5ad
+# ├── Human.Immune.Health.Atlas.CD4.T.cells.h5ad
+# ├── Human.Immune.Health.Atlas.CD8.T.cells.h5ad
+# ├── Human.Immune.Health.Atlas.DCs.h5ad
+# ├── Human.Immune.Health.Atlas.h5ad
+# ├── Human.Immune.Health.Atlas.Monocytes.h5ad
+# ├── Human.Immune.Health.Atlas.NK.cells.and.ILCs.h5ad
+# └── Human.Immune.Health.Atlas.Other.cells.h5ad
+#
+# 0 directories, 8 files
+```
+
+<hr />
+
+### Filter samples based on metadata
+
+#### Show available datasets
 
 `GEfetch2R` provides `ShowCELLxGENEDatasets` to extract dataset metadata, including dataset title, description, contact, organism, ethnicity, sex, tissue, disease, assay, suspension type, cell type, et al.
 
 ```{r cellxgene_all, eval=FALSE}
 # all available datasets
 all.cellxgene.datasets <- ShowCELLxGENEDatasets()
+nrow(all.cellxgene.datasets)
+# [1] 2043
 ```
 
-Show the metadata:
-```{r cellxgene_all_show}
-head(all.cellxgene.datasets)
+Load datasets with `SeuratObject`:
+
+```{r cellxgene_predownload, eval=FALSE}
+# the datasets with SeuratObject
+# wget https://github.com/showteeth/GEfetch2R/raw/ff2f19f3b557f90fce5f8bf2f8662cebdfd04298/man/benchmark/all.cellxgene.datasets.rds
+all.cellxgene.datasets <- readRDS("all.cellxgene.datasets.rds")
+nrow(all.cellxgene.datasets)
+# [1] 1320
 ```
 
 <hr />
 
-### Summary attributes
+#### Summary attributes
 
 `GEfetch2R` provides `StatDBAttribute` to summary attributes of [CELLxGENE](https://cellxgene.cziscience.com/):
 
-```{r cellxgene_summary}
+```{r cellxgene_summary, eval=FALSE}
 StatDBAttribute(
   df = all.cellxgene.datasets, filter = c("organism", "sex", "disease"),
   database = "CELLxGENE", combine = TRUE
 )
+# # A tibble: 280 × 4
+# # Groups:   organism, sex [18]
+#    organism     sex     disease    Num
+#    <chr>        <chr>   <chr>    <int>
+#  1 homo sapiens male    normal     687
+#  2 homo sapiens female  normal     535
+#  3 mus musculus male    normal     178
+#  4 mus musculus female  normal     125
+#  5 mus musculus unknown normal     100
+#  6 homo sapiens unknown normal      79
+#  7 homo sapiens female  covid-19    50
+#  8 homo sapiens female  dementia    50
+#  9 homo sapiens male    dementia    50
+# 10 homo sapiens male    covid-19    38
+# # ℹ 270 more rows
+# # ℹ Use `print(n = ...)` to see more rows
+
 # # use cellxgene.census
 # StatDBAttribute(filter = c("disease", "tissue", "cell_type"), database = "CELLxGENE",
 #                 use.census = TRUE, organism = "homo_sapiens")
@@ -153,7 +370,7 @@ StatDBAttribute(
 
 <hr />
 
-### Extract metadata
+#### Filter metadata
 
 `GEfetch2R` provides `ExtractCELLxGENEMeta` to filter dataset metadata, the available values of attributes can be obtained with `StatDBAttribute` except **cell number**:
 
@@ -163,72 +380,116 @@ human.10x.cellxgene.meta <- ExtractCELLxGENEMeta(
   all.samples.df = all.cellxgene.datasets,
   assay = c("10x 3' v2", "10x 3' v3"), organism = "Homo sapiens"
 )
+nrow(human.10x.cellxgene.meta)
+# [1] 627
+
 # subset
 cellxgene.down.meta <- human.10x.cellxgene.meta[human.10x.cellxgene.meta$cell_type == "oligodendrocyte" &
   human.10x.cellxgene.meta$tissue == "entorhinal cortex", ]
-```
-
-Show the metadata:
-```{r cellxgene_meta_show}
-head(cellxgene.down.meta)
+nrow(cellxgene.down.meta)
+# [1] 1
 ```
 
 <hr />
 
-### Download object and load to R
+#### Download object and load to R
 
 After manually check the extracted metadata, users can **download the specified objects** with `ParseCELLxGENE`. The downloaded objects are controlled by `file.ext` (choose from `"rds"` and `"h5ad"`).
 
-The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds`). If dataframe, users can re-run `ParseCELLxGENE` by setting `meta` to the returned value.
+The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds` and `return.seu = TRUE`). If dataframe, users can re-run `ParseCELLxGENE` by setting `meta` to the returned value.
 
 **When using `cellxgene.census`, users can subset metadata and gene**.
 
 ```{r cellxgene_parse, eval=FALSE}
 # download objects
 cellxgene.down <- ParseCELLxGENE(
-  meta = cellxgene.down.meta, file.ext = "rds",
-  out.folder = "/Volumes/soyabean/GEfetch2R/download_cellxgene"
+  meta = cellxgene.down.meta, file.ext = "rds", timeout = 36000000,
+  out.folder = "~/gefetch2r/doc/download_cellxgene"
 )
+cellxgene.down
+# NULL
 
 # retuen SeuratObject
 cellxgene.down.seu <- ParseCELLxGENE(
-  meta = cellxgene.down.meta, file.ext = "rds", return.seu = TRUE,
+  meta = cellxgene.down.meta, file.ext = "rds", return.seu = TRUE, timeout = 36000000,
   obs.value.filter = "cell_type == 'oligodendrocyte' & disease == 'Alzheimer disease'",
   obs.keys = c("cell_type", "disease", "sex", "suspension_type", "development_stage"),
-  out.folder = "/Volumes/soyabean/GEfetch2R/download_cellxgene"
+  out.folder = "~/gefetch2r/doc/download_cellxgene"
 )
-
-# use cellxgene.census (support subset, but update is not timely)
-cellxgene.down.census <- ParseCELLxGENE(
-  use.census = TRUE, organism = "Homo sapiens",
-  obs.value.filter = "cell_type == 'B cell' & tissue_general == 'lung' & disease == 'COVID-19'",
-  obs.keys = c("cell_type", "tissue_general", "disease", "sex"),
-  include.genes = c("ENSG00000161798", "ENSG00000188229")
-)
-```
-
-Show the returned `SeuratObject`:
-```{r cellxgene_parse_show1}
 cellxgene.down.seu
-```
+# An object of class Seurat
+# 32743 features across 6873 samples within 1 assay
+# Active assay: RNA (32743 features, 0 variable features)
+#  3 dimensional reductions calculated: cca, cca.aligned, tsne
 
-Show the returned `SeuratObject` (cellxgene.census):
-```{r cellxgene_parse_show2}
-cellxgene.down.census
-```
+# # The structure of downloaded objects
+# tree ~/gefetch2r/doc/download_cellxgene
+# ~/gefetch2r/doc/download_cellxgene
+# ├── all.cellxgene.datasets.rds
+# ├── Human.Immune.Health.Atlas.B.and.Plasma.cells.h5ad
+# ├── Human.Immune.Health.Atlas.CD4.T.cells.h5ad
+# ├── Human.Immune.Health.Atlas.CD8.T.cells.h5ad
+# ├── Human.Immune.Health.Atlas.DCs.h5ad
+# ├── Human.Immune.Health.Atlas.h5ad
+# ├── Human.Immune.Health.Atlas.Monocytes.h5ad
+# ├── Human.Immune.Health.Atlas.NK.cells.and.ILCs.h5ad
+# ├── Human.Immune.Health.Atlas.Other.cells.h5ad
+# └── Molecular.characterization.of.selectively.vulnerable.neurons.in.Alzheimer.s.Disease..EC.oligodendrocyte.rds
 
-The structure of downloaded objects:
-```{bash cellxgene_parse_structure}
-tree /Volumes/soyabean/GEfetch2R/download_cellxgene
+# 0 directories, 10 files
+
+# # use cellxgene.census (support subset, but update is not timely)
+# cellxgene.down.census <- ParseCELLxGENE(
+#   use.census = TRUE, organism = "Homo sapiens",
+#   obs.value.filter = "cell_type == 'B cell' & tissue_general == 'lung' & disease == 'COVID-19'",
+#   obs.keys = c("cell_type", "tissue_general", "disease", "sex"),
+#   include.genes = c("ENSG00000161798", "ENSG00000188229")
+# )
 ```
 
 <hr />
 
 ## Human Cell Atlas
 
-The [Human Cell Atlas](https://www.humancellatlas.org/) aims to map every cell type in the human body, it contains **484 projects**, most of which are from `Homo sapiens` (also includes projects from `Mus musculus`, `Macaca mulatta` and `canis lupus familiaris`).
+The [Human Cell Atlas](https://www.humancellatlas.org/) aims to map every cell type in the human body, it contains **546 projects**, most of which are from `Homo sapiens` (also includes projects from `Mus musculus`, `Macaca mulatta` and `canis lupus familiaris`).
 
-### Show available datasets
+### Given dataset
+
+With the dataset link(s), users can **download the processed objects** with `ParseHCA`. The format of downloaded objects are controlled by `file.ext` (choose from `"tsv"`, `"rds"`, `"rdata"`, `"h5"`, `"h5ad"` and `"loom"`).
+
+The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds` and `return.seu = TRUE`). If dataframe, users can re-run `ParseHCA` by setting `meta` to the returned value.
+
+```{r hca_given, eval=FALSE}
+# download objects
+hca.given.download <- ParseHCA(
+  link = c(
+    "https://explore.data.humancellatlas.org/projects/902dc043-7091-445c-9442-d72e163b9879",
+    "https://explore.data.humancellatlas.org/projects/cdabcf0b-7602-4abf-9afb-3b410e545703"
+  ), timeout = 36000000,
+  out.folder = "~/gefetch2r/doc/download_hca"
+)
+# # The structure of downloaded objects
+# tree ~/gefetch2r/doc/download_hca
+# ~/gefetch2r/doc/download_hca
+# ├── COMBAT2022.h5ad
+# └── seurat_object_hca_as_harmonized_AS_SP_nuc_refined_cells.rds.gz
+#
+# 0 directories, 2 files
+
+# retuen SeuratObject
+hypertrophic.heart.seu <- ParseHCA(
+  link = c(
+    "https://explore.data.humancellatlas.org/projects/902dc043-7091-445c-9442-d72e163b9879"
+  ), timeout = 36000000, return.seu = TRUE,
+  out.folder = "~/gefetch2r/doc/download_hca"
+)
+```
+
+<hr />
+
+### Filter samples based on metadata
+
+#### Show available datasets
 
 `GEfetch2R` provides `ShowHCAProjects` to extract detailed project metadata, including project title, description, organism, sex, organ/organPart, disease, assay, preservation method, sample type, suspension type, cell type, development stage, et al.
 
@@ -236,26 +497,36 @@ There are **484 unique projects** under *five different catalogs (`dcp29`, `dcp3
 
 ```{r hca_all, eval=FALSE}
 all.hca.projects <- ShowHCAProjects()
-```
-
-Show the metadata:
-```{r hca_all_show}
-head(all.hca.projects)
+nrow(all.hca.projects)
+# [1] 546
 ```
 
 <hr />
 
-### Summary attributes
+#### Summary attributes
 
 `GEfetch2R` provides `StatDBAttribute` to summary attributes of [Human Cell Atlas](https://www.humancellatlas.org/):
 
-```{r hca_summary}
+```{r hca_summary, eval=FALSE}
 StatDBAttribute(df = all.hca.projects, filter = c("organism", "sex"), database = "HCA")
+# $organism
+#                    Value Num      Key
+# 1           homo sapiens 520 organism
+# 2           mus musculus  58 organism
+# 3 canis lupus familiaris   1 organism
+# 4         macaca mulatta   1 organism
+#
+# $sex
+#     Value Num Key
+# 1  female 405 sex
+# 2    male 392 sex
+# 3 unknown 164 sex
+# 4   mixed   6 sex
 ```
 
 <hr />
 
-### Extract metadata
+#### Filter metadata
 
 `GEfetch2R` provides `ExtractHCAMeta` to filter projects metadata, the available values of attributes can be obtained with `StatDBAttribute` except **cell number**:
 
@@ -265,46 +536,356 @@ hca.human.10x.projects <- ExtractHCAMeta(
   all.projects.df = all.hca.projects, organism = "Homo sapiens",
   protocol = c("10x 3' v2", "10x 3' v3")
 )
-```
-
-Show the metadata:
-```{r hca_meta_show}
-head(hca.human.10x.projects)
+nrow(hca.human.10x.projects)
+# [1] 251
 ```
 
 <hr />
 
-### Download object and load to R
+#### Download object and load to R
 
-After manually check the extracted metadata, users can **download the specified objects** with `ParseHCA`. The downloaded objects are controlled by `file.ext` (choose from `"rds"`, `"rdata"`, `"h5"`, `"h5ad"` and `"loom"`).
+After manually check the extracted metadata, users can **download the specified objects** with `ParseHCA`. The format of downloaded objects are controlled by `file.ext` (choose from `"tsv"`, `"rds"`, `"rdata"`, `"h5"`, `"h5ad"` and `"loom"`).
 
-The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds`). If dataframe, users can re-run `ParseHCA` by setting `meta` to the returned value.
+The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds` and `return.seu = TRUE`). If dataframe, users can re-run `ParseHCA` by setting `meta` to the returned value.
 
 ```{r hca_parse, eval=FALSE}
 # download objects
-hca.down <- ParseHCA(
-  meta = hca.human.10x.projects[1:4, ], out.folder = "/Volumes/soyabean/GEfetch2R/download_hca",
-  file.ext = c("h5ad", "rds")
+hca.human.10x.down <- ParseHCA(
+  meta = hca.human.10x.projects[1:3, ],
+  out.folder = "~/gefetch2r/doc/download_hca",
+  file.ext = c("h5ad", "rds"), timeout = 36000000
 )
-
-# return SeuratObject
-hca.down.seu <- ParseHCA(
-  meta = hca.human.10x.projects[1:4, ], out.folder = "/Volumes/soyabean/GEfetch2R/download_hca",
-  file.ext = c("h5ad", "rds"), return.seu = TRUE
-)
-```
-
-Show the returned `SeuratObject`:
-```{r hca_parse_show}
-hca.down.seu
-```
-
-The example structure of downloaded objects:
-```{bash hca_parse_structure}
-tree /Volumes/soyabean/GEfetch2R/download_hca
+# file downloaded
+# 4f30b962-d49b-4624-a233-64f048cf8632_b61a921b-7fa3-4b42-b455-aaaf32447920.h5ad
 ```
 
 <hr />
+
+## Process RData files
+
+As illustrated before, the downloaded `rds` file containing `SeuratObject` will be automatically loaded into R. Here, `GEfetch2R` provides `LoadRData` to dissect and extract the `RData` files.
+
+`LoadRData` process the objects in `RData` files by two ways:
+
+* for **widely used scRNA-seq objects** (`SeuratObject` (`Seurat` package), `seuratobject` (`Seurat v2` package), `SingleCellExperiment` (`SingleCellExperiment` package), `cell_data_set` (`Monocle v3` package), `CellDataSet` (`Monocle` package)) and **bulk RNA-seq objects** (`DESeqDataSet` (`DESeq2` package), `DGEList` (`edgeR` package)):
+
+| **Object**               | **raw count matrix**                    | **normalized count matrix**                                                                     | **scaled count matrix**        | **metadata**                         | **notes**                                       |
+|--------------------------|-----------------------------------------|-------------------------------------------------------------------------------------------------|--------------------------------|--------------------------------------|-------------------------------------------------|
+| **SeuratObject**         | slot `counts`                           | slot `data`                                                                                     | slot `scale.data`              | `obj@meta.data`                      | support multiple assays (e.g.: RNA, integrated) |
+| **seuratobject**         | `obj@raw.data`                          | `obj@data`                                                                                      | `obj@scale.data`               | `obj@meta.data`                      |                                                 |
+| **SingleCellExperiment** | assay `counts`                          | assay `logcounts`                                                                               | assay `scaledata`/`scale.data` | `SingleCellExperiment::colData(obj)` | support multiple experiments                    |
+| **cell_data_set**        | assay `counts`                          | assay `logcounts`                                                                               | assay `scaledata`/`scale.data` | `SingleCellExperiment::colData(obj)` | support multiple experiments                    |
+| **CellDataSet**          | empty or `Biobase::exprs(obj)`          | empty or `Biobase::exprs(obj)`                                                                  | empty or `Biobase::exprs(obj)` | `Biobase::pData(obj)`                |                                                 |
+| **DESeqDataSet**         | `DESeq2::counts(obj, normalized = FALSE)` | (`obj <- DESeq2::estimateSizeFactors(obj)`) `DESeq2::counts(obj, normalized = TRUE)`                | empty                          | `obj@colData`                        |                                                 |
+| **DGEList**              | `obj$counts`                            | `obj <- edgeR::calcNormFactors(obj, method = "TMM")`; `count.mat.list[["data"]] <- edgeR::cpm(obj)` | empty                          | `obj$samples`                        |                                                 |
+
+* for **non-standard objects (`matrix`, `data.frame`, `dgCMatrix`, `dgRMatrix`, `dgTMatrix`)**: 
+  * if `matrix`/`data.frame`: 
+    * if the number of columns is greater than or equal to three: 
+      * if all columns values are in the same class and the class is numeric/integer, treat this object as matrix
+      * else if starting from the second column, all column values are numeric/integer, treat this object as matrix
+      * else if column names contain pattern `"sample|name|cell|id|library|well|barcode|index|type|condition|treat|group"`, treat this object as metadata/annotation
+      * else display the structure of the object and load the object to R.
+    * else if column names contain pattern `"sample|name|cell|id|library|well|barcode|index|type|condition|treat|group"`, treat this object as metadata/annotation
+    * else display the structure of the object and load the object to R.
+  * else if `dgCMatrix`/`dgRMatrix`/`dgTMatrix`, treat this object as matrix
+  * else print the first six rows of the object.
+
+<div class="alert alert-success" role="alert">
+The first way has a higher priority; that is, if valid scRNA-seq/bulk RNA-seq objects (containing comprehensive information) are detected, skip the second way.
+</div>
+
+### Example [GSE244572](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE244572): `SeuratObject` with multiple assays
+
+```{r rdata_multi_assay, eval=FALSE}
+# download the object
+ParseGEOProcessed(acce = "GSE244572", timeout = 360000, supp.idx = 1, file.ext = c("rdata", "rds", "h5ad", "loom"))
+
+# process the object
+GSE244572.list <- LoadRData(
+  rdata = "GSE244572/GSE244572_RPE_CITESeq.RData",
+  accept.fmt = c("Seurat", "seurat", "SingleCellExperiment", "cell_data_set", "CellDataSet", "DESeqDataSet", "DGEList"),
+  slot = "counts", return.obj = TRUE
+)
+# # message:
+# The object classes stored in RData: Seurat.
+#      Class
+# obj Seurat
+# Detect 1 object(s) in given format(s): Seurat, seurat, SingleCellExperiment, cell_data_set, CellDataSet, DESeqDataSet, DGEList.
+# Load object: obj (Seurat) to global environment!
+# Extract count matrix and metadata (if available) from: obj (Seurat).
+# Detect Seurat version: 4.0.4, with assay(s): RNA, ADT, nADT, SCT, integrated, IADT.
+
+# returned value
+ls() # list objects in the global environment
+# [1] "GSE244572.list" "obj"
+names(GSE244572.list) # one valid object
+# [1] "obj"
+head(GSE244572.list$obj$meta.data)
+#                  orig.ident nCount_RNA nFeature_RNA sample percent.mt nCount_ADT nFeature_ADT donor time   rpe nCount_nADT nFeature_nADT nCount_SCT nFeature_SCT integrated_snn_res.0.5 seurat_clusters
+# CCTAGATTAAT_1 SeuratProject     487751         3922 318_2W   13.34062     387973          121   318   2W adult          22            14     214660         3175                      5               0
+# GTTGAGCTGCG_1 SeuratProject     124013         1477 318_2W   13.27925     312671          110   318   2W adult          21            14     215337         1475                      2               4
+# GTTGATCTTCT_1 SeuratProject      95909         1344 318_2W   15.60333      44974          100   318   2W adult          35            27     214940         1359                      0               2
+# TAACCTTGAGT_1 SeuratProject     328530         2361 319_2W   17.52930     279285          128   319   2W adult          23            18     215249         2349                      2               0
+# CCTCCGCCTGC_1 SeuratProject     702493         4766 319_2W   22.13887    1579539          143   319   2W adult          32            17     215407         4027                      1               6
+# CCATATACGAC_1 SeuratProject     497485         3694 319_2W   14.13791     873609          117   319   2W adult          23            12     214400         2913                      1               4
+#               integrated.weight wsnn_res.0.5 wsnn_res.0.2
+# CCTAGATTAAT_1         0.7954453            3            0
+# GTTGAGCTGCG_1         0.6762115            5            4
+# GTTGATCTTCT_1         0.9341439            0            2
+# TAACCTTGAGT_1         0.7959367            3            0
+# CCTCCGCCTGC_1         0.5048201           10            6
+# CCATATACGAC_1         0.7556721            5            4
+names(GSE244572.list$obj$count.mat) # list of six assays
+# [1] "RNA"        "ADT"        "nADT"       "SCT"        "integrated" "IADT"
+names(GSE244572.list$obj$count.mat$RNA) # list of slot(s)
+# [1] "counts"
+GSE244572.list$obj$count.mat$RNA$counts[1:5, 1:5] # count matrix
+# 5 x 5 sparse Matrix of class "dgCMatrix"
+#            CCTAGATTAAT_1 GTTGAGCTGCG_1 GTTGATCTTCT_1 TAACCTTGAGT_1 CCTCCGCCTGC_1
+# WASH7P                 .             .             .             .             .
+# CICP27                 .             .             .             .             .
+# AL627309.6             .             .             .             .             .
+# AL627309.5             .             .             .             .             .
+# FO538757.1             .             .             .             .             .
+```
+
+<hr />
+
+### Example [GSE249307](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE249307): multiple `SeuratObject` objects
+
+```{r rdata_multi_seu_objects, eval=FALSE}
+# download the object
+ParseGEOProcessed(acce = "GSE249307", timeout = 360000, supp.idx = 1, file.ext = c("rdata", "rds", "h5ad", "loom"))
+
+# process the object
+GSE249307.list <- LoadRData(
+  rdata = "GSE249307/GSE249307_scRNA_seurat_data.RData",
+  accept.fmt = c("Seurat", "seurat", "SingleCellExperiment", "cell_data_set", "CellDataSet", "DESeqDataSet", "DGEList"),
+  slot = "counts"
+)
+# # message:
+# The object classes stored in RData: Seurat.
+#                          Class
+# processed_seurat_object Seurat
+# raw_seurat_object       Seurat
+# Detect 2 object(s) in given format(s): Seurat, seurat, SingleCellExperiment, cell_data_set, CellDataSet, DESeqDataSet, DGEList.
+# Load object: processed_seurat_object (Seurat) to global environment!
+# Extract count matrix and metadata (if available) from: processed_seurat_object (Seurat).
+# Detect Seurat version: 3.0.0.9000, with assay(s): RNA.
+# Load object: raw_seurat_object (Seurat) to global environment!
+# Extract count matrix and metadata (if available) from: raw_seurat_object (Seurat).
+# Detect Seurat version: 3.0.0.9000, with assay(s): RNA.
+
+# returned value
+ls() # list objects in the global environment
+# [1] "GSE249307.list"          "processed_seurat_object" "raw_seurat_object"
+names(GSE249307.list) # two valid objects
+# [1] "processed_seurat_object" "raw_seurat_object"
+head(GSE249307.list$raw_seurat_object$meta.data)
+#                               orig.ident nCount_RNA nFeature_RNA sample species umi_count_50dup rnd1_well rnd2_well rnd3_well valid library        cell_barcode cells_unique treatment1  treatment2 cytokine_timepoint
+# lib1_AGATCGCACATCAAGT_42 lib1_2_analysis     356571        13917 samp43    hg38        689652.3        42         7        24     1    lib1 AGATCGCACATCAAGT_42       unique  IL17+TNFa  Virus_6hpi               late
+# lib1_ACTATGCAATAGCGAC_22 lib1_2_analysis     198322        11831 samp23    hg38        383579.2        22        79        22     1    lib1 ACTATGCAATAGCGAC_22       unique    Vehicle  Virus_6hpi           baseline
+# lib1_CGACTGGAGACAGTGC_23 lib1_2_analysis     187640        11865 samp24    hg38        362918.9        23        92        40     1    lib1 CGACTGGAGACAGTGC_23       unique       IL13  Virus_6hpi              early
+# lib1_AACGCTTAGTACGCAA_24 lib1_2_analysis     177905        11530 samp25    hg38        344090.2        24        55        14     1    lib1 AACGCTTAGTACGCAA_24       unique  IL17+TNFa  Virus_6hpi              early
+# lib1_ACACGACCAGTCACTA_11 lib1_2_analysis     156939        10976 samp12    hg38        303539.4        11        26        73     1    lib1 ACACGACCAGTCACTA_11       unique    Vehicle Virus_72hpi           baseline
+# lib1_TCTTCACAATAGCGAC_42 lib1_2_analysis     142185        11049 samp43    hg38        275003.3        42        79        62     1    lib1 TCTTCACAATAGCGAC_42       unique  IL17+TNFa  Virus_6hpi               late
+#                          donor
+# lib1_AGATCGCACATCAAGT_42     C
+# lib1_ACTATGCAATAGCGAC_22     B
+# lib1_CGACTGGAGACAGTGC_23     B
+# lib1_AACGCTTAGTACGCAA_24     B
+# lib1_ACACGACCAGTCACTA_11     A
+# lib1_TCTTCACAATAGCGAC_42     C
+names(GSE249307.list$raw_seurat_object$count.mat) # list of available assay
+# [1] "RNA"
+names(GSE249307.list$raw_seurat_object$count.mat$RNA) # list of slot(s)
+# [1] "counts"
+GSE249307.list$raw_seurat_object$count.mat$RNA$counts[1:5, 1:5] # count matrix
+# 5 x 5 sparse Matrix of class "dgCMatrix"
+#          lib1_AGATCGCACATCAAGT_42 lib1_ACTATGCAATAGCGAC_22 lib1_CGACTGGAGACAGTGC_23 lib1_AACGCTTAGTACGCAA_24 lib1_ACACGACCAGTCACTA_11
+# A1BG                            .                        .                        .                        .                        .
+# A1BG-AS1                        1                        .                        1                        .                        .
+# A1CF                            .                        .                        .                        .                        .
+# A2M                             .                        .                        .                        .                        .
+# A2ML1                           .                        .                        .                        .                        .
+```
+
+<hr />
+
+### Example [GSE282783](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE282783): `SeuratObject` and non-standard objects
+
+```{r rdata_multi_objects, eval=FALSE}
+# download the object
+ParseGEOProcessed(acce = "GSE282783", timeout = 360000, supp.idx = 1, file.ext = c("rdata", "rds", "h5ad", "loom"))
+
+# process the object
+GSE282783.list <- LoadRData(
+  rdata = "GSE282783/GSE282783_E16_FT_E17_hGFAP-Cre_mek12dcko.Rdata",
+  accept.fmt = c("Seurat", "seurat", "SingleCellExperiment", "cell_data_set", "CellDataSet", "DESeqDataSet", "DGEList"),
+  slot = "counts"
+)
+# # message:
+# The object classes stored in RData: character, data.frame, IntegrationAnchorSet, Seurat, function.
+#                                Class
+# all.genes                  character
+# Cluster                   data.frame
+# g2m.genes                 data.frame
+# immune.anchors  IntegrationAnchorSet
+# immune.combined               Seurat
+# Mapkdcko_CTR                  Seurat
+# Mapkdcko_EXP                  Seurat
+# MarkerPlot                  function
+# s.genes                   data.frame
+# Detect 3 object(s) in given format(s): Seurat, seurat, SingleCellExperiment, cell_data_set, CellDataSet, DESeqDataSet, DGEList.
+# Load object: immune.combined (Seurat) to global environment!
+# Extract count matrix and metadata (if available) from: immune.combined (Seurat).
+# Detect Seurat version: 4.0.4, with assay(s): RNA, integrated.
+# Load object: Mapkdcko_CTR (Seurat) to global environment!
+# Extract count matrix and metadata (if available) from: Mapkdcko_CTR (Seurat).
+# Detect Seurat version: 4.0.4, with assay(s): RNA.
+# Load object: Mapkdcko_EXP (Seurat) to global environment!
+# Extract count matrix and metadata (if available) from: Mapkdcko_EXP (Seurat).
+# Detect Seurat version: 4.0.4, with assay(s): RNA.
+
+# returned value
+ls() # list objects in the global environment
+# [1] "GSE282783.list"  "immune.combined" "Mapkdcko_CTR"    "Mapkdcko_EXP"
+names(GSE282783.list) # three valid objects
+# [1] "immune.combined" "Mapkdcko_CTR"    "Mapkdcko_EXP"
+head(GSE282783.list$immune.combined$meta.data)
+#                        orig.ident nCount_RNA nFeature_RNA       Sample      S.Score   G2M.Score Phase    old.ident integrated_snn_res.0.6 seurat_clusters
+# AAACCCAAGCACGTCC-1_1 Mapkdcko_CTR       3584         1586 Mapkdcko_CTR -0.010667752 -0.10155295    G1 Mapkdcko_CTR                      0               0
+# AAACCCAAGTGCAGGT-1_1 Mapkdcko_CTR      11187         3232 Mapkdcko_CTR  0.544009405  0.92782765   G2M Mapkdcko_CTR                      9               9
+# AAACCCACAACGTAAA-1_1 Mapkdcko_CTR       6498         2217 Mapkdcko_CTR -0.138904079 -0.09983576    G1 Mapkdcko_CTR                      2               2
+# AAACCCACAACGTTAC-1_1 Mapkdcko_CTR       4531         1873 Mapkdcko_CTR -0.008647976 -0.16412585    G1 Mapkdcko_CTR                      0               0
+# AAACCCACACTGCGAC-1_1 Mapkdcko_CTR       6588         2568 Mapkdcko_CTR -0.175856885 -0.19708486    G1 Mapkdcko_CTR                      5               5
+# AAACCCAGTACGATCT-1_1 Mapkdcko_CTR       3790         1616 Mapkdcko_CTR -0.101067444 -0.06548076    G1 Mapkdcko_CTR                      0               0
+names(GSE282783.list$immune.combined$count.mat) # list of available assays
+# [1] "RNA"        "integrated"
+names(GSE282783.list$immune.combined$count.mat$RNA) # list of slot(s)
+# [1] "counts"
+GSE282783.list$immune.combined$count.mat$RNA$counts[1:5, 1:5] # count matrix
+# 5 x 5 sparse Matrix of class "dgCMatrix"
+#         AAACCCAAGCACGTCC-1_1 AAACCCAAGTGCAGGT-1_1 AAACCCACAACGTAAA-1_1 AAACCCACAACGTTAC-1_1 AAACCCACACTGCGAC-1_1
+# Xkr4                       .                    .                    .                    .                    .
+# Gm1992                     .                    .                    .                    .                    .
+# Gm37381                    .                    .                    .                    .                    .
+# Rp1                        .                    .                    .                    .                    .
+# Rp1.1                      .                    .                    .                    .                    .
+```
+
+<hr />
+
+### Example: simulated non-standard objects
+
+Generate `RData` file containing a mixture of non-standard objects:
+```{r rdata_nonstandard_generate, eval=FALSE}
+# dgCMatrix
+sparse.mat <- SeuratObject::GetAssayData(SeuratObject::pbmc_small, assay = "RNA", slot = "counts")
+# count matrix and metadata from GSE297431
+GSE297431.meta.supp <- ExtractGEOMeta(acce = "GSE297431", down.supp = TRUE, supp.idx = 2)
+GSE297431.cnt <- ParseGEO(acce = "GSE297431", down.supp = TRUE, supp.idx = 1, supp.type = "count", load2R = F)
+# move rownames to dataframe (first column)
+GSE297431.cnt.row2col <- GSE297431.cnt %>%
+  tibble::rownames_to_column(var = "Gene") %>%
+  dplyr::relocate()
+# dataframe to matrix
+GSE297431.cnt.mat <- GSE297431.cnt %>% as.matrix()
+# list (noise)
+cc.genes <- Seurat::cc.genes
+# dataframe (noise)
+s.genes <- data.frame(gene = cc.genes$s.genes)
+# vector (noise)
+g2m.genes <- cc.genes$g2m.genes
+# save
+save(sparse.mat, GSE297431.meta.supp, GSE297431.cnt, GSE297431.cnt.row2col, GSE297431.cnt.mat, cc.genes, s.genes, g2m.genes,
+  file = "simulated_non_standard_objects.RData"
+)
+```
+
+
+Dissect and extract the generated `RData` file:
+```{r rdata_nonstandard_objects, eval=FALSE}
+# process the object
+non.standard.list <- LoadRData(
+  rdata = "simulated_non_standard_objects.RData",
+  accept.fmt = c("Seurat", "seurat", "SingleCellExperiment", "cell_data_set", "CellDataSet", "DESeqDataSet", "DGEList"),
+  return.obj = FALSE
+)
+# # message:
+# The object classes stored in RData: list, character, data.frame, matrix, array, dgCMatrix.
+#                               Class
+# cc.genes                       list
+# g2m.genes                 character
+# GSE297431.cnt            data.frame
+# GSE297431.cnt.mat     matrix, array
+# GSE297431.cnt.row2col    data.frame
+# GSE297431.meta.supp      data.frame
+# s.genes                  data.frame
+# sparse.mat                dgCMatrix
+# No valid object in given format(s): Seurat, seurat, SingleCellExperiment, cell_data_set, CellDataSet, DESeqDataSet, DGEList. Now we will guess the type!
+# The slot parameter does not work here!
+# cc.genes is list.
+# $s.genes
+#  [1] "MCM5"     "PCNA"     "TYMS"     "FEN1"     "MCM2"     "MCM4"     "RRM1"     "UNG"      "GINS2"    "MCM6"     "CDCA7"    "DTL"      "PRIM1"    "UHRF1"    "MLF1IP"   "HELLS"    "RFC2"     "RPA2"     "NASP"
+# [20] "RAD51AP1" "GMNN"     "WDR76"    "SLBP"     "CCNE2"    "UBR7"     "POLD3"    "MSH2"     "ATAD2"    "RAD51"    "RRM2"     "CDC45"    "CDC6"     "EXO1"     "TIPIN"    "DSCC1"    "BLM"      "CASP8AP2" "USP1"
+# [39] "CLSPN"    "POLA1"    "CHAF1B"   "BRIP1"    "E2F8"
+#
+# $g2m.genes
+#  [1] "HMGB2"   "CDK1"    "NUSAP1"  "UBE2C"   "BIRC5"   "TPX2"    "TOP2A"   "NDC80"   "CKS2"    "NUF2"    "CKS1B"   "MKI67"   "TMPO"    "CENPF"   "TACC3"   "FAM64A"  "SMC4"    "CCNB2"   "CKAP2L"  "CKAP2"   "AURKB"
+# [22] "BUB1"    "KIF11"   "ANP32E"  "TUBB4B"  "GTSE1"   "KIF20B"  "HJURP"   "CDCA3"   "HN1"     "CDC20"   "TTK"     "CDC25C"  "KIF2C"   "RANGAP1" "NCAPD2"  "DLGAP5"  "CDCA2"   "CDCA8"   "ECT2"    "KIF23"   "HMMR"
+# [43] "AURKA"   "PSRC1"   "ANLN"    "LBR"     "CKAP5"   "CENPE"   "CTCF"    "NEK2"    "G2E3"    "GAS2L3"  "CBX5"    "CENPA"
+#
+# g2m.genes is character.
+# [1] "HMGB2"  "CDK1"   "NUSAP1" "UBE2C"  "BIRC5"  "TPX2"
+# GSE297431.cnt has 107 columns and each column is numerical! Most likely a count matrix!
+# GSE297431.cnt.mat has 107 columns and each column is numerical! Most likely a count matrix!
+# GSE297431.cnt.row2col has 108 columns, all of which are numerical except for the first column! Maybe a count matrix!
+# Detect possible sample metadata keys: Sample_ID, Type in GSE297431.meta.supp. Maybe metadata/annotation!
+# Can not determine if s.genes is metadata/annotation. Load to the global environment, please manually check!
+# 'data.frame':	43 obs. of  1 variable:
+#  $ gene: chr  "MCM5" "PCNA" "TYMS" "FEN1" ...
+# NULL
+# sparse.mat is a sparse matrix. Most likely a count matrix!
+
+# returned value
+ls() # list objects in the global environment
+# [1] "non.standard.list" "s.genes"
+names(non.standard.list) # two elements: count matrix and metadata
+# [1] "count" "meta"
+names(non.standard.list$meta) # list of available metadata
+# [1] "GSE297431.meta.supp"
+head(non.standard.list$meta$GSE297431.meta.supp)
+#             Sample_ID  Batch  Plate   Type Growths Class
+# 1   Plate1_mut_A1_S70 batch2 Plate1 mutant       3    M3
+# 2 Plate1_mut_A11_S135 batch2 Plate1 mutant       3    M3
+# 3 Plate1_mut_A12_S141 batch2 Plate1 mutant       1    M1
+# 4   Plate1_mut_A2_S77 batch2 Plate1 mutant       1    M1
+# 5   Plate1_mut_A3_S84 batch2 Plate1 mutant       2    M2
+# 6   Plate1_mut_A4_S91 batch2 Plate1 mutant       2    M2
+names(non.standard.list$count) # list of available count matrices
+# [1] "GSE297431.cnt"         "GSE297431.cnt.mat"     "GSE297431.cnt.row2col" "sparse.mat"
+non.standard.list$count$GSE297431.cnt[1:5, 1:5] # count matrix
+#       Plate1_mut_A1_S70 Plate1_mut_A11_S135 Plate1_mut_A12_S141 Plate1_mut_A2_S77 Plate1_mut_A3_S84
+# Gnai3               382                 201                 279               261                 8
+# Pbsn                  0                   0                   0                 0                 0
+# Cdc45               117                  86                  56               230                 7
+# Scml2               268                 116                 204               105                31
+# Apoh                  0                   0                   0                 0                 0
+```
+
+<hr />
+
+
+
+
+
+
+
+
+
+
 
 
 

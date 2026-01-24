@@ -1,7 +1,14 @@
 ---
 title: "ObjectConversion"
-output: html_document
-date: "2023-07-30"
+output: 
+  html_document:
+    toc_depth: 4
+    toc_float: true
+fig_caption: TRUE
+vignette: >
+  %\VignetteIndexEntry{GEfetch2R}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -10,18 +17,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-There are many tools have been developed to process scRNA-seq data, such as [Scanpy](https://scanpy.readthedocs.io/en/stable/), [Seurat](https://satijalab.org/seurat/), [scran](https://bioconductor.org/packages/release/bioc/html/scran.html) and [Monocle](http://cole-trapnell-lab.github.io/monocle-release/). These tools have their own objects, such as `Anndata` of `Scanpy`, `SeuratObject` of `Seurat`, `SingleCellExperiment` of `scran` and `CellDataSet`/`cell_data_set` of `Monocle2`/`Monocle3`. There are also some file format designed for large omics datasets, such as [loom](http://loompy.org/). To perform a comprehensive scRNA-seq data analysis, we usually need to combine multiple tools, which means we need to perform object conversion frequently.
+There are many tools have been developed to process scRNA-seq data, such as [Scanpy](https://scanpy.readthedocs.io/en/stable/), [Seurat](https://satijalab.org/seurat/), [scran](https://bioconductor.org/packages/release/bioc/html/scran.html) and [Monocle](http://cole-trapnell-lab.github.io/monocle-release/). These tools have their own objects, such as `AnnData` of `Scanpy`, `SeuratObject` of `Seurat`, `SingleCellExperiment` of `scran` and `CellDataSet`/`cell_data_set` of `Monocle2`/`Monocle3`. There are also some file format designed for large omics datasets, such as [loom](http://loompy.org/). To perform a comprehensive scRNA-seq data analysis, we usually need to combine multiple tools, which means we need to perform object conversion frequently.
 
 To facilitate user analysis of scRNA-seq data, `GEfetch2R`:
 
-* **benchmarked the format conversion tools** and provides some guides for tool selection under different scenarios(`Anndata` -> `SeuratObject`, `SeuratObject` to `Anndata`, `Anndata` to `SingleCellExperiment`, `SingleCellExperiment` to `Anndata`)
+* **benchmarked the format conversion tools** and provides some guides for tool selection under different scenarios(`AnnData` -> `SeuratObject`, `SeuratObject` to `AnnData`, `AnnData` to `SingleCellExperiment`, `SingleCellExperiment` to `AnnData`)
 * provides multiple functions to **perform format conversion between widely used scRNA-seq objects** (`SeuratObject`, `AnnData`, `SingleCellExperiment`, `CellDataSet/cell_data_set` and `loom`)
 
 <hr />
 
 ## Test data
 
-```{r test_data}
+```{r test_data, eval=FALSE}
 # library
 library(GEfetch2R)
 library(Seurat) # pbmc_small
@@ -30,33 +37,75 @@ library(Seurat) # pbmc_small
 
 `SeuratObject`:
 
-```{r test_seurat}
+```{r test_seurat, eval=FALSE}
 # object
 pbmc_small
+# An object of class Seurat
+# 230 features across 80 samples within 1 assay
+# Active assay: RNA (230 features, 20 variable features)
+#  2 dimensional reductions calculated: pca, tsne
+
 # metadata
 head(pbmc_small@meta.data)
+#                   orig.ident nCount_RNA nFeature_RNA RNA_snn_res.0.8 letter.idents groups
+# ATGCCAGAACGACT SeuratProject         70           47               0             A     g2
+# CATGGCCTGTGCAT SeuratProject         85           52               0             A     g1
+# GAACCTGATGAACC SeuratProject         87           50               1             B     g2
+# TGACTGGATTCTCA SeuratProject        127           56               0             A     g2
+# AGTCAGACTGCACA SeuratProject        173           53               0             A     g2
+# TCTGATACACGTGT SeuratProject         70           48               0             A     g1
+#                RNA_snn_res.1
+# ATGCCAGAACGACT             0
+# CATGGCCTGTGCAT             0
+# GAACCTGATGAACC             0
+# TGACTGGATTCTCA             0
+# AGTCAGACTGCACA             0
+# TCTGATACACGTGT             0
 ```
 
 `SingleCellExperiment`:
-```{r testsce}
+```{r testsce, eval=FALSE}
 # seger <- scRNAseq::SegerstolpePancreasData()
 # load from local
-seger <- readRDS("/Users/soyabean/Desktop/tmp/scdown/conversion/seger.rds")
+seger <- readRDS("~/gefetch2r/doc/conversion/seger.rds")
 seger
+# class: SingleCellExperiment
+# dim: 26179 3514
+# metadata(0):
+# assays(1): counts
+# rownames(26179): SGIP1 AZIN2 ... BIVM-ERCC5 eGFP
+# rowData names(2): refseq symbol
+# colnames(3514): HP1502401_N13 HP1502401_D14 ... HP1526901T2D_O11 HP1526901T2D_A8
+# colData names(9): individual sex ... submitted single cell quality cell type
+# reducedDimNames(0):
+# altExpNames(1): ERCC
 ```
+
+
 
 <hr />
 
 ## Convert SeuratObject to other objects
 
-Here, we will convert SeuratObject to `SingleCellExperiment`, `CellDataSet`/`cell_data_set`, `Anndata`, `loom`.
+Here, we will convert SeuratObject to `SingleCellExperiment`, `CellDataSet`/`cell_data_set`, `AnnData`, `loom`.
 
 ### SeuratObject to SingleCellExperiment
 
 The conversion is performed with functions implemented in `Seurat`:
-```{r seu2sce}
+```{r seu2sce, eval=FALSE}
 sce.obj <- ExportSeurat(seu.obj = pbmc_small, assay = "RNA", to = "SCE")
 sce.obj
+# class: SingleCellExperiment
+# dim: 230 80
+# metadata(0):
+# assays(2): counts logcounts
+# rownames(230): MS4A1 CD79B ... SPON2 S100B
+# rowData names(5): vst.mean vst.variance vst.variance.expected vst.variance.standardized
+#   vst.variable
+# colnames(80): ATGCCAGAACGACT CATGGCCTGTGCAT ... GGAACACTTCAGAC CTTGATTGATCTTC
+# colData names(8): orig.ident nCount_RNA ... RNA_snn_res.1 ident
+# reducedDimNames(2): PCA TSNE
+# altExpNames(0):
 ```
 
 <hr />
@@ -65,10 +114,24 @@ sce.obj
 
 To `CellDataSet` (The conversion is performed with functions implemented in `Seurat`):
 
-```{r seu2cds1}
+```{r seu2cds1, eval=FALSE}
 # BiocManager::install("monocle") # reuqire monocle
 cds.obj <- ExportSeurat(seu.obj = pbmc_small, assay = "RNA", reduction = "tsne", to = "CellDataSet")
 cds.obj
+# CellDataSet (storageMode: environment)
+# assayData: 230 features, 80 samples
+#   element names: exprs
+# protocolData: none
+# phenoData
+#   sampleNames: ATGCCAGAACGACT CATGGCCTGTGCAT ... CTTGATTGATCTTC (80 total)
+#   varLabels: orig.ident nCount_RNA ... Size_Factor (8 total)
+#   varMetadata: labelDescription
+# featureData
+#   featureNames: MS4A1 CD79B ... S100B (230 total)
+#   fvarLabels: vst.mean vst.variance ... gene_short_name (6 total)
+#   fvarMetadata: labelDescription
+# experimentData: use 'experimentData(object)'
+# Annotation:
 ```
 
 To `cell_data_set` (The conversion is performed with functions implemented in `SeuratWrappers`):
@@ -77,29 +140,83 @@ To `cell_data_set` (The conversion is performed with functions implemented in `S
 # remotes::install_github('cole-trapnell-lab/monocle3') # reuqire monocle3
 cds3.obj <- ExportSeurat(seu.obj = pbmc_small, assay = "RNA", to = "cell_data_set")
 cds3.obj
+# class: cell_data_set
+# dim: 230 80
+# metadata(0):
+# assays(2): counts logcounts
+# rownames(230): MS4A1 CD79B ... SPON2 S100B
+# rowData names(0):
+# colnames(80): ATGCCAGAACGACT CATGGCCTGTGCAT ... GGAACACTTCAGAC CTTGATTGATCTTC
+# colData names(9): orig.ident nCount_RNA ... ident Size_Factor
+# reducedDimNames(2): PCA TSNE
+# mainExpName: RNA
+# altExpNames(0):
 ```
 
 <hr />
 
 ### SeuratObject to AnnData
 
-There are multiple tools available for format conversion from `SeuratObject` to `Anndata`:
+There are multiple tools available for format conversion from `SeuratObject` to `AnnData`:
 
 * `scDIOR` is the best method in terms of information kept and usability
 * `sceasy` has best performance in running time and disk usage.
 
-```{r seu2anndata}
-# sceasy
+```{r seu2anndata, eval=FALSE}
+# sceasy, generate pbmc_small_sceasy.h5ad
 Seu2AD(
-  seu.obj = pbmc_small, method = "sceasy", out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion",
-  assay = "RNA", slot = "counts", conda.path = "/Applications/anaconda3"
+  seu.obj = pbmc_small, method = "sceasy", out.folder = "~/gefetch2r/doc/conversion",
+  assay = "RNA", slot = "counts", conda.path = "~/anaconda3"
 )
-# # SeuratDisk
-# Seu2AD(seu.obj = pbmc_small, method = "SeuratDisk", out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion",
-#        assay = "RNA", save.scale = TRUE)
-# # scDIOR
-# Seu2AD(seu.obj = pbmc_small, method = "scDIOR",
-#        out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion", assay = "RNA", save.scale = TRUE)
+# AnnData object with n_obs × n_vars = 80 × 230
+#     obs: 'orig.ident', 'nCount_RNA', 'nFeature_RNA', 'RNA_snn_res.0.8', 'letter.idents', 'groups', 'RNA_snn_res.1'
+#     var: 'vst.mean', 'vst.variance', 'vst.variance.expected', 'vst.variance.standardized', 'vst.variable'
+#     obsm: 'X_pca', 'X_tsne'
+
+
+# SeuratDisk, generate pbmc_small_SeuratDisk.h5Seurat, pbmc_small_SeuratDisk.h5ad
+Seu2AD(
+  seu.obj = pbmc_small, method = "SeuratDisk", out.folder = "~/gefetch2r/doc/conversion",
+  assay = "RNA", save.scale = TRUE
+)
+# Creating h5Seurat file for version 3.1.5.9900
+# Adding counts for RNA
+# Adding data for RNA
+# Adding scale.data for RNA
+# Adding variable features for RNA
+# Adding feature-level metadata for RNA
+# Adding cell embeddings for pca
+# Adding loadings for pca
+# Adding projected loadings for pca
+# Adding standard deviations for pca
+# Adding JackStraw information for pca
+# Adding cell embeddings for tsne
+# No loadings for tsne
+# No projected loadings for tsne
+# No standard deviations for tsne
+# No JackStraw data for tsne
+# Validating h5Seurat file
+# Adding scale.data from RNA as X
+# Transfering meta.features to var
+# Adding data from RNA as raw
+# Transfering meta.features to raw/var
+# Transfering meta.data to obs
+# Adding dimensional reduction information for pca
+# Adding feature loadings for pca
+# Adding dimensional reduction information for tsne
+# Adding RNA_snn as neighbors
+# [1] "~/gefetch2r/doc/conversion/pbmc_small_SeuratDisk.h5ad"
+
+
+# # scDIOR, generate pbmc_small_scDIOR.h5
+Seu2AD(
+  seu.obj = pbmc_small, method = "scDIOR",
+  out.folder = "~/gefetch2r/doc/conversion", assay = "RNA", save.scale = TRUE
+)
+# NULL
+# Warning message:
+# In matrix_to_h5(mat = slot(object = slot_assay, name = "scale.data"),  :
+#   sdata is dense matrix
 ```
 
 <hr />
@@ -107,11 +224,26 @@ Seu2AD(
 ### SeuratObject to loom
 
 The conversion is performed with functions implemented in `SeuratDisk`:
-```{r seu2loom}
+```{r seu2loom, eval=FALSE}
 ExportSeurat(
   seu.obj = pbmc_small, assay = "RNA", to = "loom",
-  loom.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small.loom"
+  loom.file = "~/gefetch2r/doc/conversion/pbmc_small.loom"
 )
+# Convert SeuratObject to loom!
+# Saving data from RNA as /matrix
+#   |========================================================================================| 100%
+# Adding slot counts for assay RNA
+# Adding layer counts
+#   |========================================================================================| 100%
+# Adding col attribute CellID
+# Adding col attribute orig.ident
+# Adding col attribute nCount_RNA
+# Adding col attribute nFeature_RNA
+# Adding col attribute RNA_snn_res.0.8
+# Adding col attribute letter.idents
+# Adding col attribute groups
+# Adding col attribute RNA_snn_res.1
+# Adding row attribute Gene
 ```
 
 <hr />
@@ -121,12 +253,22 @@ ExportSeurat(
 ### SingleCellExperiment to SeuratObject
 
 The conversion is performed with functions implemented in `Seurat`:
-```{r sce2seu}
+```{r sce2seu, eval=FALSE}
 seu.obj.sce <- ImportSeurat(
   obj = sce.obj, from = "SCE", count.assay = "counts",
   data.assay = "logcounts", assay = "RNA"
 )
+# Convert SingleCellExperiment to SeuratObject!
+# The assay you provided: RNA is not in the cell_data_set object: . Change assay to NULL # (Seurat 4.4.0)
+# Warning: Keys should be one or more alphanumeric characters followed by an underscore, setting key from PC__ to PC_
+# Warning: All keys should be one or more alphanumeric characters followed by an underscore '_', setting key to PC_
+# Warning: Keys should be one or more alphanumeric characters followed by an underscore, setting key from tSNE__ to tSNE_
+# Warning: All keys should be one or more alphanumeric characters followed by an underscore '_', setting key to tSNE_
 seu.obj.sce
+# An object of class Seurat
+# 230 features across 80 samples within 1 assay
+# Active assay: RNA (230 features, 0 variable features)
+#  2 dimensional reductions calculated: pca, tsne
 ```
 
 <hr />
@@ -134,12 +276,23 @@ seu.obj.sce
 ### CellDataSet/cell_data_set to SeuratObject
 
 `CellDataSet` to `SeuratObject` (The conversion is performed with functions implemented in `Seurat`):
-```{r cds2seu1}
+```{r cds2seu1, eval=FALSE}
 seu.obj.cds <- ImportSeurat(
   obj = cds.obj, from = "CellDataSet",
   count.assay = "counts", assay = "RNA"
 )
+# Convert CellDataSet (Monocle) to SeuratObject!
+# Pulling expression data
+# Building Seurat object
+# Adding feature-level metadata
+# No dispersion information in CellDataSet object
+# No variable features present
+# Adding tSNE dimensional reduction
 seu.obj.cds
+# An object of class Seurat
+# 230 features across 80 samples within 1 assay
+# Active assay: RNA (230 features, 0 variable features)
+#  1 dimensional reduction calculated: tsne
 ```
 
 `cell_data_set` to `SeuratObject` (The conversion is performed with functions implemented in `Seurat`):
@@ -148,7 +301,13 @@ seu.obj.cds3 <- ImportSeurat(
   obj = cds3.obj, from = "cell_data_set",
   count.assay = "counts", data.assay = "logcounts", assay = "RNA"
 )
+# Convert cell_data_set (Monocle3) to SeuratObject!
+# The assay you provided: RNA is not in the cell_data_set object: . Change assay to NULL # (Seurat 4.4.0)
 seu.obj.cds3
+# An object of class Seurat
+# 230 features across 80 samples within 1 assay
+# Active assay: RNA (230 features, 0 variable features)
+#  2 dimensional reductions calculated: pca, tsne
 ```
 
 <hr />
@@ -162,24 +321,30 @@ There are multiple tools available for format conversion from `AnnData` to `Seur
 * `schard` and `sceasy` have comparable performance when cell number below 200k, but `sceasy` has better performance in scalability
 * `sceasy` has better performance in disk usage 
 
-```{r anndata2seu}
+```{r anndata2seu, eval=FALSE}
 # sceasy
 ann.sceasy <- AD2Seu(
-  anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad", method = "sceasy",
+  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad", method = "sceasy",
   assay = "RNA", slot = "scale.data"
 )
+# X -> data
 ann.sceasy
+# An object of class Seurat
+# 230 features across 80 samples within 1 assay
+# Active assay: RNA (230 features, 0 variable features)
+#  2 dimensional reductions calculated: pca, tsne
+
 # # SeuratDisk
-# ann.seu <- AD2Seu(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad",
+# ann.seu <- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",
 #                   method = "SeuratDisk", assay = "RNA", load.assays = c("RNA"))
 # # scDIOR
-# ann.scdior <- AD2Seu(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad",
+# ann.scdior <- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",
 #                      method = "scDIOR", assay = "RNA")
 # # schard
-# ann.schard <- AD2Seu(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad",
+# ann.schard <- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",
 #                      method = "schard", assay = "RNA", use.raw = T)
 # # SeuratDisk+scDIOR
-# ann.seuscdior <- AD2Seu(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad",
+# ann.seuscdior <- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",
 #                         method = "SeuratDisk+scDIOR", assay = "RNA", load.assays = c("RNA"))
 ```
 
@@ -189,10 +354,18 @@ ann.sceasy
 
 The conversion is performed with functions implemented in `SeuratDisk` and `Seurat`:
 
-```{r loom2seu}
+```{r loom2seu, eval=FALSE}
 # loom will lose reduction
-seu.obj.loom <- ImportSeurat(loom.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small.loom", from = "loom")
+seu.obj.loom <- ImportSeurat(loom.file = "~/gefetch2r/doc/conversion/pbmc_small.loom", from = "loom")
+# Convert loom to SeuratObject!
+# Reading in /matrix
+# Storing /matrix as counts
+# Saving /matrix to assay 'RNA'
+# Loading graph RNA_snn
 seu.obj.loom
+# An object of class Seurat
+# 230 features across 80 samples within 1 assay
+# Active assay: RNA (230 features, 0 variable features)
 ```
 
 <hr />
@@ -206,24 +379,24 @@ There are multiple tools available for format conversion from `SingleCellExperim
 * `zellkonverter` is the best method in terms of information kept and running time
 * `scDIOR` is the best method in terms of usability and disk usage
 
-```{r sce2anndata}
+```{r sce2anndata, eval=FALSE}
 # zellkonverter
 SCE2AD(
   sce.obj = seger, method = "zellkonverter",
-  out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion", slot = "counts",
-  conda.path = "/Applications/anaconda3"
+  out.folder = "~/gefetch2r/doc/conversion", slot = "counts",
+  conda.path = "~/anaconda3"
 )
 
 # # sceasy
-# SCE2AD(sce.obj = seger, method = "sceasy", out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion",
-#        slot = "counts", conda.path = "/Applications/anaconda3")
+# SCE2AD(sce.obj = seger, method = "sceasy", out.folder = "~/gefetch2r/doc/conversion",
+#        slot = "counts", conda.path = "~/anaconda3")
 #
 # # scDIOR
 # seger.scdior <- seger
 # library(SingleCellExperiment)
 # # scDIOR does not support varm in rowData
 # rowData(seger.scdior)$varm <- NULL
-# SCE2AD(sce.obj = seger.scdior, method = "scDIOR", out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion")
+# SCE2AD(sce.obj = seger.scdior, method = "scDIOR", out.folder = "~/gefetch2r/doc/conversion")
 ```
 
 <hr />
@@ -236,21 +409,21 @@ There are multiple tools available for format conversion from `AnnData` to `Sing
 * `schard` is the best method in terms of usability and running time
 * `schard` and `scDIOR` have comparable performance in disk usage
 
-```{r anndata2sce}
+```{r anndata2sce, eval=FALSE}
 # zellkonverter
 sce.zell <- AD2SCE(
-  anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/seger_zellkonverter.h5ad",
+  anndata.file = "~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad",
   method = "zellkonverter", slot = "scale.data",
-  use.raw = TRUE, conda.path = "/Applications/anaconda3"
+  use.raw = TRUE, conda.path = "~/anaconda3"
 )
-sce.zell
 
 # # scDIOR
-# sce.scdior <- AD2SCE(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/seger_zellkonverter.h5ad.h5ad",
+# sce.scdior <- AD2SCE(anndata.file = "~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad",
 #                      method = "scDIOR", assay = "RNA",
-#                      use.raw = TRUE, conda.path = "/Applications/anaconda3")
+#                      use.raw = TRUE, conda.path = "~/anaconda3")
+#
 # # schard
-# sce.schard <- AD2SCE(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/seger_zellkonverter.h5ad.h5ad",
+# sce.schard <- AD2SCE(anndata.file = "~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad",
 #                      method = "schard", use.raw = TRUE)
 ```
 
@@ -266,20 +439,33 @@ The conversion is performed with functions implemented in `LoomExperiment`.
 # remove seger.loom first
 SCELoom(
   from = "SingleCellExperiment", to = "loom", sce = seger,
-  loom.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/seger.loom"
+  loom.file = "~/gefetch2r/doc/conversion/seger.loom"
 )
+# Convert SingleCellExperiment to loom.
 ```
 
 <hr />
 
 ### loom to SingleCellExperiment
 
-```{r loom2sce}
+```{r loom2sce, eval=FALSE}
 seger.loom <- SCELoom(
   from = "loom", to = "SingleCellExperiment",
   loom.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/seger.loom"
 )
+# Convert loom to SingleCellExperiment.
 seger.loom
+# class: SingleCellExperiment
+# dim: 26179 3514
+# metadata(0):
+# assays(1): counts
+# rownames(26179): SGIP1 AZIN2 ... BIVM-ERCC5.1 eGFP
+# rowData names(2): refseq symbol
+# colnames(3514): HP1502401_N13 HP1502401_D14 ... HP1526901T2D_O11 HP1526901T2D_A8
+# colData names(9): age body.mass.index ... single.cell.well.quality
+#   submitted.single.cell.quality
+# reducedDimNames(0):
+# altExpNames(0):
 ```
 
 <hr />

@@ -5,73 +5,50 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="description" content="GEfetch2R">
 <title>ObjectConversion • GEfetch2R</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.2.2/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.2.2/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="ObjectConversion">
-<meta property="og:description" content="GEfetch2R">
-<!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
-<script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-<![endif]-->
+<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="ObjectConversion">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
-    
 
-    <nav class="navbar fixed-top navbar-dark navbar-expand-lg bg-primary"><div class="container">
-    
+
+    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+
     <a class="navbar-brand me-2" href="../index.html">GEfetch2R</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
 
-    
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item">
-  <a class="nav-link" href="../index.html">
-    <span class="fa fa-home fa-lg"></span>
-     
-  </a>
-</li>
+<li class="nav-item"><a class="nav-link" href="../index.html"><span class="fa fa-home fa-lg"></span></a></li>
 <li class="active nav-item dropdown">
-  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
-  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
-    <a class="dropdown-item" href="../articles/DownloadRaw.html">Download raw data (sra/fastq/bam)</a>
-    <a class="dropdown-item" href="../articles/DownloadMatrices.html">Download count matrix and annotation</a>
-    <a class="dropdown-item" href="../articles/DownloadObjects.html">Download processed object</a>
-    <a class="dropdown-item" href="../articles/ObjectConversion.html">Format conversion and benchmark</a>
-  </div>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="../articles/QuickStart.html">Quick start</a></li>
+    <li><a class="dropdown-item" href="../articles/DownloadRaw.html">Download raw data (sra/fastq/bam)</a></li>
+    <li><a class="dropdown-item" href="../articles/DownloadMatrices.html">Download count matrix and annotation</a></li>
+    <li><a class="dropdown-item" href="../articles/DownloadObjects.html">Download processed object</a></li>
+    <li><a class="dropdown-item" href="../articles/ObjectConversion.html">Format conversion and benchmark</a></li>
+  </ul>
 </li>
-<li class="nav-item">
-  <a class="nav-link" href="../reference/index.html">Reference</a>
-</li>
-<li class="nav-item">
-  <a class="nav-link" href="../news/index.html">Change log</a>
-</li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Change log</a></li>
       </ul>
-<form class="form-inline my-2 my-lg-0" role="search">
-        <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off">
-</form>
-
-      <ul class="navbar-nav">
-<li class="nav-item">
-  <a class="external-link nav-link" href="https://github.com/showteeth/GEfetch2R">
-    <span class="fa fa-github fa-lg"></span>
-     
-  </a>
-</li>
+<ul class="navbar-nav">
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/showteeth/GEfetch2R"><span class="fa fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
-    
+
   </div>
 </nav><div class="container template-article">
 
@@ -80,9 +57,9 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="" class="logo" alt=""><h1>ObjectConversion</h1>
+
+      <h1>ObjectConversion</h1>
             
-            <h4 data-toc-skip class="date">2023-07-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/showteeth/GEfetch2R/blob/HEAD/vignettes/ObjectConversion.Rmd" class="external-link"><code>vignettes/ObjectConversion.Rmd</code></a></small>
       <div class="d-none name"><code>ObjectConversion.Rmd</code></div>
@@ -97,7 +74,7 @@
 such as <a href="https://scanpy.readthedocs.io/en/stable/" class="external-link">Scanpy</a>,
 <a href="https://satijalab.org/seurat/" class="external-link">Seurat</a>, <a href="https://bioconductor.org/packages/release/bioc/html/scran.html" class="external-link">scran</a>
 and <a href="http://cole-trapnell-lab.github.io/monocle-release/" class="external-link">Monocle</a>.
-These tools have their own objects, such as <code>Anndata</code> of
+These tools have their own objects, such as <code>AnnData</code> of
 <code>Scanpy</code>, <code>SeuratObject</code> of <code>Seurat</code>,
 <code>SingleCellExperiment</code> of <code>scran</code> and
 <code>CellDataSet</code>/<code>cell_data_set</code> of
@@ -111,10 +88,10 @@ need to perform object conversion frequently.</p>
 <li>
 <strong>benchmarked the format conversion tools</strong> and
 provides some guides for tool selection under different
-scenarios(<code>Anndata</code> -&gt; <code>SeuratObject</code>,
-<code>SeuratObject</code> to <code>Anndata</code>, <code>Anndata</code>
+scenarios(<code>AnnData</code> -&gt; <code>SeuratObject</code>,
+<code>SeuratObject</code> to <code>AnnData</code>, <code>AnnData</code>
 to <code>SingleCellExperiment</code>, <code>SingleCellExperiment</code>
-to <code>Anndata</code>)</li>
+to <code>AnnData</code>)</li>
 <li>provides multiple functions to <strong>perform format conversion
 between widely used scRNA-seq objects</strong>
 (<code>SeuratObject</code>, <code>AnnData</code>,
@@ -128,65 +105,50 @@ between widely used scRNA-seq objects</strong>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># library</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/showteeth/GEfetch2R" class="external-link">GEfetch2R</a></span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Setting options('download.file.method.GEOquery'='auto')</span></span></code></pre>
-<pre><code><span><span class="co">## Setting options('GEOquery.inmemory.gpl'=FALSE)</span></span></code></pre>
-<pre><code><span><span class="co">## Registered S3 method overwritten by 'SeuratDisk':</span></span>
-<span><span class="co">##   method            from  </span></span>
-<span><span class="co">##   as.sparse.H5Group Seurat</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: replacing previous import 'LoomExperiment::import' by</span></span>
-<span><span class="co">## 'reticulate::import' when loading 'GEfetch2R'</span></span></code></pre>
-<pre><code><span><span class="co">## Registered S3 method overwritten by 'zellkonverter':</span></span>
-<span><span class="co">##   method                                             from      </span></span>
-<span><span class="co">##   py_to_r.pandas.core.arrays.categorical.Categorical reticulate</span></span></code></pre>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span> <span class="co"># pbmc_small</span></span></code></pre></div>
-<pre><code><span><span class="co">## Attaching SeuratObject</span></span></code></pre>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># library(scRNAseq) # seger</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/showteeth/GEfetch2R" class="external-link">GEfetch2R</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span> <span class="co"># pbmc_small</span></span>
+<span><span class="co"># library(scRNAseq) # seger</span></span></code></pre></div>
 <p><code>SeuratObject</code>:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># object</span></span>
-<span><span class="va">pbmc_small</span></span></code></pre></div>
-<pre><code><span><span class="co">## An object of class Seurat </span></span>
-<span><span class="co">## 230 features across 80 samples within 1 assay </span></span>
-<span><span class="co">## Active assay: RNA (230 features, 20 variable features)</span></span>
-<span><span class="co">##  2 dimensional reductions calculated: pca, tsne</span></span></code></pre>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># metadata</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##                   orig.ident nCount_RNA nFeature_RNA RNA_snn_res.0.8</span></span>
-<span><span class="co">## ATGCCAGAACGACT SeuratProject         70           47               0</span></span>
-<span><span class="co">## CATGGCCTGTGCAT SeuratProject         85           52               0</span></span>
-<span><span class="co">## GAACCTGATGAACC SeuratProject         87           50               1</span></span>
-<span><span class="co">## TGACTGGATTCTCA SeuratProject        127           56               0</span></span>
-<span><span class="co">## AGTCAGACTGCACA SeuratProject        173           53               0</span></span>
-<span><span class="co">## TCTGATACACGTGT SeuratProject         70           48               0</span></span>
-<span><span class="co">##                letter.idents groups RNA_snn_res.1</span></span>
-<span><span class="co">## ATGCCAGAACGACT             A     g2             0</span></span>
-<span><span class="co">## CATGGCCTGTGCAT             A     g1             0</span></span>
-<span><span class="co">## GAACCTGATGAACC             B     g2             0</span></span>
-<span><span class="co">## TGACTGGATTCTCA             A     g2             0</span></span>
-<span><span class="co">## AGTCAGACTGCACA             A     g2             0</span></span>
-<span><span class="co">## TCTGATACACGTGT             A     g1             0</span></span></code></pre>
+<span><span class="va">pbmc_small</span></span>
+<span><span class="co"># An object of class Seurat</span></span>
+<span><span class="co"># 230 features across 80 samples within 1 assay</span></span>
+<span><span class="co"># Active assay: RNA (230 features, 20 variable features)</span></span>
+<span><span class="co">#  2 dimensional reductions calculated: pca, tsne</span></span>
+<span></span>
+<span><span class="co"># metadata</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pbmc_small</span><span class="op">@</span><span class="va">meta.data</span><span class="op">)</span></span>
+<span><span class="co">#                   orig.ident nCount_RNA nFeature_RNA RNA_snn_res.0.8 letter.idents groups</span></span>
+<span><span class="co"># ATGCCAGAACGACT SeuratProject         70           47               0             A     g2</span></span>
+<span><span class="co"># CATGGCCTGTGCAT SeuratProject         85           52               0             A     g1</span></span>
+<span><span class="co"># GAACCTGATGAACC SeuratProject         87           50               1             B     g2</span></span>
+<span><span class="co"># TGACTGGATTCTCA SeuratProject        127           56               0             A     g2</span></span>
+<span><span class="co"># AGTCAGACTGCACA SeuratProject        173           53               0             A     g2</span></span>
+<span><span class="co"># TCTGATACACGTGT SeuratProject         70           48               0             A     g1</span></span>
+<span><span class="co">#                RNA_snn_res.1</span></span>
+<span><span class="co"># ATGCCAGAACGACT             0</span></span>
+<span><span class="co"># CATGGCCTGTGCAT             0</span></span>
+<span><span class="co"># GAACCTGATGAACC             0</span></span>
+<span><span class="co"># TGACTGGATTCTCA             0</span></span>
+<span><span class="co"># AGTCAGACTGCACA             0</span></span>
+<span><span class="co"># TCTGATACACGTGT             0</span></span></code></pre></div>
 <p><code>SingleCellExperiment</code>:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># seger &lt;- scRNAseq::SegerstolpePancreasData()</span></span>
 <span><span class="co"># load from local</span></span>
-<span><span class="va">seger</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"/Users/soyabean/Desktop/tmp/scdown/conversion/seger.rds"</span><span class="op">)</span></span>
-<span><span class="va">seger</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SingleCellExperiment </span></span>
-<span><span class="co">## dim: 26179 3514 </span></span>
-<span><span class="co">## metadata(0):</span></span>
-<span><span class="co">## assays(1): counts</span></span>
-<span><span class="co">## rownames(26179): SGIP1 AZIN2 ... BIVM-ERCC5 eGFP</span></span>
-<span><span class="co">## rowData names(2): refseq symbol</span></span>
-<span><span class="co">## colnames(3514): HP1502401_N13 HP1502401_D14 ... HP1526901T2D_O11</span></span>
-<span><span class="co">##   HP1526901T2D_A8</span></span>
-<span><span class="co">## colData names(9): individual sex ... submitted single cell quality cell</span></span>
-<span><span class="co">##   type</span></span>
-<span><span class="co">## reducedDimNames(0):</span></span>
-<span><span class="co">## altExpNames(1): ERCC</span></span></code></pre>
+<span><span class="va">seger</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"~/gefetch2r/doc/conversion/seger.rds"</span><span class="op">)</span></span>
+<span><span class="va">seger</span></span>
+<span><span class="co"># class: SingleCellExperiment</span></span>
+<span><span class="co"># dim: 26179 3514</span></span>
+<span><span class="co"># metadata(0):</span></span>
+<span><span class="co"># assays(1): counts</span></span>
+<span><span class="co"># rownames(26179): SGIP1 AZIN2 ... BIVM-ERCC5 eGFP</span></span>
+<span><span class="co"># rowData names(2): refseq symbol</span></span>
+<span><span class="co"># colnames(3514): HP1502401_N13 HP1502401_D14 ... HP1526901T2D_O11 HP1526901T2D_A8</span></span>
+<span><span class="co"># colData names(9): individual sex ... submitted single cell quality cell type</span></span>
+<span><span class="co"># reducedDimNames(0):</span></span>
+<span><span class="co"># altExpNames(1): ERCC</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -195,29 +157,26 @@ between widely used scRNA-seq objects</strong>
 <p>Here, we will convert SeuratObject to
 <code>SingleCellExperiment</code>,
 <code>CellDataSet</code>/<code>cell_data_set</code>,
-<code>Anndata</code>, <code>loom</code>.</p>
+<code>AnnData</code>, <code>loom</code>.</p>
 <div class="section level3">
 <h3 id="seuratobject-to-singlecellexperiment">SeuratObject to SingleCellExperiment<a class="anchor" aria-label="anchor" href="#seuratobject-to-singlecellexperiment"></a>
 </h3>
 <p>The conversion is performed with functions implemented in
 <code>Seurat</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sce.obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, to <span class="op">=</span> <span class="st">"SCE"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Convert SeuratObject to SingleCellExperiment (suitable for scater)!</span></span></code></pre>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sce.obj</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SingleCellExperiment </span></span>
-<span><span class="co">## dim: 230 80 </span></span>
-<span><span class="co">## metadata(0):</span></span>
-<span><span class="co">## assays(2): counts logcounts</span></span>
-<span><span class="co">## rownames(230): MS4A1 CD79B ... SPON2 S100B</span></span>
-<span><span class="co">## rowData names(5): vst.mean vst.variance vst.variance.expected</span></span>
-<span><span class="co">##   vst.variance.standardized vst.variable</span></span>
-<span><span class="co">## colnames(80): ATGCCAGAACGACT CATGGCCTGTGCAT ... GGAACACTTCAGAC</span></span>
-<span><span class="co">##   CTTGATTGATCTTC</span></span>
-<span><span class="co">## colData names(8): orig.ident nCount_RNA ... RNA_snn_res.1 ident</span></span>
-<span><span class="co">## reducedDimNames(2): PCA TSNE</span></span>
-<span><span class="co">## altExpNames(0):</span></span></code></pre>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sce.obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, to <span class="op">=</span> <span class="st">"SCE"</span><span class="op">)</span></span>
+<span><span class="va">sce.obj</span></span>
+<span><span class="co"># class: SingleCellExperiment</span></span>
+<span><span class="co"># dim: 230 80</span></span>
+<span><span class="co"># metadata(0):</span></span>
+<span><span class="co"># assays(2): counts logcounts</span></span>
+<span><span class="co"># rownames(230): MS4A1 CD79B ... SPON2 S100B</span></span>
+<span><span class="co"># rowData names(5): vst.mean vst.variance vst.variance.expected vst.variance.standardized</span></span>
+<span><span class="co">#   vst.variable</span></span>
+<span><span class="co"># colnames(80): ATGCCAGAACGACT CATGGCCTGTGCAT ... GGAACACTTCAGAC CTTGATTGATCTTC</span></span>
+<span><span class="co"># colData names(8): orig.ident nCount_RNA ... RNA_snn_res.1 ident</span></span>
+<span><span class="co"># reducedDimNames(2): PCA TSNE</span></span>
+<span><span class="co"># altExpNames(0):</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level3">
@@ -225,40 +184,48 @@ between widely used scRNA-seq objects</strong>
 </h3>
 <p>To <code>CellDataSet</code> (The conversion is performed with
 functions implemented in <code>Seurat</code>):</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># BiocManager::install("monocle") # reuqire monocle</span></span>
-<span><span class="va">cds.obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, reduction <span class="op">=</span> <span class="st">"tsne"</span>, to <span class="op">=</span> <span class="st">"CellDataSet"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Convert SeuratObject to CellDataSet (suitable for Monocle)!</span></span></code></pre>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cds.obj</span></span></code></pre></div>
-<pre><code><span><span class="co">## CellDataSet (storageMode: environment)</span></span>
-<span><span class="co">## assayData: 230 features, 80 samples </span></span>
-<span><span class="co">##   element names: exprs </span></span>
-<span><span class="co">## protocolData: none</span></span>
-<span><span class="co">## phenoData</span></span>
-<span><span class="co">##   sampleNames: ATGCCAGAACGACT CATGGCCTGTGCAT ... CTTGATTGATCTTC (80</span></span>
-<span><span class="co">##     total)</span></span>
-<span><span class="co">##   varLabels: orig.ident nCount_RNA ... Size_Factor (8 total)</span></span>
-<span><span class="co">##   varMetadata: labelDescription</span></span>
-<span><span class="co">## featureData</span></span>
-<span><span class="co">##   featureNames: MS4A1 CD79B ... S100B (230 total)</span></span>
-<span><span class="co">##   fvarLabels: vst.mean vst.variance ... gene_short_name (6 total)</span></span>
-<span><span class="co">##   fvarMetadata: labelDescription</span></span>
-<span><span class="co">## experimentData: use 'experimentData(object)'</span></span>
-<span><span class="co">## Annotation:</span></span></code></pre>
+<span><span class="va">cds.obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, reduction <span class="op">=</span> <span class="st">"tsne"</span>, to <span class="op">=</span> <span class="st">"CellDataSet"</span><span class="op">)</span></span>
+<span><span class="va">cds.obj</span></span>
+<span><span class="co"># CellDataSet (storageMode: environment)</span></span>
+<span><span class="co"># assayData: 230 features, 80 samples</span></span>
+<span><span class="co">#   element names: exprs</span></span>
+<span><span class="co"># protocolData: none</span></span>
+<span><span class="co"># phenoData</span></span>
+<span><span class="co">#   sampleNames: ATGCCAGAACGACT CATGGCCTGTGCAT ... CTTGATTGATCTTC (80 total)</span></span>
+<span><span class="co">#   varLabels: orig.ident nCount_RNA ... Size_Factor (8 total)</span></span>
+<span><span class="co">#   varMetadata: labelDescription</span></span>
+<span><span class="co"># featureData</span></span>
+<span><span class="co">#   featureNames: MS4A1 CD79B ... S100B (230 total)</span></span>
+<span><span class="co">#   fvarLabels: vst.mean vst.variance ... gene_short_name (6 total)</span></span>
+<span><span class="co">#   fvarMetadata: labelDescription</span></span>
+<span><span class="co"># experimentData: use 'experimentData(object)'</span></span>
+<span><span class="co"># Annotation:</span></span></code></pre></div>
 <p>To <code>cell_data_set</code> (The conversion is performed with
 functions implemented in <code>SeuratWrappers</code>):</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># remotes::install_github('cole-trapnell-lab/monocle3') # reuqire monocle3</span></span>
 <span><span class="va">cds3.obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, to <span class="op">=</span> <span class="st">"cell_data_set"</span><span class="op">)</span></span>
-<span><span class="va">cds3.obj</span></span></code></pre></div>
+<span><span class="va">cds3.obj</span></span>
+<span><span class="co"># class: cell_data_set</span></span>
+<span><span class="co"># dim: 230 80</span></span>
+<span><span class="co"># metadata(0):</span></span>
+<span><span class="co"># assays(2): counts logcounts</span></span>
+<span><span class="co"># rownames(230): MS4A1 CD79B ... SPON2 S100B</span></span>
+<span><span class="co"># rowData names(0):</span></span>
+<span><span class="co"># colnames(80): ATGCCAGAACGACT CATGGCCTGTGCAT ... GGAACACTTCAGAC CTTGATTGATCTTC</span></span>
+<span><span class="co"># colData names(9): orig.ident nCount_RNA ... ident Size_Factor</span></span>
+<span><span class="co"># reducedDimNames(2): PCA TSNE</span></span>
+<span><span class="co"># mainExpName: RNA</span></span>
+<span><span class="co"># altExpNames(0):</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level3">
 <h3 id="seuratobject-to-anndata">SeuratObject to AnnData<a class="anchor" aria-label="anchor" href="#seuratobject-to-anndata"></a>
 </h3>
 <p>There are multiple tools available for format conversion from
-<code>SeuratObject</code> to <code>Anndata</code>:</p>
+<code>SeuratObject</code> to <code>AnnData</code>:</p>
 <ul>
 <li>
 <code>scDIOR</code> is the best method in terms of information kept
@@ -267,23 +234,61 @@ and usability</li>
 <code>sceasy</code> has best performance in running time and disk
 usage.</li>
 </ul>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># sceasy</span></span>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># sceasy, generate pbmc_small_sceasy.h5ad</span></span>
 <span><span class="fu"><a href="../reference/Seu2AD.html">Seu2AD</a></span><span class="op">(</span></span>
-<span>  seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, method <span class="op">=</span> <span class="st">"sceasy"</span>, out.folder <span class="op">=</span> <span class="st">"/Users/soyabean/Desktop/tmp/scdown/conversion"</span>,</span>
-<span>  assay <span class="op">=</span> <span class="st">"RNA"</span>, slot <span class="op">=</span> <span class="st">"counts"</span>, conda.path <span class="op">=</span> <span class="st">"/Applications/anaconda3"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## AnnData object with n_obs × n_vars = 80 × 230</span></span>
-<span><span class="co">##     obs: 'orig.ident', 'nCount_RNA', 'nFeature_RNA', 'RNA_snn_res.0.8', 'letter.idents', 'groups', 'RNA_snn_res.1'</span></span>
-<span><span class="co">##     var: 'vst.mean', 'vst.variance', 'vst.variance.expected', 'vst.variance.standardized', 'vst.variable'</span></span>
-<span><span class="co">##     obsm: 'X_pca', 'X_tsne'</span></span></code></pre>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># # SeuratDisk</span></span>
-<span><span class="co"># Seu2AD(seu.obj = pbmc_small, method = "SeuratDisk", out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion",</span></span>
-<span><span class="co">#        assay = "RNA", save.scale = TRUE)</span></span>
-<span><span class="co"># # scDIOR</span></span>
-<span><span class="co"># Seu2AD(seu.obj = pbmc_small, method = "scDIOR",</span></span>
-<span><span class="co">#        out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion", assay = "RNA", save.scale = TRUE)</span></span></code></pre></div>
+<span>  seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, method <span class="op">=</span> <span class="st">"sceasy"</span>, out.folder <span class="op">=</span> <span class="st">"~/gefetch2r/doc/conversion"</span>,</span>
+<span>  assay <span class="op">=</span> <span class="st">"RNA"</span>, slot <span class="op">=</span> <span class="st">"counts"</span>, conda.path <span class="op">=</span> <span class="st">"~/anaconda3"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co"># AnnData object with n_obs × n_vars = 80 × 230</span></span>
+<span><span class="co">#     obs: 'orig.ident', 'nCount_RNA', 'nFeature_RNA', 'RNA_snn_res.0.8', 'letter.idents', 'groups', 'RNA_snn_res.1'</span></span>
+<span><span class="co">#     var: 'vst.mean', 'vst.variance', 'vst.variance.expected', 'vst.variance.standardized', 'vst.variable'</span></span>
+<span><span class="co">#     obsm: 'X_pca', 'X_tsne'</span></span>
+<span></span>
+<span></span>
+<span><span class="co"># SeuratDisk, generate pbmc_small_SeuratDisk.h5Seurat, pbmc_small_SeuratDisk.h5ad</span></span>
+<span><span class="fu"><a href="../reference/Seu2AD.html">Seu2AD</a></span><span class="op">(</span></span>
+<span>  seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, method <span class="op">=</span> <span class="st">"SeuratDisk"</span>, out.folder <span class="op">=</span> <span class="st">"~/gefetch2r/doc/conversion"</span>,</span>
+<span>  assay <span class="op">=</span> <span class="st">"RNA"</span>, save.scale <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co"># Creating h5Seurat file for version 3.1.5.9900</span></span>
+<span><span class="co"># Adding counts for RNA</span></span>
+<span><span class="co"># Adding data for RNA</span></span>
+<span><span class="co"># Adding scale.data for RNA</span></span>
+<span><span class="co"># Adding variable features for RNA</span></span>
+<span><span class="co"># Adding feature-level metadata for RNA</span></span>
+<span><span class="co"># Adding cell embeddings for pca</span></span>
+<span><span class="co"># Adding loadings for pca</span></span>
+<span><span class="co"># Adding projected loadings for pca</span></span>
+<span><span class="co"># Adding standard deviations for pca</span></span>
+<span><span class="co"># Adding JackStraw information for pca</span></span>
+<span><span class="co"># Adding cell embeddings for tsne</span></span>
+<span><span class="co"># No loadings for tsne</span></span>
+<span><span class="co"># No projected loadings for tsne</span></span>
+<span><span class="co"># No standard deviations for tsne</span></span>
+<span><span class="co"># No JackStraw data for tsne</span></span>
+<span><span class="co"># Validating h5Seurat file</span></span>
+<span><span class="co"># Adding scale.data from RNA as X</span></span>
+<span><span class="co"># Transfering meta.features to var</span></span>
+<span><span class="co"># Adding data from RNA as raw</span></span>
+<span><span class="co"># Transfering meta.features to raw/var</span></span>
+<span><span class="co"># Transfering meta.data to obs</span></span>
+<span><span class="co"># Adding dimensional reduction information for pca</span></span>
+<span><span class="co"># Adding feature loadings for pca</span></span>
+<span><span class="co"># Adding dimensional reduction information for tsne</span></span>
+<span><span class="co"># Adding RNA_snn as neighbors</span></span>
+<span><span class="co"># [1] "~/gefetch2r/doc/conversion/pbmc_small_SeuratDisk.h5ad"</span></span>
+<span></span>
+<span></span>
+<span><span class="co"># # scDIOR, generate pbmc_small_scDIOR.h5</span></span>
+<span><span class="fu"><a href="../reference/Seu2AD.html">Seu2AD</a></span><span class="op">(</span></span>
+<span>  seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, method <span class="op">=</span> <span class="st">"scDIOR"</span>,</span>
+<span>  out.folder <span class="op">=</span> <span class="st">"~/gefetch2r/doc/conversion"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, save.scale <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co"># NULL</span></span>
+<span><span class="co"># Warning message:</span></span>
+<span><span class="co"># In matrix_to_h5(mat = slot(object = slot_assay, name = "scale.data"),  :</span></span>
+<span><span class="co">#   sdata is dense matrix</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level3">
@@ -291,26 +296,26 @@ usage.</li>
 </h3>
 <p>The conversion is performed with functions implemented in
 <code>SeuratDisk</code>:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span></span>
 <span>  seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, to <span class="op">=</span> <span class="st">"loom"</span>,</span>
-<span>  loom.file <span class="op">=</span> <span class="st">"/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small.loom"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Convert SeuratObject to loom!</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: Overwriting previous file</span></span>
-<span><span class="co">## /Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small.loom</span></span></code></pre>
-<pre><code><span><span class="co">## Saving data from RNA as /matrix</span></span></code></pre>
-<pre><code><span><span class="co">## Adding slot counts for assay RNA</span></span></code></pre>
-<pre><code><span><span class="co">## Adding layer counts</span></span></code></pre>
-<pre><code><span><span class="co">## Adding col attribute CellID</span></span></code></pre>
-<pre><code><span><span class="co">## Adding col attribute orig.ident</span></span></code></pre>
-<pre><code><span><span class="co">## Adding col attribute nCount_RNA</span></span></code></pre>
-<pre><code><span><span class="co">## Adding col attribute nFeature_RNA</span></span></code></pre>
-<pre><code><span><span class="co">## Adding col attribute RNA_snn_res.0.8</span></span></code></pre>
-<pre><code><span><span class="co">## Adding col attribute letter.idents</span></span></code></pre>
-<pre><code><span><span class="co">## Adding col attribute groups</span></span></code></pre>
-<pre><code><span><span class="co">## Adding col attribute RNA_snn_res.1</span></span></code></pre>
-<pre><code><span><span class="co">## Adding row attribute Gene</span></span></code></pre>
+<span>  loom.file <span class="op">=</span> <span class="st">"~/gefetch2r/doc/conversion/pbmc_small.loom"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co"># Convert SeuratObject to loom!</span></span>
+<span><span class="co"># Saving data from RNA as /matrix</span></span>
+<span><span class="co">#   |========================================================================================| 100%</span></span>
+<span><span class="co"># Adding slot counts for assay RNA</span></span>
+<span><span class="co"># Adding layer counts</span></span>
+<span><span class="co">#   |========================================================================================| 100%</span></span>
+<span><span class="co"># Adding col attribute CellID</span></span>
+<span><span class="co"># Adding col attribute orig.ident</span></span>
+<span><span class="co"># Adding col attribute nCount_RNA</span></span>
+<span><span class="co"># Adding col attribute nFeature_RNA</span></span>
+<span><span class="co"># Adding col attribute RNA_snn_res.0.8</span></span>
+<span><span class="co"># Adding col attribute letter.idents</span></span>
+<span><span class="co"># Adding col attribute groups</span></span>
+<span><span class="co"># Adding col attribute RNA_snn_res.1</span></span>
+<span><span class="co"># Adding row attribute Gene</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -322,26 +327,22 @@ usage.</li>
 </h3>
 <p>The conversion is performed with functions implemented in
 <code>Seurat</code>:</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">seu.obj.sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span></span>
 <span>  obj <span class="op">=</span> <span class="va">sce.obj</span>, from <span class="op">=</span> <span class="st">"SCE"</span>, count.assay <span class="op">=</span> <span class="st">"counts"</span>,</span>
 <span>  data.assay <span class="op">=</span> <span class="st">"logcounts"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Convert SingleCellExperiment to SeuratObject!</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: Keys should be one or more alphanumeric characters followed by an</span></span>
-<span><span class="co">## underscore, setting key from PC__ to PC_</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: All keys should be one or more alphanumeric characters followed by an</span></span>
-<span><span class="co">## underscore '_', setting key to PC_</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: Keys should be one or more alphanumeric characters followed by an</span></span>
-<span><span class="co">## underscore, setting key from tSNE__ to tSNE_</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: All keys should be one or more alphanumeric characters followed by an</span></span>
-<span><span class="co">## underscore '_', setting key to tSNE_</span></span></code></pre>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu.obj.sce</span></span></code></pre></div>
-<pre><code><span><span class="co">## An object of class Seurat </span></span>
-<span><span class="co">## 230 features across 80 samples within 1 assay </span></span>
-<span><span class="co">## Active assay: RNA (230 features, 0 variable features)</span></span>
-<span><span class="co">##  2 dimensional reductions calculated: pca, tsne</span></span></code></pre>
+<span><span class="op">)</span></span>
+<span><span class="co"># Convert SingleCellExperiment to SeuratObject!</span></span>
+<span><span class="co"># The assay you provided: RNA is not in the cell_data_set object: . Change assay to NULL # (Seurat 4.4.0)</span></span>
+<span><span class="co"># Warning: Keys should be one or more alphanumeric characters followed by an underscore, setting key from PC__ to PC_</span></span>
+<span><span class="co"># Warning: All keys should be one or more alphanumeric characters followed by an underscore '_', setting key to PC_</span></span>
+<span><span class="co"># Warning: Keys should be one or more alphanumeric characters followed by an underscore, setting key from tSNE__ to tSNE_</span></span>
+<span><span class="co"># Warning: All keys should be one or more alphanumeric characters followed by an underscore '_', setting key to tSNE_</span></span>
+<span><span class="va">seu.obj.sce</span></span>
+<span><span class="co"># An object of class Seurat</span></span>
+<span><span class="co"># 230 features across 80 samples within 1 assay</span></span>
+<span><span class="co"># Active assay: RNA (230 features, 0 variable features)</span></span>
+<span><span class="co">#  2 dimensional reductions calculated: pca, tsne</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level3">
@@ -349,33 +350,38 @@ usage.</li>
 </h3>
 <p><code>CellDataSet</code> to <code>SeuratObject</code> (The conversion
 is performed with functions implemented in <code>Seurat</code>):</p>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">seu.obj.cds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span></span>
 <span>  obj <span class="op">=</span> <span class="va">cds.obj</span>, from <span class="op">=</span> <span class="st">"CellDataSet"</span>,</span>
 <span>  count.assay <span class="op">=</span> <span class="st">"counts"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Convert CellDataSet (Monocle) to SeuratObject!</span></span></code></pre>
-<pre><code><span><span class="co">## Pulling expression data</span></span></code></pre>
-<pre><code><span><span class="co">## Building Seurat object</span></span></code></pre>
-<pre><code><span><span class="co">## Adding feature-level metadata</span></span></code></pre>
-<pre><code><span><span class="co">## No dispersion information in CellDataSet object</span></span></code></pre>
-<pre><code><span><span class="co">## No variable features present</span></span></code></pre>
-<pre><code><span><span class="co">## Adding tSNE dimensional reduction</span></span></code></pre>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu.obj.cds</span></span></code></pre></div>
-<pre><code><span><span class="co">## An object of class Seurat </span></span>
-<span><span class="co">## 230 features across 80 samples within 1 assay </span></span>
-<span><span class="co">## Active assay: RNA (230 features, 0 variable features)</span></span>
-<span><span class="co">##  1 dimensional reduction calculated: tsne</span></span></code></pre>
+<span><span class="op">)</span></span>
+<span><span class="co"># Convert CellDataSet (Monocle) to SeuratObject!</span></span>
+<span><span class="co"># Pulling expression data</span></span>
+<span><span class="co"># Building Seurat object</span></span>
+<span><span class="co"># Adding feature-level metadata</span></span>
+<span><span class="co"># No dispersion information in CellDataSet object</span></span>
+<span><span class="co"># No variable features present</span></span>
+<span><span class="co"># Adding tSNE dimensional reduction</span></span>
+<span><span class="va">seu.obj.cds</span></span>
+<span><span class="co"># An object of class Seurat</span></span>
+<span><span class="co"># 230 features across 80 samples within 1 assay</span></span>
+<span><span class="co"># Active assay: RNA (230 features, 0 variable features)</span></span>
+<span><span class="co">#  1 dimensional reduction calculated: tsne</span></span></code></pre></div>
 <p><code>cell_data_set</code> to <code>SeuratObject</code> (The
 conversion is performed with functions implemented in
 <code>Seurat</code>):</p>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">seu.obj.cds3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span></span>
 <span>  obj <span class="op">=</span> <span class="va">cds3.obj</span>, from <span class="op">=</span> <span class="st">"cell_data_set"</span>,</span>
 <span>  count.assay <span class="op">=</span> <span class="st">"counts"</span>, data.assay <span class="op">=</span> <span class="st">"logcounts"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">seu.obj.cds3</span></span></code></pre></div>
+<span><span class="co"># Convert cell_data_set (Monocle3) to SeuratObject!</span></span>
+<span><span class="co"># The assay you provided: RNA is not in the cell_data_set object: . Change assay to NULL # (Seurat 4.4.0)</span></span>
+<span><span class="va">seu.obj.cds3</span></span>
+<span><span class="co"># An object of class Seurat</span></span>
+<span><span class="co"># 230 features across 80 samples within 1 assay</span></span>
+<span><span class="co"># Active assay: RNA (230 features, 0 variable features)</span></span>
+<span><span class="co">#  2 dimensional reductions calculated: pca, tsne</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level3">
@@ -398,31 +404,30 @@ better performance in scalability</li>
 <li>
 <code>sceasy</code> has better performance in disk usage</li>
 </ul>
-<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># sceasy</span></span>
 <span><span class="va">ann.sceasy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2Seu.html">AD2Seu</a></span><span class="op">(</span></span>
-<span>  anndata.file <span class="op">=</span> <span class="st">"/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad"</span>, method <span class="op">=</span> <span class="st">"sceasy"</span>,</span>
+<span>  anndata.file <span class="op">=</span> <span class="st">"~/gefetch2r/doc/conversion/pbmc3k_final.h5ad"</span>, method <span class="op">=</span> <span class="st">"sceasy"</span>,</span>
 <span>  assay <span class="op">=</span> <span class="st">"RNA"</span>, slot <span class="op">=</span> <span class="st">"scale.data"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## X -&gt; data</span></span></code></pre>
-<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ann.sceasy</span></span></code></pre></div>
-<pre><code><span><span class="co">## An object of class Seurat </span></span>
-<span><span class="co">## 230 features across 80 samples within 1 assay </span></span>
-<span><span class="co">## Active assay: RNA (230 features, 0 variable features)</span></span>
-<span><span class="co">##  2 dimensional reductions calculated: pca, tsne</span></span></code></pre>
-<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># # SeuratDisk</span></span>
-<span><span class="co"># ann.seu &lt;- AD2Seu(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad",</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co"># X -&gt; data</span></span>
+<span><span class="va">ann.sceasy</span></span>
+<span><span class="co"># An object of class Seurat</span></span>
+<span><span class="co"># 230 features across 80 samples within 1 assay</span></span>
+<span><span class="co"># Active assay: RNA (230 features, 0 variable features)</span></span>
+<span><span class="co">#  2 dimensional reductions calculated: pca, tsne</span></span>
+<span></span>
+<span><span class="co"># # SeuratDisk</span></span>
+<span><span class="co"># ann.seu &lt;- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",</span></span>
 <span><span class="co">#                   method = "SeuratDisk", assay = "RNA", load.assays = c("RNA"))</span></span>
 <span><span class="co"># # scDIOR</span></span>
-<span><span class="co"># ann.scdior &lt;- AD2Seu(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad",</span></span>
+<span><span class="co"># ann.scdior &lt;- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",</span></span>
 <span><span class="co">#                      method = "scDIOR", assay = "RNA")</span></span>
 <span><span class="co"># # schard</span></span>
-<span><span class="co"># ann.schard &lt;- AD2Seu(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad",</span></span>
+<span><span class="co"># ann.schard &lt;- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",</span></span>
 <span><span class="co">#                      method = "schard", assay = "RNA", use.raw = T)</span></span>
 <span><span class="co"># # SeuratDisk+scDIOR</span></span>
-<span><span class="co"># ann.seuscdior &lt;- AD2Seu(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small_sceasy.h5ad",</span></span>
+<span><span class="co"># ann.seuscdior &lt;- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",</span></span>
 <span><span class="co">#                         method = "SeuratDisk+scDIOR", assay = "RNA", load.assays = c("RNA"))</span></span></code></pre></div>
 <hr>
 </div>
@@ -431,19 +436,18 @@ better performance in scalability</li>
 </h3>
 <p>The conversion is performed with functions implemented in
 <code>SeuratDisk</code> and <code>Seurat</code>:</p>
-<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># loom will lose reduction</span></span>
-<span><span class="va">seu.obj.loom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span>loom.file <span class="op">=</span> <span class="st">"/Users/soyabean/Desktop/tmp/scdown/conversion/pbmc_small.loom"</span>, from <span class="op">=</span> <span class="st">"loom"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Convert loom to SeuratObject!</span></span></code></pre>
-<pre><code><span><span class="co">## Reading in /matrix</span></span></code></pre>
-<pre><code><span><span class="co">## Storing /matrix as counts</span></span></code></pre>
-<pre><code><span><span class="co">## Saving /matrix to assay 'RNA'</span></span></code></pre>
-<pre><code><span><span class="co">## Loading graph RNA_snn</span></span></code></pre>
-<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu.obj.loom</span></span></code></pre></div>
-<pre><code><span><span class="co">## An object of class Seurat </span></span>
-<span><span class="co">## 230 features across 80 samples within 1 assay </span></span>
-<span><span class="co">## Active assay: RNA (230 features, 0 variable features)</span></span></code></pre>
+<span><span class="va">seu.obj.loom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span>loom.file <span class="op">=</span> <span class="st">"~/gefetch2r/doc/conversion/pbmc_small.loom"</span>, from <span class="op">=</span> <span class="st">"loom"</span><span class="op">)</span></span>
+<span><span class="co"># Convert loom to SeuratObject!</span></span>
+<span><span class="co"># Reading in /matrix</span></span>
+<span><span class="co"># Storing /matrix as counts</span></span>
+<span><span class="co"># Saving /matrix to assay 'RNA'</span></span>
+<span><span class="co"># Loading graph RNA_snn</span></span>
+<span><span class="va">seu.obj.loom</span></span>
+<span><span class="co"># An object of class Seurat</span></span>
+<span><span class="co"># 230 features across 80 samples within 1 assay</span></span>
+<span><span class="co"># Active assay: RNA (230 features, 0 variable features)</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -463,25 +467,24 @@ information kept and running time</li>
 <code>scDIOR</code> is the best method in terms of usability and
 disk usage</li>
 </ul>
-<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># zellkonverter</span></span>
 <span><span class="fu"><a href="../reference/SCE2AD.html">SCE2AD</a></span><span class="op">(</span></span>
 <span>  sce.obj <span class="op">=</span> <span class="va">seger</span>, method <span class="op">=</span> <span class="st">"zellkonverter"</span>,</span>
-<span>  out.folder <span class="op">=</span> <span class="st">"/Users/soyabean/Desktop/tmp/scdown/conversion"</span>, slot <span class="op">=</span> <span class="st">"counts"</span>,</span>
-<span>  conda.path <span class="op">=</span> <span class="st">"/Applications/anaconda3"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## NULL</span></span></code></pre>
-<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># # sceasy</span></span>
-<span><span class="co"># SCE2AD(sce.obj = seger, method = "sceasy", out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion",</span></span>
-<span><span class="co">#        slot = "counts", conda.path = "/Applications/anaconda3")</span></span>
+<span>  out.folder <span class="op">=</span> <span class="st">"~/gefetch2r/doc/conversion"</span>, slot <span class="op">=</span> <span class="st">"counts"</span>,</span>
+<span>  conda.path <span class="op">=</span> <span class="st">"~/anaconda3"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># # sceasy</span></span>
+<span><span class="co"># SCE2AD(sce.obj = seger, method = "sceasy", out.folder = "~/gefetch2r/doc/conversion",</span></span>
+<span><span class="co">#        slot = "counts", conda.path = "~/anaconda3")</span></span>
 <span><span class="co">#</span></span>
 <span><span class="co"># # scDIOR</span></span>
 <span><span class="co"># seger.scdior &lt;- seger</span></span>
 <span><span class="co"># library(SingleCellExperiment)</span></span>
 <span><span class="co"># # scDIOR does not support varm in rowData</span></span>
 <span><span class="co"># rowData(seger.scdior)$varm &lt;- NULL</span></span>
-<span><span class="co"># SCE2AD(sce.obj = seger.scdior, method = "scDIOR", out.folder = "/Users/soyabean/Desktop/tmp/scdown/conversion")</span></span></code></pre></div>
+<span><span class="co"># SCE2AD(sce.obj = seger.scdior, method = "scDIOR", out.folder = "~/gefetch2r/doc/conversion")</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level3">
@@ -500,41 +503,21 @@ running time</li>
 <code>schard</code> and <code>scDIOR</code> have comparable
 performance in disk usage</li>
 </ul>
-<div class="sourceCode" id="cb78"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># zellkonverter</span></span>
 <span><span class="va">sce.zell</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2SCE.html">AD2SCE</a></span><span class="op">(</span></span>
-<span>  anndata.file <span class="op">=</span> <span class="st">"/Users/soyabean/Desktop/tmp/scdown/conversion/seger_zellkonverter.h5ad"</span>,</span>
+<span>  anndata.file <span class="op">=</span> <span class="st">"~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad"</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"zellkonverter"</span>, slot <span class="op">=</span> <span class="st">"scale.data"</span>,</span>
-<span>  use.raw <span class="op">=</span> <span class="cn">TRUE</span>, conda.path <span class="op">=</span> <span class="st">"/Applications/anaconda3"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Warning in py_to_r.pandas.core.frame.DataFrame(adata$var): index contains</span></span>
-<span><span class="co">## duplicated values: row names not set</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: The names of these selected <span style="color: #00BB00;">obs</span> columns have been modified to match R</span></span>
-<span><span class="co">## conventions: <span style="color: #00BB00;">'body mass index' -&gt; 'body.mass.index'</span>, <span style="color: #00BB00;">'clinical information' -&gt;</span></span></span>
-<span><span class="co">## <span style="color: #00BB00;">'clinical.information'</span>, <span style="color: #00BB00;">'single cell well quality' -&gt;</span></span></span>
-<span><span class="co">## <span style="color: #00BB00;">'single.cell.well.quality'</span>, <span style="color: #00BB00;">'submitted single cell quality' -&gt;</span></span></span>
-<span><span class="co">## <span style="color: #00BB00;">'submitted.single.cell.quality'</span>, and <span style="color: #00BB00;">'cell type' -&gt; 'cell.type'</span></span></span></code></pre>
-<div class="sourceCode" id="cb81"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sce.zell</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SingleCellExperiment </span></span>
-<span><span class="co">## dim: 26179 3514 </span></span>
-<span><span class="co">## metadata(1): X_name</span></span>
-<span><span class="co">## assays(1): scale.data</span></span>
-<span><span class="co">## rownames(26179): SGIP1 AZIN2 ... BIVM-ERCC5 eGFP</span></span>
-<span><span class="co">## rowData names(2): refseq symbol</span></span>
-<span><span class="co">## colnames(3514): HP1502401_N13 HP1502401_D14 ... HP1526901T2D_O11</span></span>
-<span><span class="co">##   HP1526901T2D_A8</span></span>
-<span><span class="co">## colData names(9): individual sex ... submitted.single.cell.quality</span></span>
-<span><span class="co">##   cell.type</span></span>
-<span><span class="co">## reducedDimNames(0):</span></span>
-<span><span class="co">## altExpNames(0):</span></span></code></pre>
-<div class="sourceCode" id="cb83"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># # scDIOR</span></span>
-<span><span class="co"># sce.scdior &lt;- AD2SCE(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/seger_zellkonverter.h5ad.h5ad",</span></span>
+<span>  use.raw <span class="op">=</span> <span class="cn">TRUE</span>, conda.path <span class="op">=</span> <span class="st">"~/anaconda3"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># # scDIOR</span></span>
+<span><span class="co"># sce.scdior &lt;- AD2SCE(anndata.file = "~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad",</span></span>
 <span><span class="co">#                      method = "scDIOR", assay = "RNA",</span></span>
-<span><span class="co">#                      use.raw = TRUE, conda.path = "/Applications/anaconda3")</span></span>
+<span><span class="co">#                      use.raw = TRUE, conda.path = "~/anaconda3")</span></span>
+<span><span class="co">#</span></span>
 <span><span class="co"># # schard</span></span>
-<span><span class="co"># sce.schard &lt;- AD2SCE(anndata.file = "/Users/soyabean/Desktop/tmp/scdown/conversion/seger_zellkonverter.h5ad.h5ad",</span></span>
+<span><span class="co"># sce.schard &lt;- AD2SCE(anndata.file = "~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad",</span></span>
 <span><span class="co">#                      method = "schard", use.raw = TRUE)</span></span></code></pre></div>
 <hr>
 </div>
@@ -547,61 +530,59 @@ performance in disk usage</li>
 <div class="section level3">
 <h3 id="singlecellexperiment-to-loom">SingleCellExperiment to loom<a class="anchor" aria-label="anchor" href="#singlecellexperiment-to-loom"></a>
 </h3>
-<div class="sourceCode" id="cb84"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># remove seger.loom first</span></span>
 <span><span class="fu"><a href="../reference/SCELoom.html">SCELoom</a></span><span class="op">(</span></span>
 <span>  from <span class="op">=</span> <span class="st">"SingleCellExperiment"</span>, to <span class="op">=</span> <span class="st">"loom"</span>, sce <span class="op">=</span> <span class="va">seger</span>,</span>
-<span>  loom.file <span class="op">=</span> <span class="st">"/Users/soyabean/Desktop/tmp/scdown/conversion/seger.loom"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span>  loom.file <span class="op">=</span> <span class="st">"~/gefetch2r/doc/conversion/seger.loom"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co"># Convert SingleCellExperiment to loom.</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level3">
 <h3 id="loom-to-singlecellexperiment">loom to SingleCellExperiment<a class="anchor" aria-label="anchor" href="#loom-to-singlecellexperiment"></a>
 </h3>
-<div class="sourceCode" id="cb85"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">seger.loom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/SCELoom.html">SCELoom</a></span><span class="op">(</span></span>
 <span>  from <span class="op">=</span> <span class="st">"loom"</span>, to <span class="op">=</span> <span class="st">"SingleCellExperiment"</span>,</span>
 <span>  loom.file <span class="op">=</span> <span class="st">"/Users/soyabean/Desktop/tmp/scdown/conversion/seger.loom"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Convert loom to SingleCellExperiment.</span></span></code></pre>
-<div class="sourceCode" id="cb87"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seger.loom</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SingleCellExperiment </span></span>
-<span><span class="co">## dim: 26179 3514 </span></span>
-<span><span class="co">## metadata(0):</span></span>
-<span><span class="co">## assays(1): counts</span></span>
-<span><span class="co">## rownames(26179): SGIP1 AZIN2 ... BIVM-ERCC5.1 eGFP</span></span>
-<span><span class="co">## rowData names(2): refseq symbol</span></span>
-<span><span class="co">## colnames(3514): HP1502401_N13 HP1502401_D14 ... HP1526901T2D_O11</span></span>
-<span><span class="co">##   HP1526901T2D_A8</span></span>
-<span><span class="co">## colData names(8): Source.Name age ... sex single.cell.well.quality</span></span>
-<span><span class="co">## reducedDimNames(0):</span></span>
-<span><span class="co">## altExpNames(0):</span></span></code></pre>
+<span><span class="op">)</span></span>
+<span><span class="co"># Convert loom to SingleCellExperiment.</span></span>
+<span><span class="va">seger.loom</span></span>
+<span><span class="co"># class: SingleCellExperiment</span></span>
+<span><span class="co"># dim: 26179 3514</span></span>
+<span><span class="co"># metadata(0):</span></span>
+<span><span class="co"># assays(1): counts</span></span>
+<span><span class="co"># rownames(26179): SGIP1 AZIN2 ... BIVM-ERCC5.1 eGFP</span></span>
+<span><span class="co"># rowData names(2): refseq symbol</span></span>
+<span><span class="co"># colnames(3514): HP1502401_N13 HP1502401_D14 ... HP1526901T2D_O11 HP1526901T2D_A8</span></span>
+<span><span class="co"># colData names(9): age body.mass.index ... single.cell.well.quality</span></span>
+<span><span class="co">#   submitted.single.cell.quality</span></span>
+<span><span class="co"># reducedDimNames(0):</span></span>
+<span><span class="co"># altExpNames(0):</span></span></code></pre></div>
 <hr>
 </div>
 </div>
-  </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
 
 
 
     <footer><div class="pkgdown-footer-left">
-  <p></p>
-<p>Developed by Yabing Song.</p>
+  <p>Developed by Yabing Song.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer>
 </div>
 
-  
 
-  
+
+
 
   </body>
 </html>

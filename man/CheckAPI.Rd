@@ -5,12 +5,12 @@
 \title{Check the Availability of APIs.}
 \usage{
 CheckAPI(
-  database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Browser", "Zenodo", "CELLxGENE",
+  database = c("SRA/ENA", "GEO", "PanglaoDB", "UCSC Cell Browser", "Zenodo", "CELLxGENE",
     "Human Cell Atlas")
 )
 }
 \arguments{
-\item{database}{Vector of databases for API checking. Default: c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Browser", "Zenodo", "CELLxGENE", "Human Cell Atlas").}
+\item{database}{Vector of databases for API checking. Default: c("SRA/ENA", "GEO", "PanglaoDB", "UCSC Cell Browser", "Zenodo", "CELLxGENE", "Human Cell Atlas").}
 }
 \value{
 NULL.

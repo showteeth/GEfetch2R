@@ -1,6 +1,6 @@
 #' Check the Availability of APIs.
 #'
-#' @param database Vector of databases for API checking. Default: c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Browser", "Zenodo", "CELLxGENE", "Human Cell Atlas").
+#' @param database Vector of databases for API checking. Default: c("SRA/ENA", "GEO", "PanglaoDB", "UCSC Cell Browser", "Zenodo", "CELLxGENE", "Human Cell Atlas").
 #'
 #' @return NULL.
 #' @importFrom GEOfastq crawl_gsms
@@ -17,7 +17,7 @@
 #' # check all databases
 #' CheckAPI()
 #' }
-CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Browser", "Zenodo", "CELLxGENE", "Human Cell Atlas")) {
+CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglaoDB", "UCSC Cell Browser", "Zenodo", "CELLxGENE", "Human Cell Atlas")) {
   if ("SRA/ENA" %in% database) {
     # check SRR accession
     srr.acce <- tryCatch(
@@ -73,8 +73,8 @@ CheckAPI <- function(database = c("SRA/ENA", "GEO", "PanglanDB", "UCSC Cell Brow
       message("The API to access supplementary files is OK!")
     }
   }
-  if ("PanglanDB" %in% database) {
-    message("start checking APIs to access PanglanDB!")
+  if ("PanglaoDB" %in% database) {
+    message("start checking APIs to access PanglaoDB!")
     # check available metadata
     panglandb.meta <- tryCatch(
       {

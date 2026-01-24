@@ -20,7 +20,7 @@ Fastq2R(
 )
 }
 \arguments{
-\item{sample.dir}{Directory contains all samples.}
+\item{sample.dir}{Vector of path to samples (contain fastq files), e.g. c("path/to/GSM1111", "path/to/GSM2222","path/to/GSM3333").}
 
 \item{ref}{Path of folder containing 10x-compatible transcriptome \code{\link{RunCellRanger}}
 STAR \code{\link{RunSTAR}} reference.}
@@ -57,7 +57,7 @@ Pipe FASTQ files to SeuratObject and DESeqDataSet.
 \examples{
 \dontrun{
 # run CellRanger (10x Genomics)
-# the sample.dir corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
+# the sample.dir (can be a vector) corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
 seu <- Fastq2R(
   sample.dir = "/path/to/fastq",
   ref = "/path/to/10x/ref",
@@ -66,7 +66,7 @@ seu <- Fastq2R(
   st.path = "/path/to/cellranger"
 )
 # run STAR (Smart-seq2 or bulk RNA-seq)
-# the sample.dir corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
+# the sample.dir (can be a vector) corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
 deobj <- Fastq2R(
   sample.dir = "/path/to/fastq",
   ref = "/path/to/star/ref",

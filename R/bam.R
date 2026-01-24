@@ -348,7 +348,7 @@ Runbamtofastq <- function(bam.path, bam.type, pair.end, bamtofastq.path, bamtofa
     if (isFALSE(sort.name)) {
       sortn.bam <- gsub(pattern = ".bam$", replacement = ".sortname.bam", x = bam.path)
       bam.prefix <- gsub(pattern = ".bam$", replacement = "", x = basename(bam.path))
-      sort.cmd <- paste(bamtofastq.path, "sort -@", sort.thread, "-T", bam.prefix, "-o", sortn.bam, bam.path)
+      sort.cmd <- paste(bamtofastq.path, "sort -n -@", sort.thread, "-T", bam.prefix, "-o", sortn.bam, bam.path)
       sort.status <- system(sort.cmd, intern = TRUE)
       bam.path <- sortn.bam
     }
@@ -393,6 +393,38 @@ Runbamtofastq <- function(bam.path, bam.type, pair.end, bamtofastq.path, bamtofa
     return(bam.path)
   } else {
     message("Conversion successful: ", bam.path)
+    if (bam.type == "10x") {
+      # merge multiple files
+      fq.files <- list.files(path = out.folder, pattern = "fastq.gz$", recursive = T, full.names = T)
+      fq1.file <- grep(pattern = ".*_S[0-9]_L[0-9]{3}_R1_[0-9]{3}.fastq.gz", x = fq.files, value = T)
+      fq2.file <- grep(pattern = ".*_S[0-9]_L[0-9]{3}_R2_[0-9]{3}.fastq.gz", x = fq.files, value = T)
+      if (length(fq1.file) != length(fq2.file)) {
+        stop("The number of R1 and R2 fastq.gz files under ", out.folder, " is differ, please check and re-run!")
+      }
+      if (length(fq1.file) == 0 || length(fq2.file) == 0) {
+        stop("The number of R1 and R2 fastq.gz files under ", out.folder, " is zero, please check and re-run!")
+      }
+      if (length(fq1.file) > 1) {
+        message("Merge ", length(fq1.file), " R1 and R2 fastq.gz files!")
+        out.fq1.file <- file.path(dirname(bam.path), paste0(basename(dirname(bam.path)), "_S1_L001_R1_001.fastq.gz"))
+        out.fq2.file <- file.path(dirname(bam.path), paste0(basename(dirname(bam.path)), "_S1_L001_R2_001.fastq.gz"))
+        merge1.cmd <- paste("cat", paste(fq1.file, collapse = " "), ">", out.fq1.file, sep = " ")
+        merge2.cmd <- paste("cat", paste(fq2.file, collapse = " "), ">", out.fq2.file, sep = " ")
+        merge.cmd <- paste(merge1.cmd, merge2.cmd, sep = " && ")
+        # run merge command
+        message(paste("Merging multiple fastq files:", merge.cmd))
+        merge.status <- system(merge.cmd, intern = TRUE)
+        merge.status.code <- attr(merge.status, "status")
+        if (!is.null(merge.status.code)) {
+          warning("Merge multiple fastq files error on: ", dirname(bam.path), ", please re-run!")
+          return(bam.path)
+        } else {
+          message("Merging multiple fastq files successful: ", dirname(bam.path))
+          # remove the original file
+          remove.tag <- file.remove(fq.files)
+        }
+      }
+    }
     return(NULL)
   }
 }
