@@ -1,12 +1,12 @@
 #' Load Objects, Count Matrix, and Metadata from RData.
 #'
 #' @param rdata Path to RData file.
-#' @param accept.fmt Vector, the format of objects for loading. Default: c("Seurat", "seurat", "SingleCellExperiment",
+#' @param accept.fmt Vector, the class of objects for loading. Default: c("Seurat", "seurat", "SingleCellExperiment",
 #' "cell_data_set", "CellDataSet", "DESeqDataSet", "DGEList"). "Seurat" for Seurat v3, v4; "seurat" for Seurat v2.
 #' @param show.object Logical value, whether to show the class of available objects. Default: TRUE.
 #' @param return.obj Logical value, whether to load the available objects in \code{accept.fmt} to global environment. Default: TRUE.
 #' @param slot Vector, the type of count matrix to pull. Default: c("counts", "data", "scale.data").
-#' 'counts': raw, un-normalized counts, 'data': normalized data, scale.data: z-scored/variance-stabilized data.
+#' counts: raw, un-normalized counts, data: normalized data, scale.data: z-scored/variance-stabilized data.
 #'
 #' @return List contains count matrix and metadta or NULL.
 #' @importFrom magrittr %>%
@@ -41,6 +41,12 @@ LoadRData <- function(rdata, accept.fmt = c(
                         "cell_data_set", "CellDataSet", "DESeqDataSet", "DGEList"
                       ),
                       show.object = TRUE, return.obj = TRUE, slot = c("counts", "data", "scale.data")) {
+  # check gz
+  if(grepl(pattern = ".gz$", x = rdata)){
+    message("Detect RData file in compressed format, decompressing now!")
+    Gunzip(rdata, overwrite = TRUE)
+    rdata = gsub(pattern = ".gz", replacement = "", x = rdata)
+  }
   # create new environment
   load.env <- new.env()
   load(file = rdata, envir = load.env)
@@ -58,7 +64,7 @@ LoadRData <- function(rdata, accept.fmt = c(
   # filter class
   valid.obj <- obj.class[obj.class$Class %in% accept.fmt, , drop = FALSE]
   if (nrow(valid.obj) > 0) {
-    message("Detect ", nrow(valid.obj), " object(s) in given format(s): ", paste(accept.fmt, collapse = ", "), ".")
+    message("Detect ", nrow(valid.obj), " object(s) in given class(s): ", paste(accept.fmt, collapse = ", "), ".")
     obj.count.list <- list()
     for (nm in rownames(valid.obj)) {
       nm.class <- valid.obj[nm, "Class"]
@@ -71,7 +77,7 @@ LoadRData <- function(rdata, accept.fmt = c(
     }
     return(obj.count.list)
   } else {
-    message("No valid object in given format(s): ", paste(accept.fmt, collapse = ", "), ". Now we will guess the type!")
+    message("No valid object in given class(s): ", paste(accept.fmt, collapse = ", "), ". Now we will guess the type!")
     message("The slot parameter does not work here!")
     obj.count.list <- list()
     obj.meta.list <- list()
