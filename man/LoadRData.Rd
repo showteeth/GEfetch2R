@@ -16,7 +16,7 @@ LoadRData(
 \arguments{
 \item{rdata}{Path to RData file.}
 
-\item{accept.fmt}{Vector, the format of objects for loading. Default: c("Seurat", "seurat", "SingleCellExperiment",
+\item{accept.fmt}{Vector, the class of objects for loading. Default: c("Seurat", "seurat", "SingleCellExperiment",
 "cell_data_set", "CellDataSet", "DESeqDataSet", "DGEList"). "Seurat" for Seurat v3, v4; "seurat" for Seurat v2.}
 
 \item{show.object}{Logical value, whether to show the class of available objects. Default: TRUE.}
@@ -24,7 +24,7 @@ LoadRData(
 \item{return.obj}{Logical value, whether to load the available objects in \code{accept.fmt} to global environment. Default: TRUE.}
 
 \item{slot}{Vector, the type of count matrix to pull. Default: c("counts", "data", "scale.data").
-'counts': raw, un-normalized counts, 'data': normalized data, scale.data: z-scored/variance-stabilized data.}
+counts: raw, un-normalized counts, data: normalized data, scale.data: z-scored/variance-stabilized data.}
 }
 \value{
 List contains count matrix and metadta or NULL.

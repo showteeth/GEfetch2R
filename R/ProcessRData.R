@@ -42,10 +42,10 @@ LoadRData <- function(rdata, accept.fmt = c(
                       ),
                       show.object = TRUE, return.obj = TRUE, slot = c("counts", "data", "scale.data")) {
   # check gz
-  if(grepl(pattern = ".gz$", x = rdata)){
+  if (grepl(pattern = ".gz$", x = rdata)) {
     message("Detect RData file in compressed format, decompressing now!")
     Gunzip(rdata, overwrite = TRUE)
-    rdata = gsub(pattern = ".gz", replacement = "", x = rdata)
+    rdata <- gsub(pattern = ".gz", replacement = "", x = rdata)
   }
   # create new environment
   load.env <- new.env()

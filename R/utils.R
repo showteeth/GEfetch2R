@@ -1028,10 +1028,15 @@ LoadRDS2Seurat <- function(out.folder, merge, obs.value.filter = NULL, obs.keys 
       }
       # remove NULL element
       seu.list[sapply(seu.list, is.null)] <- NULL
-      if (isTRUE(merge)) {
-        seu.obj <- mergeExperiments(seu.list)
+      if (length(seu.list) == 0) {
+        message("No SeuratObject detected!")
+        seu.obj <- NULL
       } else {
-        seu.obj <- seu.list
+        if (isTRUE(merge)) {
+          seu.obj <- mergeExperiments(seu.list)
+        } else {
+          seu.obj <- seu.list
+        }
       }
     }
     return(seu.obj)
