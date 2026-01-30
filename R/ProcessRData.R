@@ -149,15 +149,15 @@ ExtractObject <- function(obj, obj.class, slot) {
       count.mat.list <- lapply(all.assays, function(x) {
         x.list <- list()
         if ("counts" %in% slot) {
-          count.mat <- SeuratObject::GetAssayData(obj, assay = x, layer = "counts")
+          count.mat <- SeuratObject::LayerData(obj, assay = x, layer = "counts")
           x.list[["counts"]] <- count.mat
         }
         if ("data" %in% slot) {
-          data.mat <- SeuratObject::GetAssayData(obj, assay = x, layer = "data")
+          data.mat <- SeuratObject::LayerData(obj, assay = x, layer = "data")
           x.list[["data"]] <- data.mat
         }
         if ("scale.data" %in% slot) {
-          scale.mat <- SeuratObject::GetAssayData(obj, assay = x, layer = "scale.data")
+          scale.mat <- SeuratObject::LayerData(obj, assay = x, layer = "scale.data")
           x.list[["scale.data"]] <- scale.mat
         }
         return(x.list)
