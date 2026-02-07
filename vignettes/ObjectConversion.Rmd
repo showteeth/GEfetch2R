@@ -81,7 +81,20 @@ seger
 # altExpNames(1): ERCC
 ```
 
-
+`AnnData` ([generate_pbmc3k_anndata.ipynb](https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/generate_pbmc3k_anndata.ipynb)):
+```{python testanndata, eval=FALSE}
+import scanpy as sc
+pbmc3k = sc.read('~/gefetch2r/doc/conversion/pbmc3k.h5ad')
+pbmc3k
+# AnnData object with n_obs × n_vars = 2638 × 1838
+#     obs: 'n_genes', 'n_genes_by_counts', 'total_counts', 'total_counts_mt', 'pct_counts_mt', 'leiden'
+#     var: 'gene_ids', 'n_cells', 'mt', 'n_cells_by_counts', 'mean_counts', 'pct_dropout_by_counts', 'total_counts', 'highly_variable', 'means', 'dispersions', 'dispersions_norm', 'mean', 'std'
+#     uns: 'hvg', 'leiden', 'log1p', 'neighbors', 'pca', 'rank_genes_groups', 'umap'
+#     obsm: 'X_pca', 'X_umap'
+#     varm: 'PCs'
+#     layers: 'logcounts', 'rawcounts'
+#     obsp: 'connectivities', 'distances'
+```
 
 <hr />
 
@@ -173,7 +186,6 @@ Seu2AD(
 #     var: 'vst.mean', 'vst.variance', 'vst.variance.expected', 'vst.variance.standardized', 'vst.variable'
 #     obsm: 'X_pca', 'X_tsne'
 
-
 # SeuratDisk, generate pbmc_small_SeuratDisk.h5Seurat, pbmc_small_SeuratDisk.h5ad
 Seu2AD(
   seu.obj = pbmc_small, method = "SeuratDisk", out.folder = "~/gefetch2r/doc/conversion",
@@ -206,7 +218,6 @@ Seu2AD(
 # Adding dimensional reduction information for tsne
 # Adding RNA_snn as neighbors
 # [1] "~/gefetch2r/doc/conversion/pbmc_small_SeuratDisk.h5ad"
-
 
 # # scDIOR, generate pbmc_small_scDIOR.h5
 Seu2AD(
@@ -324,28 +335,162 @@ There are multiple tools available for format conversion from `AnnData` to `Seur
 ```{r anndata2seu, eval=FALSE}
 # sceasy
 ann.sceasy <- AD2Seu(
-  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad", method = "sceasy",
+  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k.h5ad", method = "sceasy",
   assay = "RNA", slot = "scale.data"
 )
-# X -> data
+# Warning: Feature names cannot have underscores ('_'), replacing with dashes ('-')
+# X -> scale.data; raw.X -> data
 ann.sceasy
 # An object of class Seurat
-# 230 features across 80 samples within 1 assay
-# Active assay: RNA (230 features, 0 variable features)
-#  2 dimensional reductions calculated: pca, tsne
+# 13714 features across 2638 samples within 1 assay
+# Active assay: RNA (13714 features, 0 variable features)
+#  2 dimensional reductions calculated: pca, umap
 
-# # SeuratDisk
-# ann.seu <- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",
-#                   method = "SeuratDisk", assay = "RNA", load.assays = c("RNA"))
-# # scDIOR
-# ann.scdior <- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",
-#                      method = "scDIOR", assay = "RNA")
-# # schard
-# ann.schard <- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",
-#                      method = "schard", assay = "RNA", use.raw = T)
-# # SeuratDisk+scDIOR
-# ann.seuscdior <- AD2Seu(anndata.file = "~/gefetch2r/doc/conversion/pbmc3k_final.h5ad",
-#                         method = "SeuratDisk+scDIOR", assay = "RNA", load.assays = c("RNA"))
+# SeuratDisk
+ann.seu <- AD2Seu(
+  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k.h5ad",
+  method = "SeuratDisk", assay = "RNA", load.assays = c("RNA")
+)
+# Warning: Unknown file type: h5ad
+# Creating h5Seurat file for version 3.1.5.9900
+# Adding X as scale.data
+# Adding raw/X as data
+# Adding raw/X as counts
+# Adding meta.features from raw/var
+# Adding dispersions from scaled feature-level metadata
+# Adding dispersions_norm from scaled feature-level metadata
+# Merging gene_ids from scaled feature-level metadata
+# Adding highly_variable from scaled feature-level metadata
+# Adding mean from scaled feature-level metadata
+# Merging mean_counts from scaled feature-level metadata
+# Adding means from scaled feature-level metadata
+# Merging mt from scaled feature-level metadata
+# Merging n_cells from scaled feature-level metadata
+# Merging n_cells_by_counts from scaled feature-level metadata
+# Merging pct_dropout_by_counts from scaled feature-level metadata
+# Adding std from scaled feature-level metadata
+# Merging total_counts from scaled feature-level metadata
+# Adding X_pca as cell embeddings for pca
+# Adding X_umap as cell embeddings for umap
+# Adding PCs as feature loadings fpr pca
+# Adding miscellaneous information for pca
+# Adding standard deviations for pca
+# Adding miscellaneous information for umap
+# Adding hvg to miscellaneous data
+# Adding leiden to miscellaneous data
+# Adding log1p to miscellaneous data
+# Adding rank_genes_groups to miscellaneous data
+# Adding layer logcounts as data in assay logcounts
+# Adding layer rawcounts as data in assay rawcounts
+# Validating h5Seurat file
+# Warning: Feature names cannot have underscores ('_'), replacing with dashes ('-')
+# Initializing RNA with data
+# Adding counts for RNA
+# Adding scale.data for RNA
+# Adding feature-level metadata for RNA
+# Adding reduction pca
+# Adding cell embeddings for pca
+# Adding feature loadings for pca
+# Adding miscellaneous information for pca
+# Adding reduction umap
+# Adding cell embeddings for umap
+# Adding miscellaneous information for umap
+# Adding command information
+# Adding cell-level metadata
+ann.seu
+# An object of class Seurat
+# 13714 features across 2638 samples within 1 assay
+# Active assay: RNA (13714 features, 0 variable features)
+#  2 dimensional reductions calculated: pca, umap
+
+# scDIOR
+ann.scdior <- AD2Seu(
+  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k.h5ad",
+  method = "scDIOR", assay = "RNA"
+)
+# Warning: No columnames present in cell embeddings, setting to 'PCA_1:50'
+# Warning: No columnames present in cell embeddings, setting to 'UMAP_1:2'
+# Warning: Feature names cannot have underscores ('_'), replacing with dashes ('-')
+ann.scdior
+# An object of class Seurat
+# 17390 features across 2638 samples within 3 assays
+# Active assay: RNA (13714 features, 0 variable features)
+#  2 other assays present: logcounts, rawcounts
+#  2 dimensional reductions calculated: pca, umap
+
+# schard
+ann.schard <- AD2Seu(
+  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k.h5ad",
+  method = "schard", assay = "RNA", use.raw = T
+)
+# Warning: Keys should be one or more alphanumeric characters followed by an underscore, setting key from rna to rna_
+# Warning: Invalid name supplied, making object name syntactically valid. New object name is X_indexn_genesn_genes_by_countstotal_countstotal_counts_mtpct_counts_mtleiden; see ?make.names for more details on syntax validity
+ann.schard
+# An object of class Seurat
+# 13714 features across 2638 samples within 1 assay
+# Active assay: RNA (13714 features, 0 variable features)
+#  2 dimensional reductions calculated: Xpca_, Xumap_
+
+# SeuratDisk+scDIOR
+ann.seuscdior <- AD2Seu(
+  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k.h5ad",
+  method = "SeuratDisk+scDIOR", assay = "RNA", load.assays = c("RNA")
+)
+# Warning: Unknown file type: h5ad
+# Creating h5Seurat file for version 3.1.5.9900
+# Adding X as scale.data
+# Adding raw/X as data
+# Adding raw/X as counts
+# Adding meta.features from raw/var
+# Adding dispersions from scaled feature-level metadata
+# Adding dispersions_norm from scaled feature-level metadata
+# Merging gene_ids from scaled feature-level metadata
+# Adding highly_variable from scaled feature-level metadata
+# Adding mean from scaled feature-level metadata
+# Merging mean_counts from scaled feature-level metadata
+# Adding means from scaled feature-level metadata
+# Merging mt from scaled feature-level metadata
+# Merging n_cells from scaled feature-level metadata
+# Merging n_cells_by_counts from scaled feature-level metadata
+# Merging pct_dropout_by_counts from scaled feature-level metadata
+# Adding std from scaled feature-level metadata
+# Merging total_counts from scaled feature-level metadata
+# Adding X_pca as cell embeddings for pca
+# Adding X_umap as cell embeddings for umap
+# Adding PCs as feature loadings fpr pca
+# Adding miscellaneous information for pca
+# Adding standard deviations for pca
+# Adding miscellaneous information for umap
+# Adding hvg to miscellaneous data
+# Adding leiden to miscellaneous data
+# Adding log1p to miscellaneous data
+# Adding rank_genes_groups to miscellaneous data
+# Adding layer logcounts as data in assay logcounts
+# Adding layer rawcounts as data in assay rawcounts
+# Validating h5Seurat file
+# Warning: Feature names cannot have underscores ('_'), replacing with dashes ('-')
+# Initializing RNA with data
+# Adding counts for RNA
+# Adding scale.data for RNA
+# Adding feature-level metadata for RNA
+# Adding reduction pca
+# Adding cell embeddings for pca
+# Adding feature loadings for pca
+# Adding miscellaneous information for pca
+# Adding reduction umap
+# Adding cell embeddings for umap
+# Adding miscellaneous information for umap
+# Adding command information
+# Adding cell-level metadata
+# Warning: No columnames present in cell embeddings, setting to 'PCA_1:50'
+# Warning: No columnames present in cell embeddings, setting to 'UMAP_1:2'
+# Warning: Feature names cannot have underscores ('_'), replacing with dashes ('-')
+ann.seuscdior
+# An object of class Seurat
+# 17390 features across 2638 samples within 3 assays
+# Active assay: RNA (13714 features, 0 variable features)
+#  2 other assays present: logcounts, rawcounts
+#  2 dimensional reductions calculated: pca, umap
 ```
 
 <hr />
@@ -377,26 +522,49 @@ seu.obj.loom
 There are multiple tools available for format conversion from `SingleCellExperiment` to `AnnData`:
 
 * `zellkonverter` is the best method in terms of information kept and running time
-* `scDIOR` is the best method in terms of usability and disk usage
+* `scDIOR` is the best method in terms of usability and disk usage (**`scDIOR` require `diopy` to read `h5` file**)
 
 ```{r sce2anndata, eval=FALSE}
-# zellkonverter
+# zellkonverter, output seger_zellkonverter.h5ad
 SCE2AD(
   sce.obj = seger, method = "zellkonverter",
   out.folder = "~/gefetch2r/doc/conversion", slot = "counts",
   conda.path = "~/anaconda3"
 )
+# NULL
+# # read seger_zellkonverter.h5ad in python
+# import scanpy as sc
+# seger_zellkonverter = sc.read('~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad')
+# seger_zellkonverter
+# AnnData object with n_obs × n_vars = 3514 × 26179
+#     obs: 'individual', 'sex', 'age', 'body mass index', 'clinical information', 'disease', 'single cell well quality', 'submitted single cell quality', 'cell type'
+#     var: 'refseq', 'symbol'
+#     uns: 'X_name'
 
-# # sceasy
-# SCE2AD(sce.obj = seger, method = "sceasy", out.folder = "~/gefetch2r/doc/conversion",
-#        slot = "counts", conda.path = "~/anaconda3")
-#
-# # scDIOR
-# seger.scdior <- seger
-# library(SingleCellExperiment)
-# # scDIOR does not support varm in rowData
-# rowData(seger.scdior)$varm <- NULL
-# SCE2AD(sce.obj = seger.scdior, method = "scDIOR", out.folder = "~/gefetch2r/doc/conversion")
+# sceasy, output seger_sceasy.h5ad
+SCE2AD(
+  sce.obj = seger, method = "sceasy", out.folder = "~/gefetch2r/doc/conversion",
+  slot = "counts", conda.path = "~/anaconda3"
+)
+# AnnData object with n_obs × n_vars = 3514 × 26179
+#     obs: 'individual', 'sex', 'age', 'body.mass.index', 'clinical.information', 'disease', 'single.cell.well.quality', 'submitted.single.cell.quality', 'cell.type'
+#     var: 'refseq', 'symbol'
+
+# scDIOR, output seger.scdior_scDIOR.h5
+seger.scdior <- seger
+library(SingleCellExperiment)
+# scDIOR does not support varm in rowData
+rowData(seger.scdior)$varm <- NULL
+SCE2AD(sce.obj = seger.scdior, method = "scDIOR", out.folder = "~/gefetch2r/doc/conversion")
+# [1] "The first 'assayNames' defaults to 'X'"
+# [1] "RNA"
+# # read seger.scdior_scDIOR.h5 in python
+# import diopy
+# seger_scdior = diopy.input.read_h5(file = "~/gefetch2r/doc/conversion/seger.scdior_scDIOR.h5")
+# seger_scdior
+# AnnData object with n_obs × n_vars = 3514 × 26179
+#     obs: 'individual', 'sex', 'age', 'body mass index', 'clinical information', 'disease', 'single cell well quality', 'submitted single cell quality', 'cell type'
+#     var: 'refseq', 'symbol'
 ```
 
 <hr />
@@ -412,19 +580,61 @@ There are multiple tools available for format conversion from `AnnData` to `Sing
 ```{r anndata2sce, eval=FALSE}
 # zellkonverter
 sce.zell <- AD2SCE(
-  anndata.file = "~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad",
+  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k.h5ad",
   method = "zellkonverter", slot = "scale.data",
   use.raw = TRUE, conda.path = "~/anaconda3"
 )
+sce.zell
+# class: SingleCellExperiment
+# dim: 1838 2638
+# metadata(7): hvg leiden ... rank_genes_groups umap
+# assays(3): scale.data logcounts rawcounts
+# rownames(1838): TNFRSF4 CPSF3L ... S100B PRMT2
+# rowData names(14): gene_ids n_cells ... std varm
+# colnames(2638): AAACATACAACCAC-1 AAACATTGAGCTAC-1 ... TTTGCATGAGAGGC-1
+#   TTTGCATGCCTCAC-1
+# colData names(6): n_genes n_genes_by_counts ... pct_counts_mt leiden
+# reducedDimNames(2): X_pca X_umap
+# altExpNames(1): raw
 
-# # scDIOR
-# sce.scdior <- AD2SCE(anndata.file = "~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad",
-#                      method = "scDIOR", assay = "RNA",
-#                      use.raw = TRUE, conda.path = "~/anaconda3")
-#
-# # schard
-# sce.schard <- AD2SCE(anndata.file = "~/gefetch2r/doc/conversion/seger_zellkonverter.h5ad",
-#                      method = "schard", use.raw = TRUE)
+# scDIOR
+sce.scdior <- AD2SCE(
+  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k.h5ad",
+  method = "scDIOR", assay = "RNA",
+  use.raw = TRUE, conda.path = "~/anaconda3"
+)
+sce.scdior
+# class: SingleCellExperiment
+# dim: 13714 2638
+# metadata(0):
+# assays(1): X
+# rownames(13714): AL627309.1 AP006222.2 ... PNRC2-1 SRSF10-1
+# rowData names(7): gene_ids n_cells ... pct_dropout_by_counts
+#   total_counts
+# colnames(2638): AAACATACAACCAC-1 AAACATTGAGCTAC-1 ... TTTGCATGAGAGGC-1
+#   TTTGCATGCCTCAC-1
+# colData names(6): n_genes n_genes_by_counts ... pct_counts_mt leiden
+# reducedDimNames(2): pca umap
+# altExpNames(0):
+
+# schard
+sce.schard <- AD2SCE(
+  anndata.file = "~/gefetch2r/doc/conversion/pbmc3k.h5ad",
+  method = "schard", use.raw = TRUE
+)
+sce.schard
+# class: SingleCellExperiment
+# dim: 13714 2638
+# metadata(0):
+# assays(1): X
+# rownames(13714): AL627309.1 AP006222.2 ... PNRC2-1 SRSF10-1
+# rowData names(8): _index gene_ids ... pct_dropout_by_counts
+#   total_counts
+# colnames(2638): AAACATACAACCAC-1 AAACATTGAGCTAC-1 ... TTTGCATGAGAGGC-1
+#   TTTGCATGCCTCAC-1
+# colData names(7): _index n_genes ... pct_counts_mt leiden
+# reducedDimNames(2): X_pca X_umap
+# altExpNames(0):
 ```
 
 <hr />

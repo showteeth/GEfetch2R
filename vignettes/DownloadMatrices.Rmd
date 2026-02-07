@@ -86,7 +86,7 @@ CheckAPI(database = c("GEO", "PanglaoDB", "UCSC Cell Browser"))
 
 [GEO is an international public repository that archives and freely distributes microarray, next-generation sequencing, and other forms of high-throughput functional genomics data submitted by the research community.](https://www.ncbi.nlm.nih.gov/geo/info/overview.html) It provides a very convenient way for users to explore and select interested scRNA-seq datasets. 
 
-### Extract metadata
+### Extract metadata (optional)
 
 `ExtractGEOMeta` provides two ways to extract sample metadata:
 
