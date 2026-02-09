@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-`GEfetch2R` provides functions for users to download processed single-cell RNA-seq data from [GEO](https://www.ncbi.nlm.nih.gov/geo/), [Zenodo](https://zenodo.org/), [CELLxGENE](https://cellxgene.cziscience.com/) and [Human Cell Atlas](https://www.humancellatlas.org/), including files in `RDS`, `RData`, `h5ad`, `h5`, `loom` formats. 
+`GEfetch2R` provides functions for users to download processed single-cell RNA-seq data from [GEO](https://www.ncbi.nlm.nih.gov/geo/), [Zenodo](https://zenodo.org/), [CELLxGENE](https://cellxgene.cziscience.com/) and [Human Cell Atlas](https://www.humancellatlas.org/), including files in `rds`, `RData`, `h5ad`, `h5`, `loom` formats. 
 
 Until now, the public resources supported and the returned values:
 
