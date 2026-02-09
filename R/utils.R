@@ -1,4 +1,4 @@
-# merge Seurat object, modify from: https://github.com/dosorio/rPanglaoDB/blob/master/R/mergeExperiments.R
+# merge SeuratObject, modify from: https://github.com/dosorio/rPanglaoDB/blob/master/R/mergeExperiments.R
 mergeExperiments <- function(experimentList) {
   el.df <- lapply(experimentList, FUN = function(x) {
     dim(x)
@@ -178,7 +178,7 @@ CheckParas <- function(df, column, para.value, fuzzy.match = TRUE) {
   return(value)
 }
 
-# used in UCSCCellBrowser, create seurat object (add coord to metadata)
+# used in UCSCCellBrowser, create SeuratObject (add coord to metadata)
 Load2Seurat <- function(exp.file, barcode.url = NULL, feature.url = NULL,
                         meta.file, coord.file = NULL, name = NULL, obs.value.filter = NULL,
                         obs.keys = NULL, include.genes = NULL) {

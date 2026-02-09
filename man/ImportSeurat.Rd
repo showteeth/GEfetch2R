@@ -43,7 +43,7 @@ used when \code{from} is "SCE" or cell_data_set. Default: logcounts.}
 \code{\link{as.Seurat}}, corresponding to \code{from}.}
 }
 \value{
-A Seurat object.
+A SeuratObject.
 }
 \description{
 Convert Other Formats to SeuratObject.

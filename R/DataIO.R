@@ -1,6 +1,6 @@
 #' Export SeuratObject to Other Formats.
 #'
-#' @param seu.obj A seurat object.
+#' @param seu.obj A SeuratObject.
 #' @param assay Which assay to use. Default: NULL (get with \code{\link{DefaultAssay}}).
 #' @param reduction Name of DimReduc to set to main reducedDim in cds.
 #' @param to The target format, chosen from "SCE" (SingleCellExperiment), "AnnData", "CellDataSet", "cell_data_set", "loom".
@@ -44,7 +44,7 @@ ExportSeurat <- function(seu.obj, assay = NULL, reduction = NULL,
   to <- match.arg(arg = to)
   # check object
   if (!methods::is(seu.obj, "Seurat")) {
-    stop("Please provide valid Seurat object!")
+    stop("Please provide valid SeuratObject!")
   }
 
   # get default assay
@@ -148,7 +148,7 @@ ExportSeurat <- function(seu.obj, assay = NULL, reduction = NULL,
 #' @param ... Parameter for \code{\link{as.Seurat}}, \code{sceasy::convertFormat}, \code{\link{as.Seurat}}, \code{\link{as.Seurat}},
 #' \code{\link{as.Seurat}}, corresponding to \code{from}.
 #'
-#' @return A Seurat object.
+#' @return A SeuratObject.
 #' @importFrom Seurat as.Seurat
 #' @importFrom reticulate use_condaenv
 #' @importFrom SummarizedExperiment assayNames

@@ -197,7 +197,7 @@
 * Provided APIs for GEO.
 * Added `Read10XOnline` to load cellranger output.
 * Added `ExtractCBComposition` to extract cell type composition of UCSC Cell Browser datasets.
-* `ParseGEO` support creating Seurat object.
+* `ParseGEO` support creating SeuratObject.
 * Added `ExtractGEOMeta` to support extract metadata from GEO.
 
 -------------------

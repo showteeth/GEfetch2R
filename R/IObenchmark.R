@@ -1,6 +1,6 @@
 #' Convert SeuratObject to AnnData using SeuratDisk/sceasy/scDIOR.
 #'
-#' @param seu.obj A seurat object.
+#' @param seu.obj A SeuratObject.
 #' @param method Method used to perform conversion, choose from "SeuratDisk", "sceasy",	"scDIOR". Default: "SeuratDisk".
 #' @param out.folder Output folder. Default: NULL (current working directory).
 #' @param out.filename Output file name, e.g., test.h5ad. Default: NULL (\code{seu.obj} name, method, h5ad.).

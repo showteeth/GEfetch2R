@@ -31,7 +31,7 @@ GSE130636.down <- DownloadSRA(
 )
 
 # count matrix -----------
-CheckAPI(database = c("GEO", "PanglanDB", "UCSC Cell Browser"))
+CheckAPI(database = c("GEO", "PanglaoDB", "UCSC Cell Browser"))
 
 # * GEO --------
 # set VROOM_CONNECTION_SIZE to avoid error: Error: The size of the connection buffer (786432) was not large enough

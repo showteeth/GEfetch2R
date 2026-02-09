@@ -317,7 +317,7 @@ ExtractCBComposition <- function(meta = NULL, link = NULL, json.folder = NULL) {
 #' @param obs.keys Columns to fetch for the cell's metadata. e.g., c("cluster", "Louvain Cluster", "donor","sex"). Default: NULL.
 #' @param include.genes Genes to include. Default: NULL.
 #'
-#' @return Seurat object (if \code{merge} is TRUE) or list of Seurat objects (if \code{merge} is FALSE).
+#' @return SeuratObject (if \code{merge} is TRUE) or list of SeuratObjects (if \code{merge} is FALSE).
 #' @importFrom magrittr %>%
 #' @importFrom data.table fread rbindlist
 #' @importFrom dplyr full_join filter distinct

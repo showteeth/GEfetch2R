@@ -205,7 +205,7 @@ ExtractPanglaoDBComposition <- function(meta = NULL, sra = NULL, srs = NULL, loc
 #' @param exclude.gene Exclude cells expressing the genes. Default: NA.
 #' @param merge Logical value, whether to merge Seurat list. Default: FALSE.
 #'
-#' @return Seurat object (if \code{merge} is TRUE) or list of Seurat objects (if \code{merge} is FALSE).
+#' @return SeuratObject (if \code{merge} is TRUE) or list of SeuratObjects (if \code{merge} is FALSE).
 #' @importFrom magrittr %>%
 #' @importFrom rPanglaoDB getSampleList getSampleComposition getSamples
 #' @importFrom dplyr filter
@@ -273,7 +273,7 @@ ParsePanglaoDB <- function(meta = NULL, sra = NULL, srs = NULL, cell.type = "All
     # split meta to save time
     meta.normal <- meta %>% dplyr::filter(.data[["SRS"]] != "notused")
     meta.abnormal <- meta %>% dplyr::filter(.data[["SRS"]] == "notused")
-    # get Seurat object
+    # get SeuratObject
     ## normal
     if (nrow(meta.normal) > 0) {
       message("Processing ", nrow(meta.normal), " samples with SRS!")

@@ -138,7 +138,7 @@ docker run --rm -p 8888:8787 -e PASSWORD=passwd -e ROOT=TRUE -it soyabean/GEfetc
 * The `samtools` path: `/opt/conda/bin/samtools`.
 * The `STAR` and `Cell Ranger` is not available in the image because customized reference genome is required.
 
-Codes used to test the usability of the Docker image: [Docker_test.R](https://github.com/showteeth/GEfetch2R/blob/dev/man/benchmark/Docker_test.R)
+Codes used to test the usability of the Docker image: [Docker_test.R](https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/Docker_test.R)
 
 <hr />
 

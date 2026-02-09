@@ -34,7 +34,7 @@ e.g., `Louvain Cluster` == 1 & sex == 'M' (use \code{``} to wrap columns with sp
 \item{merge}{Logical value, whether to merge Seurat list. Default: FALSE.}
 }
 \value{
-Seurat object (if \code{merge} is TRUE) or list of Seurat objects (if \code{merge} is FALSE).
+SeuratObject (if \code{merge} is TRUE) or list of SeuratObjects (if \code{merge} is FALSE).
 }
 \description{
 Download UCSC Cell Browser Datasets.

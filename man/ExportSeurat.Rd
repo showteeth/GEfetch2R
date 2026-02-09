@@ -16,7 +16,7 @@ ExportSeurat(
 )
 }
 \arguments{
-\item{seu.obj}{A seurat object.}
+\item{seu.obj}{A SeuratObject.}
 
 \item{assay}{Which assay to use. Default: NULL (get with \code{\link{DefaultAssay}}).}
 

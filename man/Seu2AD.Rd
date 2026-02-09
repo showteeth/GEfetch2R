@@ -16,7 +16,7 @@ Seu2AD(
 )
 }
 \arguments{
-\item{seu.obj}{A seurat object.}
+\item{seu.obj}{A SeuratObject.}
 
 \item{method}{Method used to perform conversion, choose from "SeuratDisk", "sceasy",    "scDIOR". Default: "SeuratDisk".}
 
