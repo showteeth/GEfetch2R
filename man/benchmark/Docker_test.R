@@ -172,7 +172,9 @@ ExportSeurat(
 )
 
 # * convert other objects to SeuratObject ------------------------
-download.file("https://github.com/showteeth/GEfetch2R/blob/dev/man/benchmark/pbmc3k.h5ad", destfile = "/home/rstudio/pbmc3k.h5ad")
+# generate the pbmc3k.h5ad: https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/generate_pbmc3k_anndata.ipynb
+# upload to the home directory
+# or download: download.file("https://github.com/showteeth/GEfetch2R/raw/refs/heads/main/man/benchmark/pbmc3k.h5ad", destfile = "/home/rstudio/pbmc3k.h5ad")
 
 # SingleCellExperiment to SeuratObject
 seu.obj.sce <- ImportSeurat(
