@@ -33,8 +33,8 @@ GSE130636.down <- DownloadSRA(
 # download from ENA using wget
 GSE130636.down <- DownloadSRA(
   gsm.df = GSE130636.runs, download.method = "wget",
-  wget.path = "/usr/bin/wget", timeout = 360000,
-  out.folder = "/home/rstudio/download_sra/wget", rename = TRUE,
+  wget.path = "/usr/bin/wget", timeout = 360000, 
+  out.folder = "/home/rstudio/download_sra/wget", rename = TRUE, 
   parallel = TRUE, use.cores = 2
 )
 
