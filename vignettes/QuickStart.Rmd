@@ -70,14 +70,14 @@ conda install -c hcc aspera-cli -y
 <hr />
 
 ### Docker image
-We also provide a [docker image](https://hub.docker.com/repository/docker/soyabean/GEfetch2R) to use:
+We also provide a [docker image](https://hub.docker.com/repository/docker/soyabean/gefetch2r) to use:
 
 ```bash
 # pull the image
-docker pull soyabean/GEfetch2R:1.2
+docker pull soyabean/gefetch2r:1.2
 
 # run the image
-docker run --rm -p 8888:8787 -e PASSWORD=passwd -e ROOT=TRUE -it soyabean/GEfetch2R:1.2
+docker run --rm -p 8888:8787 -e PASSWORD=passwd -e ROOT=TRUE -it soyabean/gefetch2r:1.2
 ```
 
 **Notes**:

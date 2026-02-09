@@ -218,12 +218,12 @@
 <div class="section level3">
 <h3 id="docker-image">Docker image<a class="anchor" aria-label="anchor" href="#docker-image"></a>
 </h3>
-<p>We also provide a <a href="https://hub.docker.com/repository/docker/soyabean/GEfetch2R" class="external-link">docker image</a> to use:</p>
+<p>We also provide a <a href="https://hub.docker.com/repository/docker/soyabean/gefetch2r" class="external-link">docker image</a> to use:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># pull the image</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="ex">docker</span> pull soyabean/GEfetch2R:1.2</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="ex">docker</span> pull soyabean/gefetch2r:1.2</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># run the image</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">--rm</span> <span class="at">-p</span> 8888:8787 <span class="at">-e</span> PASSWORD=passwd <span class="at">-e</span> ROOT=TRUE <span class="at">-it</span> soyabean/GEfetch2R:1.2</span></code></pre></div>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">--rm</span> <span class="at">-p</span> 8888:8787 <span class="at">-e</span> PASSWORD=passwd <span class="at">-e</span> ROOT=TRUE <span class="at">-it</span> soyabean/gefetch2r:1.2</span></code></pre></div>
 <p><strong>Notes</strong>:</p>
 <ul>
 <li>After running the above codes, open browser and enter <code>http://localhost:8888/</code>, the user name is <code>rstudio</code>, the password is <code>passwd</code> (set by <code>-e PASSWORD=passwd</code>)</li>
