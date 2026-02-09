@@ -1,7 +1,7 @@
 
-# GEfetch2R - Access Single-cell/Bulk RNA-seq Data from Public Repositories and Benchmark the Subsequent Format Conversion Tools
+# *GEfetch2R* - Access Single-cell/Bulk RNA-seq Data from Public Repositories and Benchmark the Subsequent Format Conversion Tools
 
-# [<mark>Quick start</mark>](https://showteeth.github.io/scfetch/articles/QuickStart.html)
+# [<mark>Quick start</mark>](https://showteeth.github.io/GEfetch2R/articles/QuickStart.html)
 
 <img src = "man/figures/GEfetch2R.png" align = "right" width = "200"/>
 
@@ -14,19 +14,19 @@
 
 For **bulk RNA-seq**:
 
-* Download **raw data (`sra/fastq/bam`)** from `SRA/ENA` with **GEO accessions**:
+* Download **raw data (`sra/fastq/bam`)** from `SRA/ENA` with **GEO accession**:
   * **Parallel** download `sra/fastq/bam` files from `SRA/ENA`
   * **Support Aspera** (`ENA`)
   * **Parallel** split `sra` to `fastq` files
   * **Convert `bam` to `fastq` files**
   * **Mapping with `STAR` and load the output to `DESeq2`**
-* Download **count matrix** from `GEO` with **GEO accessions**:
+* Download **count matrix** from `GEO` with **GEO accession**:
   * **Generate count matrix from supplementary files**
   * **Load the count matrix to `DESeq2`**
 
 For **scRNA-seq**:
 
-* Download **raw data (`sra/fastq/bam`)** from `SRA/ENA` with **GEO accessions**:
+* Download **raw data (`sra/fastq/bam`)** from `SRA/ENA` with **GEO accession**:
   * **Parallel** download `sra/fastq/bam` files from `SRA/ENA`
   * **Foramt downloaded `fastq` files** to standard style that can be identified by 10x softwares (e.g. `CellRanger`).
   * **Support Aspera** (`ENA`)
@@ -35,12 +35,12 @@ For **scRNA-seq**:
   * **Convert `bam` to `fastq` files (`samtools/bamtofastq_linux`)**
   * **Mapping with `STAR/CellRanger` and load the output to `Seurat`**
 * Download **count matrix**:
-  * Download **count matrix** from `GEO` with **GEO accessions**
+  * Download **count matrix** from `GEO` with **GEO accession**
   * Download **count matrix** and **annotation (e.g. cell type)** information from `PanglaoDB` and `UCSC Cell Browser` with **key words (filter criteria)**
   * **Extract subset with annotation and gene (`PanglaoDB` and `UCSC Cell Browser`)**  
   * **Load the count matrix and annotation to `Seurat`**
 * Download **processed object**:
-  * Download **processed object** from `GEO` with **GEO accessions**
+  * Download **processed object** from `GEO` with **GEO accession**
   * Download **processed object** from `Zenodo` with **DOI**
   * Download **processed object** from `CELLxGENE` and `Human Cell Atlas` with **key words (filter criteria)**
   * **Parallel** download
