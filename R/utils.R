@@ -359,6 +359,70 @@ Read10XOnline <- function(matrix.url, barcode.url, feature.url, gene.column = 2,
   return(final.data)
 }
 
+# used in UCSCCellBrowser, extract desc.json
+ParseCBdesc <- function(desc.files) {
+  desc.list <- lapply(names(desc.files), function(x) {
+    sd.json <- jsonlite::fromJSON(txt = desc.files[x])
+    used.attr <- c(
+      "title" = "title", "paper" = "paper_url", "abstract" = "abstract", "unit" = "unitDesc",
+      "coords" = "coordFiles", "methods" = "methods", "geo" = "geo_series"
+    )
+    sd.df <- ExtractDesc(lst = sd.json, attr = used.attr)
+    sd.df$name <- x
+    sd.df
+  })
+  desc.df <- do.call(rbind, desc.list)
+  return(desc.df)
+}
+
+# used in UCSCCellBrowser, extract desc.json
+ParseCBdataset <- function(datasets.files) {
+  datasets.list <- lapply(names(datasets.files), function(x) {
+    x.json <- jsonlite::fromJSON(txt = datasets.files[x])
+    x.file.df <- jsonlite::flatten(as.data.frame(x.json$fileVersions))
+    mat.name <- ifelse("outMatrix.fname" %in% colnames(x.file.df), basename(x.file.df[, "outMatrix.fname"]), "")
+    barcode.name <- ifelse("barcodes.fname" %in% colnames(x.file.df), basename(x.file.df[, "barcodes.fname"]), "")
+    feature.name <- ifelse("features.fname" %in% colnames(x.file.df), basename(x.file.df[, "features.fname"]), "")
+    x.file.df <- data.frame(matrix = mat.name, barcode = barcode.name, feature = feature.name)
+    x.file.df$name <- x
+    x.file.df
+  })
+  datasets.df <- do.call(rbind, datasets.list)
+  return(datasets.df)
+}
+
+# used in UCSCCellBrowser, get dataset information from link
+ParseCBlink <- function(link) {
+  dataset.vec <- gsub(pattern = "https://cells.ucsc.edu/?ds=", replacement = "", x = link, fixed = TRUE)
+  dataset.vec <- gsub(pattern = "&.*$", replacement = "", x = dataset.vec)
+  dataset.name <- gsub(pattern = "+", replacement = "/", x = dataset.vec, fixed = TRUE)
+  # resolve collection and dataset
+  base.url <- "https://cells.ucsc.edu/"
+  dataset.info.list <- lapply(dataset.name, function(x) {
+    x.url <- file.path(base.url, x, "dataset.json")
+    x.json <- jsonlite::fromJSON(txt = x.url)
+    if ("datasets" %in% names(x.json)) {
+      x.df <- data.frame(name = x, isCollection = TRUE)
+      x.samples.df <- ExtractSampleOnline(x.df) %>% as.data.frame()
+      x.samples.df[, c("name", "shortLabel")]
+    } else {
+      data.frame(name = x.json$name, shortLabel = x.json$shortLabel)
+    }
+  })
+  dataset.info.df <- do.call(rbind, dataset.info.list) %>% dplyr::distinct()
+  # add matrix information
+  datasets.files <- file.path(base.url, dataset.info.df$name, "dataset.json")
+  names(datasets.files) <- dataset.info.df$name
+  datasets.df <- ParseCBdataset(datasets.files)
+  datasets.df$matrixType <- ifelse(datasets.df$barcode == "", "matrix", "10x")
+  # add sample information
+  desc.files <- file.path(base.url, datasets.df$name, "desc.json")
+  names(desc.files) <- datasets.df$name
+  desc.df <- ParseCBdesc(desc.files)
+  meta <- merge(datasets.df, desc.df, by = "name") %>% as.data.frame()
+  return(meta)
+}
+
 # used in GEO, check the integrity of 10x files
 Check10XFiles <- function(folders, gene2feature) {
   folders.flag <- sapply(folders, function(x) {
@@ -485,16 +549,109 @@ PrepareCELLxGENEUrls <- function(df, fe) {
   CheckColumns(df = df, columns = c("dataset_id", fe.id, "dataset_description"))
   invalid.df <- df[is.na(df[[fe.id]]) | is.na(df$dataset_id) | df$dataset_id == "" | df[[fe.id]] == "", ]
   # message("Detect ", nrow(invalid.df), " invalid metadata (", fe.id, "/dataset_id is empty or NA).")
-  message("There is no file in dataset_id: ", paste(invalid.df$dataset_id, collapse = ", "), " with extension rds.")
+  if (nrow(invalid.df) > 0) {
+    message("There is no file in dataset_id: ", paste(invalid.df$dataset_id, collapse = ", "), " with extension ", fe, ".")
+  }
   valid.df <- df[!(is.na(df[[fe.id]]) | is.na(df$dataset_id) | df$dataset_id == "" | df[[fe.id]] == ""), ]
-  valid.urls <- df[[fe.id]]
-  valid.names <- make.names(valid.df$dataset_description, unique = TRUE)
-  valid.filenames <- paste0(valid.names, ".", fe)
-  names(valid.urls) <- valid.filenames
+  if (nrow(valid.df) > 0) {
+    valid.urls <- df[[fe.id]]
+    valid.names <- make.names(valid.df$dataset_description, unique = TRUE)
+    valid.filenames <- paste0(valid.names, ".", fe)
+    names(valid.urls) <- valid.filenames
+  } else {
+    valid.urls <- NULL
+  }
   return(list(df = valid.df, urls = valid.urls))
 }
 
-# used in hca, recursively extract projects (limit size to 100, get all projects when the size is greater than 100)
+# used in cellxgene, deal with NULL value
+CXGnullCol <- function(value) {
+  if (is.null(value)) {
+    return(NA)
+  } else {
+    return(value)
+  }
+}
+
+# used in cellxgene, parse dataset information of single collection
+ParseCXGcollection <- function(collection_id) {
+  # base url
+  cellxgene.collections.url <- "https://api.cellxgene.cziscience.com/curation/v1/collections/"
+  # single collection url
+  cellxgene.sc.url <- paste0(cellxgene.collections.url, collection_id)
+  cellxgene.sc.content <- URLRetrieval(cellxgene.sc.url)
+  # check collection_id
+  if (length(names(cellxgene.sc.content)) == 4 && all(names(cellxgene.sc.content) == c("detail", "status", "title", "type"))) {
+    print(as.data.frame(cellxgene.sc.content))
+    stop("Error occurred when accessing collection: ", collection_id, ". If CheckAPI() returns OK, please check collection_id (link) you provided!")
+  }
+  cellxgene.sc.datasets <- jsonlite::flatten(cellxgene.sc.content$datasets)
+  colnames(cellxgene.sc.datasets) <- gsub(pattern = "^title$", replacement = "dataset_description", x = colnames(cellxgene.sc.datasets))
+  # prepare metadata
+  cellxgene.sc.df <- data.frame(
+    title = cellxgene.sc.content$name, description = cellxgene.sc.content$description, doi = CXGnullCol(cellxgene.sc.content$doi),
+    contact = CXGnullCol(cellxgene.sc.content$contact_name), contact_email = CXGnullCol(cellxgene.sc.content$contact_email),
+    collection_id = cellxgene.sc.content$collection_id, collection_url = cellxgene.sc.content$collection_url,
+    consortia = paste(unlist(cellxgene.sc.content$consortia), collapse = ", "), curator_name = CXGnullCol(cellxgene.sc.content$curator_name),
+    visibility = cellxgene.sc.content$visibility
+  )
+  cellxgene.sc.df <- cbind(cellxgene.sc.df, cellxgene.sc.datasets) %>% as.data.frame()
+  # modify metadata
+  label.col <- c(
+    "assay", "cell_type", "organism", "self_reported_ethnicity", "sex", "tissue",
+    "disease", "development_stage"
+  )
+  valid.label.col <- intersect(colnames(cellxgene.sc.df), label.col)
+  cellxgene.sc.df <-
+    PasteAttrCXG(
+      df = cellxgene.sc.df,
+      attr = valid.label.col, col = "label"
+    )
+  list.col <- c("batch_condition", "suspension_type", "donor_id")
+  valid.list.col <- intersect(colnames(cellxgene.sc.df), list.col)
+  cellxgene.sc.df <-
+    PasteAttr(df = cellxgene.sc.df, attr = valid.list.col)
+  # add h5ad and rds information
+  cellxgene.sc.list <- lapply(1:nrow(cellxgene.sc.df), function(x) {
+    x.df <- cellxgene.sc.df[x, ]
+    x.df.dataset <- x.df$assets[[1]]
+    # x.df$dataset_id <- unique(x.df.dataset$dataset_id)
+    if ("RDS" %in% unique(x.df.dataset$filetype)) {
+      x.rds.idx <- which(x.df.dataset$filetype == "RDS")
+      x.df$rds_id <- x.df.dataset$url[x.rds.idx]
+    } else {
+      x.df$rds_id <- NA
+    }
+    if ("H5AD" %in% unique(x.df.dataset$filetype)) {
+      x.h5ad.idx <- which(x.df.dataset$filetype == "H5AD")
+      x.df$h5ad_id <- x.df.dataset$url[x.h5ad.idx]
+    } else {
+      x.df$h5ad_id <- NA
+    }
+    x.df
+  })
+  cellxgene.sc.final <- data.table::rbindlist(cellxgene.sc.list, fill = TRUE) %>%
+    as.data.frame()
+  return(cellxgene.sc.final)
+}
+
+# used in cellxgene, parse dataset information
+ParseCXGdataset <- function(dataset_id) {
+  dataset.url <- paste0("https://api.cellxgene.cziscience.com/curation/v1/datasets/", dataset_id, "/versions")
+  dataset.content <- URLRetrieval(dataset.url)
+  # check dataset_id
+  if (length(names(dataset.content)) == 4 && all(names(dataset.content) == c("detail", "status", "title", "type"))) {
+    print(as.data.frame(dataset.content))
+    stop("Error occurred when accessing collection: ", dataset_id, ". If CheckAPI() returns OK, please check dataset_id (link) you provided!")
+  }
+  # get first dataset, newer
+  collection.id <- dataset.content[1, "collection_id"]
+  collection.info <- ParseCXGcollection(collection_id = collection.id)
+  used.collection.info <- collection.info[collection.info$dataset_id == dataset_id, ]
+  return(used.collection.info)
+}
+
+# used in hca, recursively extract projects
 # reference: https://bioconductor.org/packages/release/bioc/html/hca.html
 RecurURLRetrieval <- function(url) {
   url.content <- URLRetrieval(url)
@@ -662,6 +819,149 @@ HCAExtactData <- function(df) {
   return(df.final)
 }
 
+# used in hca, parse dataset information of project
+ParseHCAdataset <- function(project.id) {
+  # get all catalogs
+  catalog.vec <- ExtractHCACatalogs()
+  # get project detail
+  projects.cat.list <- lapply(catalog.vec, function(x) {
+    project.url <- paste0(
+      "https://service.azul.data.humancellatlas.org/index/projects?catalog=", x,
+      "&filters=%7B%0A%20%20%22projectId%22%3A%20%7B%0A%20%20%20%20%22is%22%3A%20%5B%0A%20%20%20%20%20%20%22",
+      project.id, "%22%0A%20%20%20%20%5D%0A%20%20%7D%0A%7D"
+    )
+    projects.list <- URLRetrieval(project.url)
+    projects.info <- projects.list$hits %>% as.data.frame()
+    if (nrow(projects.info) != 0) {
+      projects.info$catalog <- x
+    }
+    return(projects.info)
+  })
+  projects.cat.df <- data.table::rbindlist(projects.cat.list, fill = TRUE) %>% as.data.frame()
+  if (nrow(projects.cat.df) == 0) {
+    stop("Error occurred when accessing project: ", project.id, ". If CheckAPI() returns OK, please check project.id (link) you provided!")
+  }
+  # remove duplicated information in different catalogs
+  projects.cat.df <- projects.cat.df %>% dplyr::distinct(.data[["entryId"]], .keep_all = TRUE)
+  # process the project information
+  projects.cat.final <- ProcessHCAProject(x.df = projects.cat.df)
+  return(projects.cat.final)
+}
+
+# used in hca, process dataset information of project
+ProcessHCAProject <- function(x.df) {
+  # entryid and catalog
+  entryId <- x.df$entryId
+  catalog <- x.df$catalog
+
+  # procotol information
+  x.df.protocol <- x.df$protocols[[1]]
+  workflow <- HCAPasteCol(x.df.protocol, col = "workflow")
+  libraryConstructionApproach <- HCAPasteCol(x.df.protocol, col = "libraryConstructionApproach")
+  nucleicAcidSource <- HCAPasteCol(x.df.protocol, col = "nucleicAcidSource")
+  instrumentManufacturerModel <- HCAPasteCol(x.df.protocol, col = "instrumentManufacturerModel")
+  pairedEnd <- HCAPasteCol(x.df.protocol, col = "pairedEnd")
+
+  # source
+  x.df.source <- x.df$sources[[1]]
+  sourceId <- HCAPasteColdf(x.df.source, col = "sourceId")
+  sourceSpec <- HCAPasteColdf(x.df.source, col = "sourceSpec")
+
+  # project
+  x.df.projects <- x.df$projects[[1]]
+  projectId <- HCAPasteColdf(x.df.projects, col = "projectId")
+  projectTitle <- HCAPasteColdf(x.df.projects, col = "projectTitle")
+  projectShortname <- HCAPasteColdf(x.df.projects, col = "projectShortname")
+  laboratory <- HCAPasteCol(x.df.projects, col = "laboratory")
+  estimatedCellCount <- HCAPasteColdf(x.df.projects, col = "estimatedCellCount")
+  projectDescription <- HCAPasteColdf(x.df.projects, col = "projectDescription")
+  publications <- HCAPasteColdf(x.df.projects$publications[[1]], col = "publicationTitle")
+  accessions <- HCAPasteColdf(x.df.projects$accessions[[1]], col = "accession")
+  accessible <- HCAPasteColdf(x.df.projects, col = "accessible")
+
+  # sample
+  x.df.samples <- x.df$samples[[1]]
+  sampleEntityType <- HCAPasteCol(df = x.df.samples, col = "sampleEntityType")
+  organ <- HCAPasteCol(df = x.df.samples, col = "effectiveOrgan")
+  sampleID <- HCAPasteCol(df = x.df.samples, col = "id")
+  organPart <- HCAPasteCol(df = x.df.samples, col = "organPart")
+  disease <- HCAPasteCol(df = x.df.samples, col = "disease")
+  preservationMethod <- HCAPasteCol(df = x.df.samples, col = "preservationMethod")
+
+  # cell line
+  x.df.cellLines <- x.df$cellLines[[1]]
+  cellLineID <- HCAPasteCol(df = x.df.cellLines, col = "id")
+  cellLineType <- HCAPasteCol(df = x.df.cellLines, col = "cellLineType")
+  cellLinemodelOrgan <- HCAPasteCol(df = x.df.cellLines, col = "modelOrgan")
+
+  # Organism
+  x.df.organisms <- x.df$donorOrganisms[[1]]
+  donorCount <- ifelse(is.null(x.df.organisms$donorCount), "", x.df.organisms$donorCount)
+  developmentStage <- HCAPasteCol(df = x.df.organisms, col = "developmentStage")
+  genusSpecies <- HCAPasteCol(df = x.df.organisms, col = "genusSpecies")
+  biologicalSex <- HCAPasteCol(df = x.df.organisms, col = "biologicalSex")
+
+  # organoids
+  x.df.organoids <- x.df$organoids[[1]]
+  organoidsID <- HCAPasteCol(df = x.df.organoids, col = "id")
+  organoidsmodelOrgan <- HCAPasteCol(df = x.df.organoids, col = "modelOrgan")
+  organoidsmodelOrganPart <- HCAPasteCol(df = x.df.organoids, col = "modelOrganPart")
+
+  # cellSuspensions
+  x.df.cellSuspensions <- x.df$cellSuspensions[[1]]
+  selectedCellType <- HCAPasteCol(df = x.df.cellSuspensions, col = "selectedCellType")
+
+  # date
+  x.df.date <- x.df$dates[[1]]
+  lastModifiedDate <- HCAPasteColdf(df = x.df.date, col = "lastModifiedDate")
+
+  # uuid, file name and file formats
+  x.df.dataset <- data.frame()
+  if (ncol(x.df.projects$matrices) > 0) {
+    x.mat.df <- HCAExtactData(x.df.projects$matrices)
+    x.mat.df$source <- "matrices"
+    x.df.dataset <- data.table::rbindlist(list(x.df.dataset, x.mat.df), fill = TRUE) %>% as.data.frame()
+  }
+  if (ncol(x.df.projects$contributedAnalyses) > 0) {
+    x.ca.df <- HCAExtactData(x.df.projects$contributedAnalyses)
+    x.ca.df$source <- "contributedAnalyses"
+    x.df.dataset <- data.table::rbindlist(list(x.df.dataset, x.ca.df), fill = TRUE) %>% as.data.frame()
+  }
+  if (nrow(x.df.dataset) > 0) {
+    x.df.dataset <- x.df.dataset[!is.na(x.df.dataset$uuid), ] %>% dplyr::distinct(.data[["uuid"]], .keep_all = TRUE)
+    dataMeta <- HCAPasteColdf(df = x.df.dataset, col = "meta")
+    dataDescription <- HCAPasteColdf(df = x.df.dataset, col = "contentDescription")
+    dataFormat <- HCAPasteColdf(df = x.df.dataset, col = "format")
+    dataName <- HCAPasteColdf(df = x.df.dataset, col = "name")
+    dataUUID <- HCAPasteColdf(df = x.df.dataset, col = "uuid")
+    dataVersion <- HCAPasteColdf(df = x.df.dataset, col = "version")
+  } else {
+    dataMeta <- NA
+    dataDescription <- NA
+    dataFormat <- NA
+    dataName <- NA
+    dataUUID <- NA
+    dataVersion <- NA
+  }
+  # return final dataframe
+  project.df <- data.frame(
+    projectTitle = projectTitle, projectId = projectId, projectShortname = projectShortname,
+    projectDescription = projectDescription, publications = publications, laboratory = laboratory,
+    accessions = accessions, accessible = accessible, estimatedCellCount = estimatedCellCount,
+    sampleEntityType = sampleEntityType, organ = organ, organPart = organPart, sampleID = sampleID,
+    disease = disease, preservationMethod = preservationMethod, donorCount = donorCount,
+    developmentStage = developmentStage, genusSpecies = genusSpecies, biologicalSex = biologicalSex,
+    selectedCellType = selectedCellType, catalog = catalog, entryId = entryId, sourceId = sourceId, sourceSpec = sourceSpec,
+    workflow = workflow, libraryConstructionApproach = libraryConstructionApproach, nucleicAcidSource = nucleicAcidSource,
+    instrumentManufacturerModel = instrumentManufacturerModel, pairedEnd = pairedEnd, cellLineID = cellLineID,
+    cellLineType = cellLineType, cellLinemodelOrgan = cellLinemodelOrgan, organoidsID = organoidsID,
+    organoidsmodelOrgan = organoidsmodelOrgan, organoidsmodelOrganPart = organoidsmodelOrganPart,
+    lastModifiedDate = lastModifiedDate, dataMeta = dataMeta, dataDescription = dataDescription, dataFormat = dataFormat,
+    dataName = dataName, dataUUID = dataUUID, dataVersion = dataVersion
+  )
+  return(project.df)
+}
+
 # used in CELLxGENE, Zenodo
 LoadRDS2Seurat <- function(out.folder, merge, obs.value.filter = NULL, obs.keys = NULL, include.genes = NULL) {
   rds.files <- list.files(path = out.folder, pattern = "rds$", full.names = TRUE, ignore.case = TRUE)
@@ -728,10 +1028,15 @@ LoadRDS2Seurat <- function(out.folder, merge, obs.value.filter = NULL, obs.keys 
       }
       # remove NULL element
       seu.list[sapply(seu.list, is.null)] <- NULL
-      if (isTRUE(merge)) {
-        seu.obj <- mergeExperiments(seu.list)
+      if (length(seu.list) == 0) {
+        message("No SeuratObject detected!")
+        seu.obj <- NULL
       } else {
-        seu.obj <- seu.list
+        if (isTRUE(merge)) {
+          seu.obj <- mergeExperiments(seu.list)
+        } else {
+          seu.obj <- seu.list
+        }
       }
     }
     return(seu.obj)
@@ -788,10 +1093,38 @@ ParseENAxml <- function(run, df.type = c("fastq", "bam")) {
 }
 
 # download files with url (download.file and ascp)
-DownloadMethod <- function(rn, url.vec, name.vec = NULL, out.folder = NULL, download.method = c("download.file", "ascp"),
-                           quiet = FALSE, timeout = 3600, ascp.path = NULL, max.rate = "300m", rename = FALSE) {
+DownloadMethod <- function(rn, url.vec, name.vec = NULL, out.folder = NULL, download.method = c("download.file", "ascp", "wget"),
+                           quiet = FALSE, timeout = 3600, ascp.path = NULL, max.rate = "300m", wget.path = NULL, rename = FALSE) {
   # download
-  if (download.method == "download.file") {
+  if (download.method == "wget") {
+    # get wget path
+    if (is.null(wget.path)) {
+      # specify wget path
+      wget.path <- Sys.which("wget")
+      if (wget.path == "") {
+        stop("Can not find wget automatically, please specify the path!")
+      }
+    } else {
+      wget.path <- wget.path
+    }
+    # wget
+    wget.cmd <- paste(wget.path, "-t 20 -nv -c -T", format(timeout, scientific = F), url.vec, "-P", out.folder)
+    wget.cmd <- paste(wget.cmd, collapse = " && ")
+    message(paste("Calling wget:", wget.cmd))
+    wget.status <- system(wget.cmd, intern = TRUE)
+    wget.status.code <- attr(wget.status, "status")
+    if (!is.null(wget.status.code)) {
+      warning("Run wget error: ", rn, ". Re-run to continue downloading!")
+      return(rn)
+    } else {
+      message("Download successful: ", rn)
+      # rename file
+      if (isTRUE(rename)) {
+        file.rename(file.path(out.folder, basename(url.vec)), file.path(out.folder, name.vec))
+      }
+      return(NULL)
+    }
+  } else if (download.method == "download.file") {
     # set timeout
     env.timeout <- getOption("timeout")
     on.exit(options(timeout = env.timeout)) # restore timeout
@@ -825,8 +1158,9 @@ DownloadMethod <- function(rn, url.vec, name.vec = NULL, out.folder = NULL, down
     ascp.status <- system(ascp.cmd, intern = TRUE)
     ascp.status.code <- attr(ascp.status, "status")
     if (!is.null(ascp.status.code)) {
-      warning("Run ascp error: ", rn)
-      do.call(file.remove, list(list.files(out.folder, full.names = TRUE, pattern = "partial$|aspera-ckpt$")))
+      warning("Run ascp error: ", rn, ". Re-run to continue downloading!")
+      # for continue download
+      # do.call(file.remove, list(list.files(out.folder, full.names = TRUE, pattern = "partial$|aspera-ckpt$")))
       return(rn)
     } else {
       message("Download successful: ", rn)
@@ -873,4 +1207,470 @@ Gunzip <- function(filename, destname = gsub("[.]gz$", "", filename), overwrite 
   }
 
   invisible(nbytes)
+}
+
+# used in ParseGEO, read count matrix file of bulk and smart-seq2 RNA-seq.
+ReadFile <- function(file.path, extra.cols = c(
+                       "chr", "start", "end", "strand", "length",
+                       "width", "chromosome", "seqnames", "seqname",
+                       "chrom", "chromosome_name", "seqid", "stop"
+                     ),
+                     transpose = TRUE) {
+  file.ext <- tools::file_ext(file.path)
+  if (file.ext %in% c("xlsx", "xls")) {
+    # read excel file
+    count.mat <- tryCatch(
+      {
+        readxl::read_excel(path = file.path) %>% as.data.frame()
+      },
+      error = function(e) {
+        message(e)
+        # empty dataframe
+        data.frame()
+      }
+    )
+  } else if (file.ext %in% c("csv", "tsv", "txt", "tab")) {
+    # read text file
+    count.mat <- tryCatch(
+      {
+        data.table::fread(file = file.path) %>% as.data.frame()
+      },
+      error = function(e) {
+        message(e)
+        # empty dataframe
+        data.frame()
+      }
+    )
+  }
+  if (nrow(count.mat) > 0) {
+    # the first column must be gene
+    # check unique
+    if (length(count.mat[, 1]) != length(unique(count.mat[, 1]))) {
+      message(
+        "The row names are not unique, run 'make.unique'.", "\n",
+        "You can extract duplicated gene names with grep(pattern = '_dup', x = rownames(count.mat), value = T)."
+      )
+      # ensure unique
+      count.mat[, 1] <- make.unique(count.mat[, 1], sep = "_dup")
+    }
+    rownames(count.mat) <- count.mat[, 1]
+    count.mat[, 1] <- NULL
+    # remove extra columns
+    count.mat.cols <- colnames(count.mat) %>% tolower()
+    extra.cols.idx <- sapply(count.mat.cols, function(x) {
+      x %in% extra.cols
+    })
+    extra.cols.remove <- count.mat.cols[extra.cols.idx]
+    if (length(extra.cols.remove) > 0) {
+      message("Detect and remove extra columns: ", paste(extra.cols.remove, collapse = ", "))
+    }
+    count.mat <- count.mat[, !extra.cols.idx, drop = FALSE]
+    # check col type
+    count.mat.ct <- sapply(count.mat, class)
+    # get character columns
+    count.mat.ct.c <- count.mat.ct[count.mat.ct == "character"] %>% names()
+    if (length(count.mat.ct.c) > 0) {
+      message("Detect and remove character columns: ", paste(count.mat.ct.c, collapse = ", "))
+      count.mat[count.mat.ct.c] <- NULL
+    }
+    # check row and col number
+    if (nrow(count.mat) < ncol(count.mat)) {
+      warning(
+        "The number of rows: ", nrow(count.mat), "(", paste(head(rownames(count.mat)), collapse = ", "), ")",
+        " is smaller than the number of columns: ", ncol(count.mat), ". May be a transposed matrix, please check and set parameter transpose (Default: TRUE)!"
+      )
+      if (isTRUE(transpose)) {
+        message("The transpose is set to TRUE, transpose the matrix!")
+        count.mat <- t(count.mat) %>% as.data.frame()
+      }
+    }
+  }
+  return(count.mat)
+}
+
+# modified from https://github.com/seandavi/GEOquery/blob/c85b1115cdee87515ed0d72bfde86f3986a0b2b7/R/getGEOSuppFiles.R
+getDirListing <- function(url) {
+  # Takes a URL and returns a character vector of filenames
+  a <- xml2::read_html(url)
+  fnames <- grep("^G", xml2::xml_text(xml2::xml_find_all(a, "//a/@href")), value = TRUE)
+  return(fnames)
+}
+# get file name and url
+getGEOFileIndexName <- function(GEO, index) {
+  geotype <- toupper(substr(GEO, 1, 3))
+  stub <- gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
+  if (geotype == "GSM") {
+    url <- sprintf(
+      "https://ftp.ncbi.nlm.nih.gov/geo/samples/%s/%s/suppl/",
+      stub, GEO
+    )
+  }
+  if (geotype == "GSE") {
+    url <- sprintf(
+      "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/suppl/",
+      stub, GEO
+    )
+  }
+  if (geotype == "GPL") {
+    url <- sprintf(
+      "https://ftp.ncbi.nlm.nih.gov/geo/platform/%s/%s/suppl/",
+      stub, GEO
+    )
+  }
+  fnames <- try(getDirListing(url), silent = TRUE)
+  # check status
+  if (inherits(fnames, "try-error")) {
+    stop("No supplemental files found. Check URL manually if in doubt: ", url)
+  }
+  # check index
+  if (index > length(fnames)) {
+    stop("Please provide valid supplementary file index. Total length: ", length(fnames))
+  }
+  used.fnames <- fnames[index]
+  return(c(used.fnames, url))
+}
+# https://github.com/seandavi/GEOquery/blob/c85b1115cdee87515ed0d72bfde86f3986a0b2b7/R/getGEOSuppFiles.R
+getGEOSuppFilesInner <- function(GEO, makeDirectory = TRUE, baseDir = getwd(), index = 1) {
+  # get used file
+  index.url <- getGEOFileIndexName(GEO = GEO, index = index)
+  storedir <- baseDir
+  fileinfo <- list()
+  # create output folder
+  if (makeDirectory) {
+    suppressWarnings(dir.create(storedir <- file.path(baseDir, GEO)))
+  }
+  # download
+  destfile <- file.path(storedir, index.url[1])
+  result <- tryCatch(
+    {
+      if (!file.exists(destfile)) {
+        res <- download.file(
+          paste(file.path(index.url[2], index.url[1]),
+            "tool=geoquery",
+            sep = "?"
+          ),
+          destfile = destfile,
+          mode = "wb", method = getOption("download.file.method.GEOquery")
+        )
+      } else {
+        message(sprintf(
+          "Using locally cached version of supplementary file(s) %s found here:\n%s ",
+          GEO, destfile
+        ))
+        res <- 0
+      }
+      res == 0
+    },
+    error = function(e) {
+      return(FALSE)
+    },
+    warning = function(w) {
+      return(FALSE)
+    }
+  )
+  if (!result) {
+    if (file.exists(destfile)) {
+      file.remove(destfile)
+    }
+    stop(sprintf("Failed to download %s!", destfile))
+  }
+  return(file.info(destfile))
+}
+
+# extract file extension without compression
+getExtWithoutCompression <- function(filename) {
+  # Define common compression extensions
+  compression.exts <- c("gz", "bz2", "xz", "zip", "tgz", "tar.gz") # expanded list
+  # Iterate and remove compression extensions
+  for (ext in compression.exts) {
+    if (grepl(paste0("\\.", ext, "$"), filename)) {
+      filename <- sub(paste0("\\.", ext, "$"), "", filename)
+    }
+  }
+  # Now, extract the remaining extension using tools::file_ext
+  return(tools::file_ext(filename))
+}
+
+# recursively move files to top directory
+MoveFileRecursively <- function(folder) {
+  move.folder.log <- sapply(folder, function(x) {
+    x.files <- list.files(path = x, full.names = TRUE, recursive = TRUE)
+    move.file.log <- sapply(x.files, function(y) {
+      # get file name
+      y.name <- basename(y)
+      y.last.folder <- basename(dirname(y))
+      # get gse or gsm
+      gname <- gsub(pattern = "(GS[EM][0-9]+).*", replacement = "\\1", x = basename(x))
+      new.file <- file.path(dirname(x), paste(gname, y.last.folder, y.name, sep = "_"))
+      if (y != new.file) {
+        # move file
+        copy.tag <- file.copy(from = y, to = new.file)
+        # remove the original file
+        remove.tag <- file.remove(y)
+        copy.tag
+      }
+    })
+  })
+  return(move.folder.log)
+}
+
+# untar and recursively move files to top directory
+ProcessTAR <- function(tar.files, remove.cf = TRUE) {
+  untar.log <- sapply(
+    tar.files,
+    function(x) {
+      x.folder <- gsub(pattern = ".tar", replacement = "", x = x)
+      utils::untar(x, exdir = x.folder)
+    }
+  )
+  # recursively move files
+  all.tar.folders <- gsub(pattern = ".tar$", replacement = "", x = tar.files)
+  move.folder.log <- MoveFileRecursively(all.tar.folders)
+  # remove tar.gz files
+  if (remove.cf) {
+    rm.log <- sapply(tar.files, file.remove)
+  }
+  return(move.folder.log)
+}
+
+# process compressed files in zip, tar, tar.gz
+ProcessCompressedFiles <- function(all.files, remove.cf = TRUE) {
+  # deal with zip files
+  all.zip.files <- grep(pattern = "zip$", x = all.files, value = TRUE)
+  if (length(all.zip.files) > 0) {
+    message("Detect files in zip format, extract!")
+    unzip.log <- sapply(
+      all.zip.files,
+      function(x) {
+        x.folder <- gsub(pattern = ".zip", replacement = "", x = x)
+        unzip(x, exdir = x.folder, overwrite = TRUE)
+      }
+    )
+    # recursively move files
+    all.zip.folders <- gsub(pattern = ".zip$", replacement = "", x = all.zip.files)
+    move.folder.log <- MoveFileRecursively(all.zip.folders)
+    # remove zip files
+    if (remove.cf) {
+      rm.log <- sapply(all.zip.files, file.remove)
+    }
+  }
+  # deal with tar.gz files
+  all.targz.files <- grep(pattern = "tar.gz$", x = all.files, value = TRUE)
+  if (length(all.targz.files) > 0) {
+    message("Detect files in tar.gz format, extract!")
+    # unzip
+    unzip.log <- sapply(
+      all.targz.files,
+      function(x) {
+        Gunzip(x, overwrite = TRUE)
+      }
+    )
+    # untar
+    all.tar.files <- gsub(pattern = ".gz$", replacement = "", x = all.targz.files)
+    process.tar <- ProcessTAR(tar.files = all.tar.files, remove.cf = remove.cf)
+  }
+  # deal with tar files
+  all.tar.files2 <- grep(pattern = "tar$", x = all.files, value = TRUE)
+  if (length(all.tar.files2) > 0) {
+    message("Detect files in tar format, extract!")
+    process.tar2 <- ProcessTAR(tar.files = all.tar.files2, remove.cf = remove.cf)
+  }
+}
+
+# process 10x files: deal with compressed files, identify h5 and MEX format, rename and move
+Process10xFiles <- function(acce, folder, accept.fmt, out.folder, gene2feature) {
+  # deal with compressed files
+  all.files <- list.files(folder, full.names = TRUE)
+  process.compressed.log <- ProcessCompressedFiles(all.files = all.files, remove.cf = TRUE)
+  # identify accept files in given format
+  if ("MEX" %in% accept.fmt) {
+    valid.pat.mex <- "barcodes.*.tsv$|genes.*.tsv$|matrix.*.mtx$|features.*.tsv$"
+    all.files.mex <- list.files(folder, full.names = TRUE, pattern = valid.pat.mex)
+    gzip.log <- sapply(
+      all.files.mex,
+      function(x) {
+        R.utils::gzip(filename = x, remove = TRUE)
+      }
+    )
+    # sample name is after, rename
+    valid.pat.gz <- "barcodes.+.tsv.gz$|genes.+.tsv.gz$|matrix.+.mtx.gz$|features.+.tsv.gz$"
+    all.files.gz <- list.files(folder, full.names = TRUE, pattern = valid.pat.gz)
+    if (length(all.files.gz) > 0) {
+      rename.log <- sapply(all.files.gz, function(x) {
+        x.new <- gsub(pattern = "(.*)(barcodes|genes|matrix|features)(.*)(.tsv.gz|.mtx.gz)", replacement = "\\1\\3\\2\\4", x = x)
+        file.rename(from = x, to = x.new)
+      })
+    }
+    # recognize valid files: barcodes.tsv.gz, genes.tsv.gz, matrix.mtx.gz and features.tsv.gz
+    valid.pat.gz <- "barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$"
+    all.files.gz <- list.files(folder, full.names = TRUE, pattern = valid.pat.gz)
+  } else {
+    all.files.gz <- c()
+  }
+  if ("h5" %in% accept.fmt) {
+    h5.gz.file <- list.files(folder, full.names = TRUE, pattern = "h5.gz$")
+    if (length(h5.gz.file) > 0) {
+      # gunzip file
+      unzip.log <- sapply(
+        h5.gz.file,
+        function(x) {
+          Gunzip(x, overwrite = TRUE)
+        }
+      )
+    }
+    all.files.h5 <- list.files(folder, full.names = TRUE, pattern = "h5$")
+  } else {
+    all.files.h5 <- c()
+  }
+  # prepare out folder
+  if (is.null(out.folder)) {
+    out.folder <- getwd()
+  }
+  out.folder <- file.path(out.folder, acce) # optimize output folder
+  # rename and move files
+  if (length(all.files.gz) > 0) {
+    message("Detect ", length(all.files.gz), " files in MEX(barcode/feature/gene/matrix) format.")
+    # change file name
+    if (gene2feature) {
+      change.name.log <- sapply(all.files.gz, function(x) {
+        if (grepl(pattern = "genes.tsv.gz$", x = x)) {
+          new.name <- gsub(pattern = "genes.tsv.gz$", replacement = "features.tsv.gz", x = x)
+          file.rename(from = x, to = new.name)
+        }
+      })
+      all.files.gz <- list.files(folder, full.names = TRUE, pattern = valid.pat.gz)
+    }
+    # get folder
+    all.sample.folder <- sapply(all.files.gz, function(x) {
+      # get basename and dirname
+      file.name <- basename(x)
+      dir.name <- dirname(x)
+      # remove file type tag
+      file.name <- gsub(pattern = valid.pat.gz, replacement = "", x = file.name)
+      # remove possible _ and .
+      file.name <- gsub(pattern = "[_\\-\\.]$", replacement = "", x = file.name)
+      file.folder <- file.path(out.folder, file.name)
+    })
+    # create folder and move file
+    move.file.log <- sapply(all.files.gz, function(x) {
+      # get folder name
+      folder.name <- all.sample.folder[x]
+      # create folder
+      if (!dir.exists(folder.name)) {
+        dir.create(path = folder.name, recursive = TRUE)
+      }
+      new.file.name <- gsub(pattern = paste0(".*(barcodes.tsv.gz$|genes.tsv.gz$|matrix.mtx.gz$|features.tsv.gz$)"), replacement = "\\1", x = x)
+      # move file
+      copy.tag <- file.copy(from = x, to = file.path(folder.name, new.file.name))
+      # remove the original file
+      remove.tag <- file.remove(x)
+      copy.tag
+    })
+  }
+  if (length(all.files.h5) > 0) {
+    message("Detect ", length(all.files.h5), " files in h5 format.")
+    # get folder
+    all.sample.folder <- sapply(all.files.h5, function(x) {
+      # get basename and dirname
+      file.name <- basename(x)
+      dir.name <- dirname(x)
+      # remove file type tag
+      file.name <- gsub(pattern = "h5$", replacement = "", x = file.name)
+      # remove possible _ and .
+      file.name <- gsub(pattern = "[_.]$", replacement = "", x = file.name)
+      # remove fix prefix
+      file.name <- gsub(pattern = "filtered_feature_bc_matrix$|filtered_gene_bc_matrix$|raw_feature_bc_matrix$|raw_gene_bc_matrix$", replacement = "", x = file.name)
+      # remove possible _ and .
+      file.name <- gsub(pattern = "[_.]$", replacement = "", x = file.name)
+      file.folder <- file.path(out.folder, file.name)
+    })
+    # create folder and move file
+    move.file.log <- sapply(all.files.h5, function(x) {
+      # get folder name
+      folder.name <- all.sample.folder[x]
+      # create folder
+      if (!dir.exists(folder.name)) {
+        dir.create(path = folder.name, recursive = TRUE)
+      }
+      # move file
+      copy.tag <- file.copy(from = x, to = file.path(folder.name, basename(x)))
+      # remove the original file
+      remove.tag <- file.remove(x)
+      copy.tag
+    })
+  }
+  if (length(all.files.gz) == 0 && length(all.files.h5) == 0) {
+    stop("No valid 10x format (barcode/feature/gene/matrix, h5) files detected! Please check.")
+  }
+  message("Process 10x fiels done! All files are in ", out.folder)
+  return(NULL)
+}
+
+# used in CheckAPIs, whether the url exists: https://stackoverflow.com/questions/52911812/check-if-url-exists-in-r
+CheckURL <- function(url_in, t = 2) {
+  con <- url(url_in)
+  check <- suppressWarnings(try(open.connection(con, open = "rt", timeout = t), silent = T)[1])
+  suppressWarnings(try(close.connection(con), silent = T))
+  ifelse(is.null(check), TRUE, FALSE)
+}
+
+# used in DownloadFastq2R, distinguish bulk rna-seq, 10x Genomics, Smart-seq2 scRNA-seq
+DistinguishRNA <- function(geo.runs) {
+  # check columns
+  CheckColumns(geo.runs, c("library_strategy", "library_source"))
+  # filter rna-seq, scrna-seq, snrna-seq (seq_template)
+  geo.runs$library_strategy <- tolower(geo.runs$library_strategy)
+  geo.runs.rna <- geo.runs[geo.runs$library_strategy %in% c("rna-seq", "scrna-seq", "snrna-seq"), ]
+  if (nrow(geo.runs.rna) == 0) {
+    stop("No valid sc/bulk RNA-seq dataset/run detected, the available library strategy: ", paste0(unique(geo.runs$library_strategy), collapse = ", "))
+  }
+  # distinguish scrna-seq/snrna-seq or bulk rna-seq: library source, library strategy, keyword
+  geo.runs.rna$library_source <- tolower(geo.runs.rna$library_source)
+  source.index <- geo.runs.rna$library_source == tolower("TRANSCRIPTOMIC SINGLE CELL")
+  strategy.index <- geo.runs.rna$library_strategy %in% c("scrna-seq", "snrna-seq")
+  keyword <- c("scRNA", "snRNA", "single.cell", "single.nuclei", "single.nucleus", "singlecell", "singlenuclei", "singlenucleus", "10X.Genomics", "10XGenomics", "Smart.seq2", "Smartseq2")
+  keyword.pattern <- paste(tolower(keyword), collapse = "|")
+  geo.runs.rna.vec <- apply(geo.runs.rna[, grepl(pattern = "title|source_name|characteristics|description", x = colnames(geo.runs.rna))], 1, paste, collapse = "-")
+  keyword.index <- grepl(pattern = keyword.pattern, x = tolower(geo.runs.rna.vec))
+  geo.runs.scrna <- geo.runs.rna[(source.index | strategy.index | keyword.index), ]
+  if (nrow(geo.runs.scrna) == 0) {
+    message("No scRNA-seq dataset/run detected (library source, library strategy, metadata).")
+    message("Detect ", nrow(geo.runs.rna), " bulk RNA-seq datasets/runs (library source, library strategy, metadata).")
+    bulk.rna <- geo.runs.rna
+    scrna.10x <- data.frame()
+    scrna.ss2 <- data.frame()
+  } else {
+    message("Detect ", nrow(geo.runs.scrna), " scRNA-seq datasets/runs (library source, library strategy, metadata).")
+    geo.runs.bulkrna <- geo.runs.rna[!(source.index | strategy.index | keyword.index), ]
+    if (nrow(geo.runs.bulkrna) > 0) {
+      message("Detect ", nrow(geo.runs.bulkrna), " bulk RNA-seq datasets/runs (library source, library strategy, metadata).")
+      bulk.rna <- geo.runs.bulkrna
+    } else {
+      bulk.rna <- data.frame()
+    }
+    # distinguish 10x or smart-seq2 scRNA-seq
+    geo.runs.scrna.vec <- apply(geo.runs.scrna, 1, paste, collapse = "-")
+    keyword.10x <- c("10X.Genomics", "Cell.Ranger", "10XGenomics", "CellRanger")
+    keyword.10x.pattern <- paste(tolower(keyword.10x), collapse = "|")
+    keyword.10x.index <- grepl(pattern = keyword.10x.pattern, x = tolower(geo.runs.scrna.vec))
+    geo.runs.scrna.10x <- geo.runs.scrna[keyword.10x.index, ]
+    keyword.ss2 <- c("Smart.seq2", "Smartseq2")
+    keyword.ss2.pattern <- paste(tolower(keyword.ss2), collapse = "|")
+    keyword.ss2.index <- grepl(pattern = keyword.ss2.pattern, x = tolower(geo.runs.scrna.vec))
+    geo.runs.scrna.ss2 <- geo.runs.scrna[keyword.ss2.index, ]
+    if (nrow(geo.runs.scrna.10x) == 0 && nrow(geo.runs.scrna.ss2) == 0) {
+      message("No 10x Genomics/Smart-seq2 scRNA-seq dataset/run detected (metadata). The scRNA-seq datasets/runs may be generated by other platforms that GEfetch2R does not yet support.")
+      scrna.10x <- data.frame()
+      scrna.ss2 <- data.frame()
+    } else if (nrow(geo.runs.scrna.10x) == 0) {
+      message("Detect ", nrow(geo.runs.scrna.ss2), " Smart-seq2 scRNA-seq/mini-bulk datasets/runs (metadata).")
+      scrna.10x <- data.frame()
+      scrna.ss2 <- geo.runs.scrna.ss2
+    } else if (nrow(geo.runs.scrna.ss2) == 0) {
+      message("Detect ", nrow(geo.runs.scrna.10x), " 10x Genomics scRNA-seq datasets/runs (metadata).")
+      scrna.10x <- geo.runs.scrna.10x
+      scrna.ss2 <- data.frame()
+    }
+  }
+  return(list(bulk.rna = bulk.rna, scrna.10x = scrna.10x, scrna.ss2 = scrna.ss2))
 }

@@ -152,10 +152,13 @@ ParseZenodo <- function(doi = NULL, file.ext = c("rdata", "rds", "h5ad"), doi.df
     dir.create(out.folder, recursive = TRUE)
   }
   doi.df$filename <- file.path(out.folder, doi.df$filename)
-  # set timeout
-  env.timeout <- getOption("timeout")
-  on.exit(options(timeout = env.timeout)) # restore timeout
-  options(timeout = timeout)
+  # get current timeout
+  if (!is.null(timeout)) {
+    message("Change Timeout to: ", timeout)
+    env.timeout <- getOption("timeout")
+    on.exit(options(timeout = env.timeout)) # restore timeout
+    options(timeout = timeout)
+  }
   message("Start downloading!")
   if (isTRUE(parallel)) {
     # prepare cores

@@ -5,28 +5,19 @@
 \title{Extract Cell Type Composition of PanglaoDB Datasets.}
 \usage{
 ExtractPanglaoDBComposition(
+  meta = NULL,
   sra = NULL,
   srs = NULL,
-  species = NULL,
-  protocol = NULL,
-  tissue = NULL,
   local.data = TRUE
 )
 }
 \arguments{
-\item{sra}{The SRA identifier of the datasets, obtain available values with \code{StatDBAttribute},
-one or multiple value. Default: NULL (All).}
+\item{meta}{Metadata contains "SRA", "SRS", can be obtained with \code{ExtractPanglaoDBMeta}.
+Skip when \code{sra} or \code{srs} is not NULL. Default: NULL.}
 
-\item{srs}{The SRS identifier of the datasets, obtain available values with \code{StatDBAttribute},
-one or multiple value. Default: NULL (All).}
+\item{sra}{The SRA identifier of the datasets. Skip when \code{meta} or \code{srs} is not NULL. Default: NULL.}
 
-\item{species}{The species of the datasets, choose from "Homo sapiens", "Mus musculus", one or multiple value. Default: NULL (All).}
-
-\item{protocol}{Protocol used to generate the datasets, choose from "10x chromium", "drop-seq", "microwell-seq",
-"C1 Fluidigm", "inDrops", "Smart-seq2", "CEL-seq", one or multiple value. Default: NULL (All).}
-
-\item{tissue}{The tissue of the datasets, obtain available values with \code{StatDBAttribute},
-one or multiple value. Default: NULL (All).}
+\item{srs}{The SRS identifier of the datasets. Skip when \code{meta} or \code{sra} is not NULL. Default: NULL.}
 
 \item{local.data}{Logical value, whether to use local data (PanglaoDB is no longer maintained). Default: TRUE.}
 }
@@ -38,9 +29,19 @@ Extract Cell Type Composition of PanglaoDB Datasets.
 }
 \examples{
 \donttest{
-human.composition <- ExtractPanglaoDBComposition(
+# get metadata
+human.meta <- ExtractPanglaoDBMeta(
   species = "Homo sapiens",
-  protocol = c("Smart-seq2", "10x chromium")
+  protocol = c("Smart-seq2", "10x chromium"),
+  cell.num = c(1000, 2000)
 )
+# get composition
+human.composition <- ExtractPanglaoDBComposition(
+  meta = human.meta
+)
+# given dataset
+human.composition <- ExtractPanglaoDBComposition(sra = "SRA598936")
+# human.composition <- ExtractPanglaoDBComposition(srs = "SRS2428405")
+# human.composition <- ExtractPanglaoDBComposition(sra = "SRA598936", srs = "SRS2428405")
 }
 }

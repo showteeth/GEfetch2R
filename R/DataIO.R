@@ -153,6 +153,7 @@ ExportSeurat <- function(seu.obj, assay = NULL, reduction = NULL,
 #' @importFrom reticulate use_condaenv
 #' @importFrom SummarizedExperiment assayNames
 #' @importFrom scater logNormCounts
+#' @importFrom SingleCellExperiment altExpNames
 #' @importFrom methods is
 #' @export
 #'
@@ -200,6 +201,17 @@ ImportSeurat <- function(obj = NULL, assay = "RNA", from = c("SCE", "AnnData", "
       obj <- scater::logNormCounts(obj)
       data.assay <- "logcounts"
     }
+    # valid assay
+    valid.assay <- intersect(SingleCellExperiment::altExpNames(x = obj), assay)
+    if (length(valid.assay) == 0) {
+      message(
+        "The assay you provided: ", assay, " is not in the SingleCellExperiment object: ",
+        paste(SingleCellExperiment::altExpNames(x = obj), collapse = ", "), ". Change assay to NULL"
+      )
+      assay <- NULL
+    } else {
+      assay <- valid.assay
+    }
     # convert
     seu.obj <- Seurat::as.Seurat(
       x = obj, counts = count.assay, data = data.assay, assay = assay, ...
@@ -245,6 +257,18 @@ ImportSeurat <- function(obj = NULL, assay = "RNA", from = c("SCE", "AnnData", "
       stop("Please provide cell_data_set with obj!")
     } else if (!methods::is(obj, "cell_data_set")) {
       stop("Please provide valid cell_data_set object!")
+    }
+    # valid assay
+    obj2sce <- as(object = obj, Class = "SingleCellExperiment")
+    valid.assay <- intersect(SingleCellExperiment::altExpNames(x = obj2sce), assay)
+    if (length(valid.assay) == 0) {
+      message(
+        "The assay you provided: ", assay, " is not in the cell_data_set object: ",
+        paste(SingleCellExperiment::altExpNames(x = obj2sce), collapse = ", "), ". Change assay to NULL"
+      )
+      assay <- NULL
+    } else {
+      assay <- valid.assay
     }
     # convert
     seu.obj <- Seurat::as.Seurat(

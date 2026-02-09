@@ -20,64 +20,12 @@ ShowCELLxGENEDatasets <- function() {
   # extract all collections
   cellxgene.collections.content <- URLRetrieval(cellxgene.collections.url)
 
-  # extract all datasets
   cellxgene.collections.list <- lapply(1:nrow(cellxgene.collections.content), function(x) {
-    cellxgene.collection.content <- cellxgene.collections.content[x, ]
-    rownames(cellxgene.collection.content) <- NULL
-    cellxgene.sc.url <- paste0(cellxgene.collections.url, cellxgene.collections.content[x, "collection_id"])
-    cellxgene.sc.content <- URLRetrieval(cellxgene.sc.url)
-    cellxgene.sc.datasets <- jsonlite::flatten(cellxgene.sc.content$datasets)
-    colnames(cellxgene.sc.datasets) <- gsub(pattern = "^title$", replacement = "dataset_description", x = colnames(cellxgene.sc.datasets))
-    # add metadata
-    cellxgene.collection.content$title <- cellxgene.sc.content$name
-    cellxgene.collection.content$description <- cellxgene.sc.content$description
-    cellxgene.collection.content$contact <- cellxgene.sc.content$contact_name
-    cellxgene.collection.content$contact_email <- cellxgene.sc.content$contact_email
-    cellxgene.collection.content <- cellxgene.collection.content[c(
-      "title", "description", "doi", "contact", "contact_email",
-      "collection_id", "collection_url", "consortia",
-      "curator_name", "visibility"
-    )]
-    cellxgene.collection.final <- cbind(cellxgene.collection.content, cellxgene.sc.datasets) %>% as.data.frame()
-    return(cellxgene.collection.final)
+    ParseCXGcollection(collection_id = cellxgene.collections.content[x, "collection_id"])
   })
-  # create all datasets dataframe
   cellxgene.collections.datasets.df <- data.table::rbindlist(cellxgene.collections.list, fill = TRUE) %>%
     as.data.frame()
-  # modify columns
-  cellxgene.collections.datasets.df <-
-    PasteAttrCXG(
-      df = cellxgene.collections.datasets.df,
-      attr = c(
-        "assay", "cell_type", "organism", "self_reported_ethnicity", "sex", "tissue",
-        "disease", "development_stage"
-      ), col = "label"
-    )
-  cellxgene.collections.datasets.df <-
-    PasteAttr(df = cellxgene.collections.datasets.df, attr = c("batch_condition", "suspension_type", "donor_id"))
-  # add h5ad and rds information
-  cellxgene.collections.datasets.list <- lapply(1:nrow(cellxgene.collections.datasets.df), function(x) {
-    x.df <- cellxgene.collections.datasets.df[x, ]
-    x.df.dataset <- x.df$assets[[1]]
-    # x.df$dataset_id <- unique(x.df.dataset$dataset_id)
-    if ("RDS" %in% unique(x.df.dataset$filetype)) {
-      x.rds.idx <- which(x.df.dataset$filetype == "RDS")
-      x.df$rds_id <- x.df.dataset$url[x.rds.idx]
-    } else {
-      x.df$rds_id <- NA
-    }
-    if ("H5AD" %in% unique(x.df.dataset$filetype)) {
-      x.h5ad.idx <- which(x.df.dataset$filetype == "H5AD")
-      x.df$h5ad_id <- x.df.dataset$url[x.h5ad.idx]
-    } else {
-      x.df$h5ad_id <- NA
-    }
-    x.df
-  })
-  # final dataframe
-  cellxgene.collections.datasets.final <- data.table::rbindlist(cellxgene.collections.datasets.list, fill = TRUE) %>%
-    as.data.frame()
-  return(cellxgene.collections.datasets.final)
+  return(cellxgene.collections.datasets.df)
 }
 
 #' Extract Metadata of CELLxGENE Datasets with Attributes.
@@ -156,8 +104,10 @@ ExtractCELLxGENEMeta <- function(all.samples.df, organism = NULL, ethnicity = NU
 #' Download CELLxGENE Datasets and Return SeuratObject.
 #'
 #' @param meta Metadata used to download, can be from \code{ExtractCELLxGENEMeta},
-#' should contain dataset_id, rds_id/h5ad_id (depend on \code{file.ext}) and name columns.
-#' Skip when \code{use.census} is TRUE. Default: NULL.
+#' should contain dataset_id, rds_id/h5ad_id (depend on \code{file.ext}) and dataset_description columns.
+#' Skip when \code{use.census} is TRUE or \code{link} is not NULL. Default: NULL.
+#' @param link Vector contains dataset/collection link(s). e.g. "https://cellxgene.cziscience.com/e/e12eb8a9-5e8b-4b59-90c8-77d29a811c00.cxg/".
+#' Skip when \code{use.census} is TRUE or \code{meta} is not NULL. Default: NULL.
 #' @param file.ext The valid file extension for download. When NULL, use "rds" and "h5ad". Default: c("rds", "h5ad").
 #' @param out.folder The output folder. Default: NULL (current working directory).
 #' @param timeout Maximum request time. Default: 3600.
@@ -186,12 +136,15 @@ ExtractCELLxGENEMeta <- function(all.samples.df, organism = NULL, ethnicity = NU
 #' @return Dataframe contains failed datasets, SeuratObject (\code{return.seu} is TRUE, rds in \code{file.ext}) or
 #' NULL (\code{return.seu} is FALSE or rds not in \code{file.ext}).
 #' @importFrom httr POST stop_for_status content
-#' @importFrom jsonlite fromJSON
+#' @importFrom jsonlite fromJSON flatten
 #' @importFrom parallel detectCores mclapply
 #' @importFrom utils download.file
-#' @importFrom rlang parse_expr
-#' @importFrom dplyr filter
-#' @import cellxgene.census
+#' @importFrom rlang parse_expr .data
+#' @importFrom dplyr filter distinct
+#' @importFrom magrittr %>%
+#' @importFrom data.table rbindlist
+#' @importFrom curl curl_fetch_memory
+#'
 #' @export
 #' @references https://gist.github.com/ivirshup/f1a1603db69de3888eacb4bdb6a9317a
 #'
@@ -207,8 +160,16 @@ ExtractCELLxGENEMeta <- function(all.samples.df, organism = NULL, ethnicity = NU
 #' )
 #' # download, need to provide the output folder
 #' ParseCELLxGENE(meta = human.10x.cellxgene.meta, out.folder = "/path/to/output")
+#' # download given collection and dataset
+#' ParseCELLxGENE(
+#'   link = c(
+#'     "https://cellxgene.cziscience.com/collections/77f9d7e9-5675-49c3-abed-ce02f39eef1b",
+#'     "https://cellxgene.cziscience.com/e/e12eb8a9-5e8b-4b59-90c8-77d29a811c00.cxg/"
+#'   ),
+#'   out.folder = "/path/to/output"
+#' )
 #' }
-ParseCELLxGENE <- function(meta = NULL, file.ext = c("rds", "h5ad"), out.folder = NULL, timeout = 3600, quiet = FALSE,
+ParseCELLxGENE <- function(meta = NULL, link = NULL, file.ext = c("rds", "h5ad"), out.folder = NULL, timeout = 3600, quiet = FALSE,
                            parallel = TRUE, use.cores = NULL, return.seu = FALSE, merge = TRUE, use.census = FALSE, census.version = "stable",
                            organism = NULL, obs.value.filter = NULL, obs.keys = NULL, include.genes = NULL, obsm.layers = FALSE, ...) {
   if (use.census) {
@@ -261,6 +222,41 @@ ParseCELLxGENE <- function(meta = NULL, file.ext = c("rds", "h5ad"), out.folder 
     census$close()
     return(seu.obj)
   } else {
+    # prepare meta
+    if (is.null(meta)) {
+      if (is.null(link)) {
+        stop("The meta and link are NULL, use.census is FALSE, please provide at least one valid value!")
+      } else {
+        # get collections and datasets
+        collections.vec <- c()
+        datasets.vec <- c()
+        for (l in link) {
+          if (grepl(pattern = "collections", x = l)) {
+            collection <- basename(l)
+            collections.vec <- c(collections.vec, collection)
+          } else if (grepl(pattern = ".cxg", x = l)) {
+            dataset <- gsub(pattern = ".cxg$", replacement = "", x = basename(l))
+            datasets.vec <- c(datasets.vec, dataset)
+          }
+        }
+        if (length(collections.vec) > 0) {
+          message("Detect collection(s): ", paste0(collections.vec, collapse = ", "))
+          collections.meta.list <- lapply(collections.vec, ParseCXGcollection)
+        } else {
+          collections.meta.list <- list()
+        }
+        if (length(datasets.vec) > 0) {
+          message("Detect dataset(s): ", paste0(datasets.vec, collapse = ", "))
+          datasets.meta.list <- lapply(datasets.vec, ParseCXGdataset)
+        } else {
+          datasets.meta.list <- list()
+        }
+        meta.list <- c(collections.meta.list, datasets.meta.list)
+        meta <- data.table::rbindlist(meta.list, fill = TRUE) %>%
+          as.data.frame() %>%
+          dplyr::distinct(.data[["dataset_id"]], .keep_all = TRUE)
+      }
+    }
     # check file extension
     if (is.null(file.ext)) {
       warning("There is no file extension provided, use rds and h5ad.")
@@ -292,6 +288,11 @@ ParseCELLxGENE <- function(meta = NULL, file.ext = c("rds", "h5ad"), out.folder 
       h5ad.urls <- h5ad.urls.list$urls
       download.df.list <- c(download.df.list, list(h5ad.urls.list$df))
       download.urls <- c(download.urls, h5ad.urls)
+    }
+    # check download urls
+    if (length(download.urls) == 0) {
+      print(meta)
+      stop("There is no file in extension:", paste0(file.ext, collapse = ", "), "  for downloading!")
     }
     download.df <- data.table::rbindlist(download.df.list, fill = TRUE) %>% as.data.frame()
     # prepare output folder

@@ -9,6 +9,7 @@ ExtractGEOExpSupp10x(
   supp.idx = 1,
   timeout = 3600,
   out.folder = NULL,
+  accept.fmt = c("MEX", "h5"),
   gene2feature = TRUE
 )
 }
@@ -20,6 +21,8 @@ ExtractGEOExpSupp10x(
 \item{timeout}{Timeout for \code{\link{download.file}}. Default: 3600.}
 
 \item{out.folder}{Output folder to save 10x files. Default: NULL (current working directory).}
+
+\item{accept.fmt}{Vector of accepted 10x output format, MEX (barcode/feature/gene/matrix), h5 (h5/h5.gz). Default: c("MEX", "h5").}
 
 \item{gene2feature}{Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}.
 Default: TURE.}

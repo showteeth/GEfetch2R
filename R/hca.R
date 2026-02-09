@@ -1,5 +1,16 @@
-# extract all projects
-ExtractHCAProjects <- function(catalog = NULL) {
+#' Show All Available Catalogs in Human Cell Atlas.
+#'
+#' @return Named vector of catalogs.
+#' @importFrom curl curl_fetch_memory
+#' @importFrom jsonlite fromJSON
+#' @export
+#'
+#' @examples
+#' \donttest{
+#' # all available catalogs
+#' all.hca.catalogs <- ExtractHCACatalogs()
+#' }
+ExtractHCACatalogs <- function() {
   # base urls
   hca.base.url <- "https://service.azul.data.humancellatlas.org"
   # get all catalogs
@@ -8,15 +19,24 @@ ExtractHCAProjects <- function(catalog = NULL) {
   catalog.vec <- sapply(names(catalog.content$catalogs), function(x) {
     if (!catalog.content$catalogs[[x]]$internal) x
   }) %>% unlist()
+  return(catalog.vec)
+}
+
+# extract all projects
+ExtractHCAProjects <- function(catalog = NULL) {
+  # base urls
+  hca.base.url <- "https://service.azul.data.humancellatlas.org"
+  # get all catalogs
+  catalog.vec <- ExtractHCACatalogs()
   if (!is.null(catalog)) {
     catalog.vec <- intersect(catalog, catalog.vec)
     if (length(catalog.vec) == 0) {
-      stop("Please check catalog you proided, choose from: dcp29, dcp30, dcp1, lm2, lm3.")
+      stop("Please check catalog you proided! All available catalogs can be accessed via ExtractHCACatalogs().")
     }
   }
   # get catalog project list
   hca.projects.list <- lapply(catalog.vec, function(x) {
-    cat.prj.url <- paste0(hca.base.url, "/index/projects?catalog=", x, "&size=100")
+    cat.prj.url <- paste0(hca.base.url, "/index/projects?catalog=", x, "&size=75")
     cat.prj <- RecurURLRetrieval(cat.prj.url) %>% as.data.frame()
     cat.prj$catalog <- x
     return(cat.prj)
@@ -30,8 +50,8 @@ ExtractHCAProjects <- function(catalog = NULL) {
 
 #' Show All Available Projects in Human Cell Atlas.
 #'
-#' @param catalog The catalog of the projects. Different catalogs may share some projects. Choose from "dcp29",
-#' "dcp30", "dcp1", "lm2", "lm3", one or multiple values. Default: NULL (all catalogs, remove duplicated projects).
+#' @param catalog The catalog of the projects (one or multiple values). Different catalogs may share some projects.
+#' All available catalogs can be accessed via \code{ExtractHCACatalogs}. Default: NULL (all catalogs, remove duplicated projects).
 #'
 #' @return Dataframe contains all available projects.
 #' @importFrom magrittr %>%
@@ -53,87 +73,7 @@ ShowHCAProjects <- function(catalog = NULL) {
   # get project detail information
   hca.projects.detail.list <- lapply(1:nrow(hca.projects.df), function(x) {
     x.df <- hca.projects.df[x, ]
-
-    # entryid and catalog
-    entryId <- x.df$entryId
-    catalog <- x.df$catalog
-
-    # procotol information
-    x.df.protocol <- x.df$protocols[[1]]
-    workflow <- HCAPasteCol(x.df.protocol, col = "workflow")
-    libraryConstructionApproach <- HCAPasteCol(x.df.protocol, col = "libraryConstructionApproach")
-    nucleicAcidSource <- HCAPasteCol(x.df.protocol, col = "nucleicAcidSource")
-    instrumentManufacturerModel <- HCAPasteCol(x.df.protocol, col = "instrumentManufacturerModel")
-    pairedEnd <- HCAPasteCol(x.df.protocol, col = "pairedEnd")
-
-    # source
-    x.df.source <- x.df$sources[[1]]
-    sourceId <- HCAPasteColdf(x.df.source, col = "sourceId")
-    sourceSpec <- HCAPasteColdf(x.df.source, col = "sourceSpec")
-
-    # project
-    x.df.projects <- x.df$projects[[1]]
-    projectId <- HCAPasteColdf(x.df.projects, col = "projectId")
-    projectTitle <- HCAPasteColdf(x.df.projects, col = "projectTitle")
-    projectShortname <- HCAPasteColdf(x.df.projects, col = "projectShortname")
-    laboratory <- HCAPasteCol(x.df.projects, col = "laboratory")
-    estimatedCellCount <- HCAPasteColdf(x.df.projects, col = "estimatedCellCount")
-    projectDescription <- HCAPasteColdf(x.df.projects, col = "projectDescription")
-    publications <- HCAPasteColdf(x.df.projects$publications[[1]], col = "publicationTitle")
-    accessions <- HCAPasteColdf(x.df.projects$accessions[[1]], col = "accession")
-    accessible <- HCAPasteColdf(x.df.projects, col = "accessible")
-
-    # sample
-    x.df.samples <- x.df$samples[[1]]
-    sampleEntityType <- HCAPasteCol(df = x.df.samples, col = "sampleEntityType")
-    organ <- HCAPasteCol(df = x.df.samples, col = "effectiveOrgan")
-    sampleID <- HCAPasteCol(df = x.df.samples, col = "id")
-    organPart <- HCAPasteCol(df = x.df.samples, col = "organPart")
-    disease <- HCAPasteCol(df = x.df.samples, col = "disease")
-    preservationMethod <- HCAPasteCol(df = x.df.samples, col = "preservationMethod")
-
-    # cell line
-    x.df.cellLines <- x.df$cellLines[[1]]
-    cellLineID <- HCAPasteCol(df = x.df.cellLines, col = "id")
-    cellLineType <- HCAPasteCol(df = x.df.cellLines, col = "cellLineType")
-    cellLinemodelOrgan <- HCAPasteCol(df = x.df.cellLines, col = "modelOrgan")
-
-    # Organism
-    x.df.organisms <- x.df$donorOrganisms[[1]]
-    donorCount <- ifelse(is.null(x.df.organisms$donorCount), "", x.df.organisms$donorCount)
-    developmentStage <- HCAPasteCol(df = x.df.organisms, col = "developmentStage")
-    genusSpecies <- HCAPasteCol(df = x.df.organisms, col = "genusSpecies")
-    biologicalSex <- HCAPasteCol(df = x.df.organisms, col = "biologicalSex")
-
-    # organoids
-    x.df.organoids <- x.df$organoids[[1]]
-    organoidsID <- HCAPasteCol(df = x.df.organoids, col = "id")
-    organoidsmodelOrgan <- HCAPasteCol(df = x.df.organoids, col = "modelOrgan")
-    organoidsmodelOrganPart <- HCAPasteCol(df = x.df.organoids, col = "modelOrganPart")
-
-    # cellSuspensions
-    x.df.cellSuspensions <- x.df$cellSuspensions[[1]]
-    selectedCellType <- HCAPasteCol(df = x.df.cellSuspensions, col = "selectedCellType")
-
-    # date
-    x.df.date <- x.df$dates[[1]]
-    lastModifiedDate <- HCAPasteColdf(df = x.df.date, col = "lastModifiedDate")
-
-    # return final dataframe
-    data.frame(
-      projectTitle = projectTitle, projectId = projectId, projectShortname = projectShortname,
-      projectDescription = projectDescription, publications = publications, laboratory = laboratory,
-      accessions = accessions, accessible = accessible, estimatedCellCount = estimatedCellCount,
-      sampleEntityType = sampleEntityType, organ = organ, organPart = organPart, sampleID = sampleID,
-      disease = disease, preservationMethod = preservationMethod, donorCount = donorCount,
-      developmentStage = developmentStage, genusSpecies = genusSpecies, biologicalSex = biologicalSex,
-      selectedCellType = selectedCellType, catalog = catalog, entryId = entryId, sourceId = sourceId, sourceSpec = sourceSpec,
-      workflow = workflow, libraryConstructionApproach = libraryConstructionApproach, nucleicAcidSource = nucleicAcidSource,
-      instrumentManufacturerModel = instrumentManufacturerModel, pairedEnd = pairedEnd, cellLineID = cellLineID,
-      cellLineType = cellLineType, cellLinemodelOrgan = cellLinemodelOrgan, organoidsID = organoidsID,
-      organoidsmodelOrgan = organoidsmodelOrgan, organoidsmodelOrganPart = organoidsmodelOrganPart,
-      lastModifiedDate = lastModifiedDate
-    )
+    ProcessHCAProject(x.df)
   })
   hca.projects.detail.df <- data.table::rbindlist(hca.projects.detail.list, fill = TRUE) %>% as.data.frame()
   return(hca.projects.detail.df)
@@ -166,6 +106,7 @@ ShowHCAProjects <- function(catalog = NULL) {
 #' Deault: NULL(without filtering).
 #' @param sequencing.type The sequencing instrument type of the projects (e.g. illumina hiseq 2500),
 #' obtain available values with \code{StatDBAttribute}, one or multiple values. Default: NULL (All).
+#' @param remove.nodata Logical value, whether to remove project with no downloadable data. Default: TRUE.
 #'
 #' @return Dataframe contains filtered projects.
 #' @importFrom magrittr %>%
@@ -190,7 +131,7 @@ ShowHCAProjects <- function(catalog = NULL) {
 #' }
 ExtractHCAMeta <- function(all.projects.df, organism = NULL, sex = NULL, organ = NULL, organ.part = NULL, disease = NULL,
                            sample.type = NULL, preservation.method = NULL, protocol = NULL,
-                           suspension.type = NULL, cell.type = NULL, cell.num = NULL, sequencing.type = NULL) {
+                           suspension.type = NULL, cell.type = NULL, cell.num = NULL, sequencing.type = NULL, remove.nodata = TRUE) {
   # all projects detail dataframe
   hca.projects.detail.df <- all.projects.df
   # extract row index under different filter
@@ -220,13 +161,23 @@ ExtractHCAMeta <- function(all.projects.df, organism = NULL, sex = NULL, organ =
   ))
   used.sample.df <- hca.projects.detail.df[valid.idx, ]
   rownames(used.sample.df) <- NULL
+  # remove project with no downloadable data
+  if (remove.nodata) {
+    remove.sample.df <- used.sample.df[is.na(used.sample.df$dataUUID), ]
+    if (nrow(remove.sample.df) > 0) {
+      message("Remove ", nrow(remove.sample.df), " project(s) with no downloadable data!")
+      used.sample.df <- used.sample.df[!is.na(used.sample.df$dataUUID), ]
+    }
+  }
   return(used.sample.df)
 }
 
 #' Download Human Cell Atlas Datasets.
 #'
-#' @param meta Metadata used to download, can be from \code{ExtractHCAMeta},
-#' should contain entryId and name catalog.
+#' @param meta Metadata used to download, can be from \code{ExtractHCAMeta}.
+#' Skip when \code{link} is not NULL. Default: NULL.
+#' @param link Vector contains project link(s), e.g. "https://explore.data.humancellatlas.org/projects/902dc043-7091-445c-9442-d72e163b9879".
+#' Skip when \code{meta} is not NULL. Default: NULL.
 #' @param file.ext The valid file extension for download. When NULL, use "rds", "rdata", "h5", "h5ad", "loom", "tsv".
 #' Default: c("rds", "rdata", "h5", "h5ad", "loom", "tsv").
 #' @param out.folder The output folder. Default: NULL (current working directory).
@@ -266,60 +217,70 @@ ExtractHCAMeta <- function(all.projects.df, organism = NULL, sex = NULL, organ =
 #' )
 #' # download, need users to provide the output folder
 #' ParseHCA(meta = all.human.10x.projects, out.folder = "/path/to/output")
+#' # download given projects
+#' ParseHCA(
+#'   link = c(
+#'     "https://explore.data.humancellatlas.org/projects/902dc043-7091-445c-9442-d72e163b9879",
+#'     "https://explore.data.humancellatlas.org/projects/cdabcf0b-7602-4abf-9afb-3b410e545703"
+#'   ),
+#'   out.folder = "/path/to/output"
+#' )
 #' }
-ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "tsv"), out.folder = NULL,
+ParseHCA <- function(meta = NULL, link = NULL, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "tsv"), out.folder = NULL,
                      timeout = 3600, quiet = FALSE, parallel = TRUE, use.cores = NULL, return.seu = FALSE, merge = TRUE) {
   # file.ext: ignore case, tar.gz, gz
   if (is.null(file.ext)) {
-    warning("There is no file extension provided, use all valid (rds, rdata, h5, h5ad and loom).")
-    file.ext <- c("rds", "rdata", "h5", "h5ad", "loom")
+    warning("There is no file extension provided, use all valid (rds, rdata, h5, h5ad, loom and tsv).")
+    file.ext <- c("rds", "rdata", "h5", "h5ad", "loom", "tsv")
   }
-  file.ext <- intersect(file.ext, c("rds", "rdata", "h5", "h5ad", "loom"))
+  file.ext <- intersect(file.ext, c("rds", "rdata", "h5", "h5ad", "loom", "tsv"))
   if (length(file.ext) == 0) {
     stop("Please provide valid file extension: rds, rdata, h5, h5ad and loom.")
   }
-  # all available projects
-  hca.projects.df <- ExtractHCAProjects(catalog = NULL)
-  # check entryId exists
-  CheckColumns(df = meta, columns = c("entryId", "catalog"))
-  # filter projects with meta
-  # projects.valid <- merge(hca.projects.df, meta[c("entryId", "catalog")], by = c("entryId", "catalog"))
-  projects.valid <- merge(hca.projects.df, meta[c("entryId", "catalog")], by = c("entryId", "catalog"))
-  # extract data
-  # get projects all datasets
-  projects.datasets.list <- lapply(1:nrow(projects.valid), function(x) {
-    x.df <- projects.valid[x, ]
-    # project
-    x.df.projects <- x.df$projects[[1]]
-    x.dataset.df <- data.frame()
-    if (ncol(x.df.projects$matrices) > 0) {
-      x.mat.df <- HCAExtactData(x.df.projects$matrices)
-      x.mat.df$source <- "matrices"
-      x.dataset.df <- data.table::rbindlist(list(x.dataset.df, x.mat.df), fill = TRUE) %>% as.data.frame()
+  # check meta
+  if (is.null(meta)) {
+    if (is.null(link)) {
+      stop("The meta and link are NULL, please provide at least one valid value!")
+    } else {
+      projects.vec <- sapply(link, basename)
+      meta.list <- lapply(projects.vec, ParseHCAdataset)
+      meta <- data.table::rbindlist(meta.list, fill = TRUE) %>%
+        as.data.frame()
     }
-    if (ncol(x.df.projects$contributedAnalyses) > 0) {
-      x.ca.df <- HCAExtactData(x.df.projects$contributedAnalyses)
-      x.ca.df$source <- "contributedAnalyses"
-      x.dataset.df <- data.table::rbindlist(list(x.dataset.df, x.ca.df), fill = TRUE) %>% as.data.frame()
-    }
-    if (nrow(x.dataset.df) > 0) {
-      x.dataset.df$entryId <- x.df$entryId
-      x.dataset.df$catalog <- x.df$catalog
+  }
+  # check columns
+  CheckColumns(df = meta, columns = c("dataUUID", "dataFormat", "dataName", "dataMeta", "dataDescription"))
+  # restore project dataset
+  projects.datasets.list <- lapply(1:nrow(meta), function(x) {
+    x.df <- meta[x, ]
+    x.entryId <- x.df$entryId
+    x.catalog <- x.df$catalog
+    x.dataMeta <- strsplit(x = x.df$dataMeta, split = ", ")[[1]]
+    x.dataDescription <- strsplit(x = x.df$dataDescription, split = ", ")[[1]]
+    x.dataUUID <- strsplit(x = x.df$dataUUID, split = ", ")[[1]]
+    x.dataFormat <- strsplit(x = x.df$dataFormat, split = ", ")[[1]]
+    x.dataName <- strsplit(x = x.df$dataName, split = ", ")[[1]]
+    x.data.df <- data.frame(meta = x.dataMeta, contentDescription = x.dataDescription, uuid = x.dataUUID, format = x.dataFormat, name = x.dataName)
+    x.data.df$entryId <- x.entryId
+    x.data.df$catalog <- x.catalog
+    # filter file extension
+    if (nrow(x.data.df) > 0) {
+      x.data.df$entryId <- x.df$entryId
       # filter with file.ext
       file.ext <- c(file.ext, paste0(file.ext, ".tar.gz"), paste0(file.ext, ".gz"))
-      x.dataset.df$lowerformat <- tolower(x.dataset.df$format)
-      x.dataset.valid.df <- x.dataset.df[x.dataset.df$lowerformat %in% file.ext, ]
-      if (nrow(x.dataset.valid.df) == 0) {
+      x.data.df$lowerformat <- tolower(x.data.df$format)
+      x.data.valid.df <- x.data.df[x.data.df$lowerformat %in% file.ext, ]
+      if (nrow(x.data.valid.df) == 0) {
         message(
           "There is no file in entryId: ", x.df$entryId, " with extension: ", paste(file.ext, collapse = ", "), ". Available file.ext: ",
-          paste(unique(x.dataset.df$lowerformat), collapse = ", "), "."
+          paste(unique(x.data.df$lowerformat), collapse = ", "), "."
         )
       }
     } else {
       message("There is no file to download in entryId: ", x.df$entryId, ".")
-      x.dataset.valid.df <- x.dataset.df
+      x.data.valid.df <- x.data.df
     }
-    return(x.dataset.valid.df)
+    return(x.data.valid.df)
   })
   projects.datasets.df <- data.table::rbindlist(projects.datasets.list, fill = TRUE) %>% as.data.frame()
   if (nrow(projects.datasets.df) == 0) {
@@ -328,23 +289,11 @@ ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "t
       paste(file.ext, collapse = ", "), ". Please check the file.ext!"
     )
   } else {
-    # remove unused columns
-    projects.datasets.df$drs_uri <- NULL
-    projects.datasets.df$uuid <- NULL
-    projects.datasets.df <- merge(meta[c(
-      "projectTitle", "projectDescription", "publications",
-      "sampleEntityType", "organPart", "disease", "preservationMethod", "biologicalSex",
-      "nucleicAcidSource", "entryId", "catalog"
-    )], projects.datasets.df, by = c("entryId", "catalog"))
-    projects.datasets.valid.df <- projects.datasets.df %>%
-      dplyr::relocate(dplyr::any_of(c("entryId", "catalog")), .after = dplyr::last_col()) %>%
-      dplyr::select(dplyr::any_of(c("meta", "contentDescription", "name")), dplyr::everything())
-    projects.datasets.valid.df$lowerformat <- NULL
-    # distinct url
-    projects.datasets.valid.df <- projects.datasets.valid.df %>% dplyr::distinct(.data[["url"]], .keep_all = TRUE)
+    # get url with uuid
+    projects.datasets.df$url <- paste0("https://service.azul.data.humancellatlas.org/repository/files/", projects.datasets.df$uuid)
     # add name
-    projects.datasets.valid.df$name <- sapply(1:nrow(projects.datasets.valid.df), function(x) {
-      x.pdvd <- projects.datasets.valid.df[x, ]
+    projects.datasets.df$name <- sapply(1:nrow(projects.datasets.df), function(x) {
+      x.pdvd <- projects.datasets.df[x, ]
       ifelse(is.null(x.pdvd$name),
         paste0(make.names(x.pdvd$meta), ".", x.pdvd$format),
         ifelse(is.na(x.pdvd$name),
@@ -356,9 +305,26 @@ ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "t
         )
       )
     })
+    # add metadata
+    projects.datasets.df <- merge(meta[c(
+      "projectTitle", "projectDescription", "publications",
+      "sampleEntityType", "organPart", "disease", "preservationMethod", "biologicalSex",
+      "nucleicAcidSource", "entryId", "catalog"
+    )], projects.datasets.df, by = c("entryId", "catalog"))
+    projects.datasets.df <- projects.datasets.df %>%
+      dplyr::relocate(dplyr::any_of(c("entryId", "catalog")), .after = dplyr::last_col()) %>%
+      dplyr::select(dplyr::any_of(c("meta", "contentDescription", "name")), dplyr::everything())
+    projects.datasets.df$lowerformat <- NULL
+    # change colnames
+    colnames(projects.datasets.df) <- c(
+      "dataMeta", "dataDescription", "dataName", "projectTitle", "projectDescription",
+      "publications", "sampleEntityType", "organPart", "disease", "preservationMethod",
+      "biologicalSex", "nucleicAcidSource", "dataUUID", "dataFormat", "url",
+      "entryId", "catalog"
+    )
     # prepare download urls
-    download.urls <- projects.datasets.valid.df$url
-    names(download.urls) <- projects.datasets.valid.df$name
+    download.urls <- projects.datasets.df$url
+    names(download.urls) <- projects.datasets.df$dataName
     # prepare output folder
     if (is.null(out.folder)) {
       out.folder <- getwd()
@@ -403,14 +369,15 @@ ParseHCA <- function(meta, file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "t
         seu.obj <- LoadRDS2Seurat(out.folder = out.folder, merge = merge)
         return(seu.obj)
       } else {
-        res.list <- list(down.meta = projects.datasets.valid.df, fail.meta = NULL)
+        res.list <- list(down.meta = projects.datasets.df, fail.meta = NULL)
         return(res.list)
       }
     } else {
       message(length(fail.status), " files downloaded failed, please re-run with fail.meta (meta)")
-      fail.entry.id <- projects.datasets.valid.df[fail.status, "entryId"] %>% unique()
+      fail.entry.id <- projects.datasets.df[fail.status, "entryId"] %>% unique()
+      # for re-run
       fail.meta <- meta[meta$entryId %in% fail.entry.id, ]
-      success.meta <- projects.datasets.valid.df[!projects.datasets.valid.df$entryId %in% fail.entry.id, ]
+      success.meta <- projects.datasets.df[!projects.datasets.df$entryId %in% fail.entry.id, ]
       res.list <- list(down.meta = success.meta, fail.meta = fail.meta)
       return(res.list)
     }

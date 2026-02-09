@@ -10,7 +10,6 @@ Fastq2R(
   method = c("CellRanger", "STAR"),
   localcores = 4,
   localmem = 16,
-  thread = 4,
   out.folder = NULL,
   st.path = NULL,
   st.paras = "--chemistry=auto --jobmode=local",
@@ -21,7 +20,7 @@ Fastq2R(
 )
 }
 \arguments{
-\item{sample.dir}{Directory contains all samples.}
+\item{sample.dir}{Vector of path to samples (contain fastq files), e.g. c("path/to/GSM1111", "path/to/GSM2222","path/to/GSM3333").}
 
 \item{ref}{Path of folder containing 10x-compatible transcriptome \code{\link{RunCellRanger}}
 STAR \code{\link{RunSTAR}} reference.}
@@ -29,11 +28,9 @@ STAR \code{\link{RunSTAR}} reference.}
 \item{method}{Mapping methods, choose from CellRanger (10x Genomics) and STAR (Smart-seq2 or bulk RNA-seq).
 Default: CellRanger.}
 
-\item{localcores}{The max cores used \code{\link{RunCellRanger}}. Default: 4.}
+\item{localcores}{The max cores/thread used \code{\link{RunCellRanger}}/\code{\link{RunSTAR}}. Default: 4.}
 
 \item{localmem}{The max memory (GB) used \code{\link{RunCellRanger}}. Default: 16.}
-
-\item{thread}{The number of threads to use \code{\link{RunSTAR}}. Default: 4.}
 
 \item{out.folder}{Output folder. Default: NULL (current working directory).}
 
@@ -60,6 +57,7 @@ Pipe FASTQ files to SeuratObject and DESeqDataSet.
 \examples{
 \dontrun{
 # run CellRanger (10x Genomics)
+# the sample.dir (can be a vector) corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
 seu <- Fastq2R(
   sample.dir = "/path/to/fastq",
   ref = "/path/to/10x/ref",
@@ -68,6 +66,7 @@ seu <- Fastq2R(
   st.path = "/path/to/cellranger"
 )
 # run STAR (Smart-seq2 or bulk RNA-seq)
+# the sample.dir (can be a vector) corresponding to sra.folder/GSMXXXX (SplitSRA) or out.folder/GSMXXXX (DownloadFastq)
 deobj <- Fastq2R(
   sample.dir = "/path/to/fastq",
   ref = "/path/to/star/ref",

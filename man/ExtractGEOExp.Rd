@@ -11,7 +11,12 @@ ExtractGEOExp(
   down.supp = FALSE,
   timeout = 3600,
   supp.type = c("count", "10x", "10xSingle"),
+  file.regex = NULL,
+  extra.cols = c("chr", "start", "end", "strand", "length", "width", "chromosome",
+    "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop"),
+  transpose = TRUE,
   out.folder = NULL,
+  accept.fmt = c("MEX", "h5"),
   gene2feature = TRUE
 )
 }
@@ -32,7 +37,16 @@ download supplementary files automatically). Default: FALSE.}
 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.}
 
+\item{file.regex}{The regex to extract correct count matrix files. Default: NULL.}
+
+\item{extra.cols}{Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts).
+Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".}
+
+\item{transpose}{Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Default: TRUE.}
+
 \item{out.folder}{Output folder to save 10x files. Default: NULL (current working directory).}
+
+\item{accept.fmt}{Vector of accepted 10x output format, MEX (barcode/feature/gene/matrix), h5 (h5/h5.gz). Default: c("MEX", "h5").}
 
 \item{gene2feature}{Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}. Default: TRUE.}
 }

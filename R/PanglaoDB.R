@@ -109,15 +109,10 @@ ExtractPanglaoDBMeta <- function(species = NULL, protocol = NULL, tissue = NULL,
 
 #' Extract Cell Type Composition of PanglaoDB Datasets.
 #'
-#' @param sra The SRA identifier of the datasets, obtain available values with \code{StatDBAttribute},
-#' one or multiple value. Default: NULL (All).
-#' @param srs The SRS identifier of the datasets, obtain available values with \code{StatDBAttribute},
-#' one or multiple value. Default: NULL (All).
-#' @param species The species of the datasets, choose from "Homo sapiens", "Mus musculus", one or multiple value. Default: NULL (All).
-#' @param protocol Protocol used to generate the datasets, choose from "10x chromium", "drop-seq", "microwell-seq",
-#' "C1 Fluidigm", "inDrops", "Smart-seq2", "CEL-seq", one or multiple value. Default: NULL (All).
-#' @param tissue The tissue of the datasets, obtain available values with \code{StatDBAttribute},
-#' one or multiple value. Default: NULL (All).
+#' @param meta Metadata contains "SRA", "SRS", can be obtained with \code{ExtractPanglaoDBMeta}.
+#' Skip when \code{sra} or \code{srs} is not NULL. Default: NULL.
+#' @param sra The SRA identifier of the datasets. Skip when \code{meta} or \code{srs} is not NULL. Default: NULL.
+#' @param srs The SRS identifier of the datasets. Skip when \code{meta} or \code{sra} is not NULL. Default: NULL.
 #' @param local.data Logical value, whether to use local data (PanglaoDB is no longer maintained). Default: TRUE.
 #'
 #' @return Dataframe contains sample metadata, cluster, cell number and cell type information.
@@ -126,42 +121,71 @@ ExtractPanglaoDBMeta <- function(species = NULL, protocol = NULL, tissue = NULL,
 #'
 #' @examples
 #' \donttest{
-#' human.composition <- ExtractPanglaoDBComposition(
+#' # get metadata
+#' human.meta <- ExtractPanglaoDBMeta(
 #'   species = "Homo sapiens",
-#'   protocol = c("Smart-seq2", "10x chromium")
+#'   protocol = c("Smart-seq2", "10x chromium"),
+#'   cell.num = c(1000, 2000)
 #' )
+#' # get composition
+#' human.composition <- ExtractPanglaoDBComposition(
+#'   meta = human.meta
+#' )
+#' # given dataset
+#' human.composition <- ExtractPanglaoDBComposition(sra = "SRA598936")
+#' # human.composition <- ExtractPanglaoDBComposition(srs = "SRS2428405")
+#' # human.composition <- ExtractPanglaoDBComposition(sra = "SRA598936", srs = "SRS2428405")
 #' }
-ExtractPanglaoDBComposition <- function(sra = NULL, srs = NULL, species = NULL, protocol = NULL, tissue = NULL, local.data = TRUE) {
+ExtractPanglaoDBComposition <- function(meta = NULL, sra = NULL, srs = NULL, local.data = TRUE) {
+  if (is.null(meta)) {
+    if ((!is.null(sra)) || (!is.null(srs))) {
+      message("Processing given dataset(s): ", paste(c(sra, srs), collapse = ", "))
+      if ((!is.null(sra)) && (!is.null(srs))) {
+        if (length(sra) != length(srs)) {
+          warning("The length of sra is not equal to the length of srs, the result may not be as expected, you can use All to pad!")
+        }
+      }
+      if (!is.null(srs)) {
+        invalid.srs <- grep(pattern = "nSRS=[0-9]*", x = srs, value = TRUE)
+        if (length(invalid.srs) > 0) {
+          message("Detect invalid srs: ", paste0(invalid.srs, collapse = ", "), ". Change it to All.")
+        }
+        valid.srs <- setdiff(srs, invalid.srs)
+        if (length(valid.srs) == 0) {
+          if (is.null(sra)) {
+            stop("The sra is NULL, and no valid srs detected!")
+          }
+          srs <- "All"
+        } else {
+          if (is.null(sra)) {
+            srs <- valid.srs
+          } else {
+            srs <- gsub(pattern = "nSRS=[0-9]*", replacement = "All", x = srs)
+          }
+        }
+      }
+    } else {
+      stop("The meta, sra, and srs are NULL, please provide at least one valid value!")
+    }
+  } else {
+    sra <- meta$SRA
+    srs <- meta$SRS
+  }
   if (local.data) {
     select.compos <- PanglaoDBComposition
-    # prepare paras
-    if (is.null(sra)) sra <- unique(select.compos$SRA)
-    if (is.null(srs)) srs <- unique(select.compos$SRS)
-    if (is.null(species)) species <- unique(select.compos$Species)
-    if (is.null(tissue)) tissue <- unique(select.compos$Tissue)
-    if (is.null(protocol)) {
-      protocol <- unique(select.compos$Protocol)
-    } else if ("Smart-seq2" %in% protocol) {
-      protocol <- c(protocol, "SMART-seq2")
+    SRS <- match.arg(arg = srs, choices = unique(c("All", "notused", select.compos$SRS)), several.ok = TRUE)
+    if (isTRUE("All" %in% SRS)) {
+      SRS <- unique(select.compos$SRS)
     }
-    select.compos <- select.compos[(select.compos$SRA %in% sra) & (select.compos$SRS %in% srs) &
-      (select.compos$Tissue %in% tissue) & (select.compos$Species %in% species) &
-      (select.compos$Protocol %in% protocol), ]
+    SRA <- match.arg(arg = sra, choices = unique(c("All", "notused", select.compos$SRA)), several.ok = TRUE)
+    if (isTRUE("All" %in% SRA)) {
+      SRA <- unique(select.compos$SRA)
+    }
+    select.compos <- select.compos[(select.compos$SRA %in% SRA) & (select.compos$SRS %in% SRS), ]
   } else {
-    # prepare paras
-    if (is.null(sra)) sra <- "All"
-    if (is.null(srs)) srs <- "All"
-    if (is.null(species)) species <- "All"
-    if (is.null(tissue)) tissue <- "All"
-    if (is.null(protocol)) {
-      protocol <- "All"
-    } else if ("Smart-seq2" %in% protocol) {
-      protocol <- c(protocol, "SMART-seq2")
-    }
     # get composition
     select.compos <- rPanglaoDB::getSampleComposition(
-      sra = sra, srs = srs, tissue = tissue,
-      protocol = protocol, specie = species, verbose = FALSE
+      sra = sra, srs = srs, verbose = FALSE
     )
   }
   # modify SMART-seq2 to Smart-seq2
@@ -172,6 +196,9 @@ ExtractPanglaoDBComposition <- function(sra = NULL, srs = NULL, species = NULL, 
 #' Parse PanglaoDB Data.
 #'
 #' @param meta Metadata contains "SRA", "SRS", "Tissue", "Protocol", "Species", can be obtained with \code{ExtractPanglaoDBMeta}.
+#' Skip when \code{sra} or \code{srs} is not NULL. Default: NULL.
+#' @param sra The SRA identifier of the datasets. Skip when \code{meta} or \code{srs} is not NULL. Default: NULL.
+#' @param srs The SRS identifier of the datasets. Skip when \code{meta} or \code{sra} is not NULL. Default: NULL.
 #' @param cell.type Extract samples with specified cell types. For samples without SRS (notused), this value can only be "All" or "None", or
 #' these samples will be filtered. Obtain available values with \code{StatDBAttribute}, one or multiple value. Default: "All".
 #' @param include.gene Include cells expressing the genes. Default: NA.
@@ -199,51 +226,89 @@ ExtractPanglaoDBComposition <- function(sra = NULL, srs = NULL, species = NULL, 
 #'   show.cell.type = TRUE, cell.num = c(1000, 2000)
 #' )
 #' hsa.seu <- ParsePanglaoDB(hsa.meta, merge = TRUE)
+#' # load given dataset
+#' cortex.seu <- ParsePanglaoDB(sra = "SRA598936", srs = "SRS2428405")
+#' # cortex.seu = ParsePanglaoDB(srs = "SRS2428405")
+#' # cortex.seu = ParsePanglaoDB(sra = "SRA598936")
 #' }
-ParsePanglaoDB <- function(meta, cell.type = "All", include.gene = NA, exclude.gene = NA, merge = FALSE) {
-  # check columns
-  CheckColumns(df = meta, columns = c("SRA", "SRS", "Tissue", "Protocol", "Species"))
-
-  # split meta to save time
-  meta.normal <- meta %>% dplyr::filter(.data[["SRS"]] != "notused")
-  meta.abnormal <- meta %>% dplyr::filter(.data[["SRS"]] == "notused")
-
-  # get Seurat object
-  ## normal
-  if (nrow(meta.normal) > 0) {
-    message("Processing ", nrow(meta.normal), " samples with SRS!")
-    normal.seu <- rPanglaoDB::getSamples(
-      sra = meta.normal$SRA, srs = meta.normal$SRS, tissue = meta.normal$Tissue,
-      protocol = meta.normal$Protocol, specie = meta.normal$Species, celltype = cell.type,
-      include = include.gene, exclude = exclude.gene, merge = FALSE
-    )
-  } else {
-    normal.seu <- list()
-  }
-  ## abnormal
-  if (nrow(meta.abnormal) > 0) {
-    if (cell.type != "All" && cell.type != "None") {
-      message("There is no ", cell.type, " in samples without SRS (notused)!")
-      abnormal.seu <- list()
-    } else {
-      message("Processing ", nrow(meta.abnormal), " samples without SRS (notused)!")
-      abnormal.seu <- getSamples_internal(
-        sra = meta.abnormal$SRA, srs = meta.abnormal$SRS, tissue = meta.abnormal$Tissue,
-        protocol = meta.abnormal$Protocol, specie = meta.abnormal$Species, celltype = cell.type,
+ParsePanglaoDB <- function(meta = NULL, sra = NULL, srs = NULL, cell.type = "All", include.gene = NA, exclude.gene = NA, merge = FALSE) {
+  if (is.null(meta)) {
+    if ((!is.null(sra)) || (!is.null(srs))) {
+      message("Processing given dataset(s): ", paste(c(sra, srs), collapse = ", "))
+      if ((!is.null(sra)) && (!is.null(srs))) {
+        if (length(sra) != length(srs)) {
+          warning("The length of sra is not equal to the length of srs, the result may not be as expected!")
+        }
+      }
+      if (!is.null(srs)) {
+        invalid.srs <- grep(pattern = "nSRS=[0-9]*", x = srs, value = TRUE)
+        if (length(invalid.srs) > 0) {
+          message("Detect invalid srs: ", paste0(invalid.srs, collapse = ", "), ". Change it to All.")
+        }
+        valid.srs <- setdiff(srs, invalid.srs)
+        if (length(valid.srs) == 0) {
+          if (is.null(sra)) {
+            stop("The sra is NULL, and no valid srs detected!")
+          }
+          srs <- "All"
+        } else {
+          if (is.null(sra)) {
+            srs <- valid.srs
+          } else {
+            srs <- gsub(pattern = "nSRS=[0-9]*", replacement = "All", x = srs)
+          }
+        }
+      }
+      seu <- getSamples_internal(
+        sra = sra, srs = srs, celltype = cell.type,
         include = include.gene, exclude = exclude.gene, merge = FALSE
       )
+      return(seu)
+    } else {
+      stop("The meta, sra, and srs are NULL, please provide at least one valid value!")
     }
   } else {
-    abnormal.seu <- list()
+    # check columns
+    CheckColumns(df = meta, columns = c("SRA", "SRS", "Tissue", "Protocol", "Species"))
+    # split meta to save time
+    meta.normal <- meta %>% dplyr::filter(.data[["SRS"]] != "notused")
+    meta.abnormal <- meta %>% dplyr::filter(.data[["SRS"]] == "notused")
+    # get Seurat object
+    ## normal
+    if (nrow(meta.normal) > 0) {
+      message("Processing ", nrow(meta.normal), " samples with SRS!")
+      normal.seu <- rPanglaoDB::getSamples(
+        sra = meta.normal$SRA, srs = meta.normal$SRS, tissue = meta.normal$Tissue,
+        protocol = meta.normal$Protocol, specie = meta.normal$Species, celltype = cell.type,
+        include = include.gene, exclude = exclude.gene, merge = FALSE
+      )
+    } else {
+      normal.seu <- list()
+    }
+    ## abnormal
+    if (nrow(meta.abnormal) > 0) {
+      if (cell.type != "All" && cell.type != "None") {
+        message("There is no ", cell.type, " in samples without SRS (notused)!")
+        abnormal.seu <- list()
+      } else {
+        message("Processing ", nrow(meta.abnormal), " samples without SRS (notused)!")
+        abnormal.seu <- getSamples_internal(
+          sra = meta.abnormal$SRA, srs = meta.abnormal$SRS, tissue = meta.abnormal$Tissue,
+          protocol = meta.abnormal$Protocol, specie = meta.abnormal$Species, celltype = cell.type,
+          include = include.gene, exclude = exclude.gene, merge = FALSE
+        )
+      }
+    } else {
+      abnormal.seu <- list()
+    }
+    # merge list
+    meta.seu <- c(normal.seu, abnormal.seu)
+    # merge or not
+    if (merge) {
+      meta.seu <- mergeExperiments(meta.seu)
+    }
+    return(meta.seu)
   }
-
-  # merge list
-  meta.seu <- c(normal.seu, abnormal.seu)
-  # merge or not
-  if (merge) {
-    meta.seu <- mergeExperiments(meta.seu)
-  }
-  return(meta.seu)
 }
 
 # get samples without SRS

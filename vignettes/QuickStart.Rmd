@@ -1,0 +1,747 @@
+---
+title: "QuickStart"
+output: 
+  html_document:
+    toc_depth: 4
+    toc_float: true
+fig_caption: TRUE
+vignette: >
+  %\VignetteIndexEntry{GEfetch2R}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Installation
+
+### Manual installation
+
+To install `GEfetch2R`, start `R` and enter:
+```{r install, eval=FALSE}
+# install from GitHub
+# install.packages("devtools")
+devtools::install_github("showteeth/GEfetch2R")
+```
+
+There are some conditionally used `R` packages:
+
+```{r install_conditional, eval=FALSE}
+# install.packages("devtools") #In case you have not installed it.
+devtools::install_github("alexvpickering/GEOfastq") # download fastq
+install.packages("tiledbsoma", repos = c("https://tiledb-inc.r-universe.dev", "https://cloud.r-project.org")) # download from CELLxGENE
+install.packages("cellxgene.census", repos = c("https://chanzuckerberg.r-universe.dev", "https://cloud.r-project.org")) # download from CELLxGENE
+devtools::install_github("cellgeni/sceasy") # format conversion
+devtools::install_github("mojaveazure/seurat-disk") # format conversion
+devtools::install_github("satijalab/seurat-wrappers") # format conversion
+devtools::install_github("theislab/zellkonverter@7b118653a471330b3734dcfee60c3537352ecb8d", upgrade = "never") # format conversion
+devtools::install_github("cellgeni/schard", upgrade = "never") # format conversion
+devtools::install_github("JiekaiLab/dior", upgrade = "never") # format conversion
+```
+
+**For possible issues about installation, please refer `INSTALL.md`.**
+
+For format conversion and downloading `fastq`/`bam` files, `GEfetch2R` requires additional tools, you can install with:
+
+``` bash
+# install additional packages for format conversion
+pip install diopy
+conda install -c bioconda loompy anndata 
+# or
+pip install anndata loompy
+
+# install additional packages for downloading fastq/bam files
+conda install -c bioconda 'parallel-fastq-dump' 'sra-tools>=3.0.0'
+
+# install bamtofastq, the following installs linux version
+wget --quiet https://github.com/10XGenomics/bamtofastq/releases/download/v1.4.1/bamtofastq_linux && chmod +x bamtofastq_linux
+
+# install ascp
+conda install -c hcc aspera-cli -y
+# ascp path: ~/miniconda3/bin/ascp (path/bin/ascp)
+# private-key file : ~/miniconda3/etc/asperaweb_id_dsa.openssh (path/etc/asperaweb_id_dsa.openssh)
+```
+
+<hr />
+
+### Docker image
+We also provide a [docker image](https://hub.docker.com/repository/docker/soyabean/GEfetch2R) to use:
+
+```bash
+# pull the image
+docker pull soyabean/GEfetch2R:1.2
+
+# run the image
+docker run --rm -p 8888:8787 -e PASSWORD=passwd -e ROOT=TRUE -it soyabean/GEfetch2R:1.2
+```
+
+**Notes**:
+
+* After running the above codes, open browser and enter `http://localhost:8888/`, the user name is `rstudio`, the password is `passwd` (set by `-e PASSWORD=passwd`)
+* If port `8888` is in use, change `-p 8888:8787`
+* The `conda.path` in `ExportSeurat` and `ImportSeurat` can be set `/opt/conda`.
+* The **sra-tools** can be found in `/opt/sratoolkit.3.0.6-ubuntu64/bin`.
+* The `parallel-fastq-dump` path: `/opt/conda/bin/parallel-fastq-dump`.
+* The `bamtofastq_linux` path: `/opt/bamtofastq_linux`.
+* The `samtools` path: `/opt/conda/bin/samtools`.
+* The `STAR` and `Cell Ranger` is not available in the image because customized reference genome is required.
+
+<hr />
+
+## Check API
+
+Check the availability of APIs used:
+
+```{r check_api, eval=FALSE}
+# check all databases: "SRA/ENA", "GEO", "PanglaoDB", "UCSC Cell Browser", "Zenodo", "CELLxGENE", "Human Cell Atlas"
+CheckAPI()
+
+# for a given database
+CheckAPI(database = "GEO")
+```
+
+<hr />
+
+## SRA/ENA (sra/fastq/bam)
+
+Extract all runs, automatically identify the RNA-seq type (10x Genomics scRNA-seq, bulk RNA-seq, Smart-seq2 scRNA-seq/mini-bulk RNA-seq) of each sample, download `fastq` files from `ENA`, perform read mapping, and load the results to R:
+
+```{r downloadfastq2r, eval=FALSE}
+# mixture of 10x Genomics scRNA-seq and bulk RNA-seq
+GSE305141.list <- DownloadFastq2R(
+  acce = "GSE305141", skip.gsm = c("GSM9162729", "GSM9162725"),
+  star.ref = "/path/to/star/ref", cellranger.ref = "/path/to/cellranger/ref",
+  star.path = "/path/to/STAR", cellranger.path = "/path/to/cellranger"
+)
+
+# given GSM number
+GSE127942.list <- DownloadFastq2R(
+  gsm = c("GSM3656922", "GSM3656923"), star.ref = "/path/to/ref",
+  star.path = "/path/to/STAR"
+)
+```
+
+Key parameters:
+
+* `acce`: the GEO accession.
+* `skip.gsm`: vector of GSM numbers to skip.
+* `gsm`: the GSM accession (given sample).
+* `star.ref`: path to `STAR` reference. Used when bulk/Smart-seq2 RNA-seq samples exist.
+* `star.path`: path to `STAR`, can be detected automatically by `Sys.which("STAR")`. Used when bulk/Smart-seq2 RNA-seq samples exist.
+* `cellranger.ref`: path to `cellranger` reference. Used when 10x Genomics scRNA-seq samples exist.
+* `cellranger.path`: path to `cellranger`, can be detected automatically by `Sys.which("cellranger")`. Used when 10x Genomics scRNA-seq samples exist.
+* `out.folder`: the output folder, current working directory by default.
+* `count.col`: Column contains used count data (`2: unstranded (default value)`; `3: stranded=yes / 1st read strand`; `4: stranded=reverse/2nd read strand`), use when bulk RNA-seq or Smart-seq2 scRNA-seq/mini-bulk RNA-seq.
+
+<div class="alert alert-success" role="alert">
+The way `GEfetch2R` automatically identify the RNA-seq type can be find [here](https://showteeth.github.io/GEfetch2R/articles/DownloadRaw.html#one-step-wrapper). Besides, users can specify the RNA-seq type via `force.type`, choose one from `"10x"`, `"Smart-seq2"`, `"bulk"`.
+</div>
+
+The above code equals the following:
+```{r downloadfastq2r_sepe, eval=FALSE}
+# extract all runs
+GSE127942.runs <- ExtractRun(acce = "GSE127942")
+GSE127942.runs <- GSE127942.runs[GSE127942.runs$gsm_name %in% c("GSM3656922", "GSM3656923"), ]
+# download fastq from ENA
+GSE127942.down <- DownloadFastq(
+  gsm.df = GSE127942.runs, out.folder = "/path/to/fastq_out",
+  download.method = "wget", # available method: "download.file", "ascp", "wget"
+  parallel = FALSE, format.10x = FALSE # 10x-specific
+)
+# read mapping, load to R
+GSE127942.gsms <- file.path("/path/to/fastq_out", c("GSM3656922", "GSM3656923"))
+GSE127942.obj <- Fastq2R(
+  sample.dir = GSE127942.gsms,
+  method = "STAR", st.path = "/path/to/STAR", ref = "/path/to/STAR.reference", # STAR reference
+  out.folder = "/path/to/mapping_out", count.col = 2, # strand-specific (2: unstranded; 3: stranded=yes; 4: stranded=reverse)
+  localcores = 4
+)
+# GSE127942.obj is a DESeqDataSet object
+```
+
+<hr />
+
+## [GEO](https://www.ncbi.nlm.nih.gov/geo/) (count matrix, metadata, processed object)
+
+### Count matrix (bulk RNA-seq/Smart-seq2)
+
+Supplementary file in `csv(.gz)`/`tsv(.gz)`/`txt(.gz)`/`tab(.gz)`/`xlsx(.gz)`/`xls(.gz)` format or `tar(.gz)` format (contain `csv(.gz)`/`tsv(.gz)`/`txt(.gz)`/`tab(.gz)`/`xlsx(.gz)`/`xls(.gz)` files):
+
+```{r geo_count, eval=FALSE}
+# return SeuratObject
+GSE297431.seu <- ParseGEO(
+  acce = "GSE297431",
+  supp.idx = 1, # specify the index of used supplementary file
+  down.supp = TRUE, supp.type = "count",
+  data.type = "sc", # scRNA-seq, Smart-seq2 here
+  load2R = TRUE, merge = TRUE
+)
+```
+
+Key parameters:
+
+* `down.supp = TRUE`: generate count matrix from supplementary file
+* `supp.idx = 1`: the first supplementary file containing the count matrix 
+* `supp.type = "count"`: the file containing count matrix is in `csv(.gz)`/`tsv(.gz)`/`txt(.gz)`/`tab(.gz)`/`xlsx(.gz)`/`xls(.gz)` format
+* `data.type = "sc"`: the data type of the dataset, choose from `"sc"` (single-cell) and `"bulk"` (bulk)
+* `load2R = F`: return count matrix; `load2R = T` and `data.type = "sc"`, return `SeuratObject`; `load2R = T` and `data.type = "bulk"`, return `DESeqDataSet`
+
+<div class="alert alert-success" role="alert">
+* `ParseGEO` is compatible with count matrices generated by [htseq-count](https://htseq.readthedocs.io/en/release_0.11.1/count.html), [featureCounts](https://subread.sourceforge.net/featureCounts.html) (contain extra columns: "Chr", "Start", "End", "Strand", "Length", e.g. [GSE182219](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE182219)), and [STAR](https://github.com/alexdobin/STAR) with `--quantMode` (contain three count columns: unstranded, 1st read strand, 2nd read strand, e.g. [GSE195839](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE195839)).
+* `ParseGEO` is also compatible with count matrix files containing irregular extra columns, e.g. [GSE268038](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE268038) contains "chromosome", "start", "end", "strand". Users can specify the extra columns to ignore by setting `extra.cols` (default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop") 
+* In general, the rows of the count matrix represent genes, and the columns represent samples. `ParseGEO` can deal with the transposed count matrix (the number of rows is less than the number of columns) by setting `transpose` to TRUE.
+</div>
+
+<hr />
+
+### Count matrix (scRNA-seq)
+
+**Supplementary files in `h5(.gz)` format or composed of `barcodes.tsv(.gz)`/`genes.tsv(.gz)`, `matrix.mtx(.gz)`, `features.tsv(.gz)` files** (set `supp.type = "10xSingle"`):
+
+```{r geo_10xsingle, eval=FALSE}
+GSE278892.seu <- ParseGEO(
+  acce = "GSE278892", down.supp = TRUE,
+  supp.type = "10xSingle", timeout = 36000,
+  out.folder = "/path/to/store/count_matrix"
+)
+```
+
+Key parameters:
+
+* `down.supp = TRUE`: generate count matrix from supplementary file
+* `supp.type = "10xSingle"`: the file containing count matrix is in separate files (`barcodes.tsv(.gz)`/`genes.tsv(.gz)`, `matrix.mtx(.gz)`, `features.tsv(.gz)`) or `h5(.gz)` file(s)
+* `load2R = F`: return count matrix; `load2R = T` and `data.type = "sc"`, return `SeuratObject`
+
+**Supplementary file in `tar(.gz)` format** (set `supp.type = "10x"`):
+
+```{r geo_10x, eval=FALSE}
+GSE292908.seu <- ParseGEO(
+  acce = "GSE292908", down.supp = TRUE,
+  supp.type = "10x", timeout = 36000,
+  supp.idx = 1, # specify the index of used supplementary file
+  out.folder = "/path/to/store/count_matrix"
+)
+```
+
+Key parameters:
+
+* `down.supp = TRUE`: generate count matrix from supplementary file
+* `supp.idx = 1`: the first supplementary file containing the count matrix 
+* `supp.type = "10x"`: the file containing count matrix is in **`tar(.gz)` format**. The files in `tar(.gz)` can be in `zip`, `tar(.gz)`, `h5(.gz)` format, or **separate files** (`barcodes.tsv(.gz)`/`genes.tsv(.gz)`, `matrix.mtx(.gz)`, `features.tsv(.gz)`).
+* `load2R = F`: return count matrix; `load2R = T` and `data.type = "sc"`, return `SeuratObject`
+
+<div class="alert alert-success" role="alert">
+* `ParseGEO` can also load data from scRNA-seq platforms other than 10x, which has a similar output structure with 10x (CellRanger), e.g. [SeekOne and MobiDrop](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE300217) and [DNBelab C4](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE285164)
+* `ParseGEO` can handle files with very deep hierarchical structures, e.g. [Compressed files (zip, tar.gz, tar) in downloaded supplemental files (GEO, 10x)](https://github.com/showteeth/GEfetch2R/issues/16)
+* `ParseGEO` can identify sample name before or after the fixed name, e.g. [Sample name is after the fixed name (GEO, 10x)](https://github.com/showteeth/GEfetch2R/issues/17)
+</div>
+
+<hr />
+
+### Metadata
+
+The sample metadata can be obtained in two ways:
+
+* **user-provided sample metadata when uploading to GEO (applicable to all GEO accessions)**:
+```{r geo_meta, eval=FALSE}
+# set VROOM_CONNECTION_SIZE to avoid error: Error: The size of the connection buffer (786432) was not large enough
+Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 60)
+# extract metadata
+GSE297431.meta <- ExtractGEOMeta(acce = "GSE297431")
+```
+
+* **metadata in supplementary file**:
+```r
+GSE297431.meta.supp <- ExtractGEOMeta(
+  acce = "GSE297431", down.supp = TRUE,
+  supp.idx = 2 # specify the index of used supplementary file
+)
+```
+
+<hr />
+
+### Processed object
+
+Supplementary file in `rdata(.gz)`/`rds(.gz)`/`h5ad(.gz)`/`loom(.gz)` format or `tar.gz` format (contain `rdata(.gz)`/`rds(.gz)`/`h5ad(.gz)`/`loom(.gz)` files):
+
+```{r geo_processed, eval=FALSE}
+# return SeuratObject
+GSE285723.seu <- ParseGEOProcessed(
+  acce = "GSE285723", supp.idx = 1,
+  file.ext = c("rdata", "rds"), return.seu = T, timeout = 36000000,
+  out.folder = "/path/to/outfoder"
+)
+```
+
+Key parameters:
+
+* `supp.idx = 1`: the first supplementary file containing the processed object.
+* `file.ext = c("rdata", "rds")`: download/keep files in `rdata(.gz)` and `rds(.gz)` formats (case-insensitive).
+* `return.seu = T`: load downloaded objects to `Seurat`.
+
+Dissect and extract the `RData` files:
+```r
+# download the object
+ParseGEOProcessed(acce = "GSE244572", timeout = 360000, supp.idx = 1, file.ext = c("rdata", "rds", "h5ad", "loom"))
+# process the object
+GSE244572.list <- LoadRData(
+  rdata = "GSE244572/GSE244572_RPE_CITESeq.RData",
+  accept.fmt = c("Seurat", "seurat", "SingleCellExperiment", "cell_data_set", "CellDataSet", "DESeqDataSet", "DGEList"),
+  slot = "counts", return.obj = TRUE
+)
+```
+
+Key parameters:
+
+* `accept.fmt`: vector, the format of objects for dissecting and extracting.
+* `slot`: vector, the type of count matrix to pull. `'counts'`: raw, un-normalized counts, `'data'`: normalized data, `scale.data`: z-scored/variance-stabilized data.
+* `return.obj`: logical value, whether to load the available objects in `accept.fmt` to global environment.
+
+<div class="alert alert-success" role="alert">
+The way `GEfetch2R` dissect and extract the `RData` files can be find [here](https://showteeth.github.io/GEfetch2R/articles/DownloadObjects.html#process-ddata-files). 
+</div>
+
+<hr />
+
+## [PanglaoDB](https://panglaodb.se/samples.html) (count matrix, cell type composition)
+
+### Given dataset
+
+```{r panglaodb_given, eval=FALSE}
+# extract cell type composition
+lung.composition <- ExtractPanglaoDBComposition(sra = "SRA570744")
+
+# extract count matrix and load to Seurat
+lung.seu <- ParsePanglaoDB(sra = "SRA570744", srs = "SRS2253536")
+```
+
+<hr />
+
+### Filter samples based on metadata
+
+```{r panglaodb_filter, eval=FALSE}
+# summarise attributes
+StatDBAttribute(df = PanglaoDBMeta, filter = c("species", "protocol"), database = "PanglaoDB")
+
+# filter metadata
+hsa.meta <- ExtractPanglaoDBMeta(
+  species = "Homo sapiens", protocol = c("Smart-seq2", "10x chromium"),
+  show.cell.type = TRUE, cell.num = c(1000, 2000)
+)
+
+# extract cell type composition
+hsa.composition <- ExtractPanglaoDBComposition(meta = hsa.meta)
+
+# download matrix and load to Seurat, small test
+hsa.seu <- ParsePanglaoDB(hsa.meta[1:3, ], merge = TRUE)
+```
+
+<hr />
+
+## [UCSC Cell Browser](https://cells.ucsc.edu/) (count matrix, cell type composition)
+
+### Given dataset
+
+```{r ucsc_given, eval=FALSE}
+# extract cell type composition
+ut.sample.ct <- ExtractCBComposition(link = c(
+  "https://cells.ucsc.edu/?ds=adult-ureter", # collection
+  "https://cells.ucsc.edu/?ds=adult-testis" # dataset
+))
+
+# extract count matrix and load to Seurat
+ut.seu <- ParseCBDatasets(link = c(
+  "https://cells.ucsc.edu/?ds=adult-ureter", # collection
+  "https://cells.ucsc.edu/?ds=adult-testis" # dataset
+), merge = TRUE)
+```
+
+* `merge = TRUE`: whether to merge `Seurat` list.
+
+<hr />
+
+### Filter samples based on metadata
+
+```{r ucsc_filter, eval=FALSE}
+# first-time run, get all samples and store json to json.folder
+ucsc.cb.samples <- ShowCBDatasets(lazy = TRUE, json.folder = "/path/to/json", update = TRUE)
+# second-time run, use stored json
+# ucsc.cb.samples = ShowCBDatasets(lazy = TRUE, json.folder = "/path/to/json", update = FALSE)
+
+# summarise attributes
+StatDBAttribute(
+  df = ucsc.cb.samples, filter = c("organism", "organ"),
+  database = "UCSC", combine = TRUE
+)
+
+# filter metadata
+hbb.sample.df <- ExtractCBDatasets(
+  all.samples.df = ucsc.cb.samples, organ = c("skeletal muscle"),
+  organism = "Human (H. sapiens)", cell.num = c(1000, 2000)
+)
+
+# extract cell type
+hbb.sample.ct <- ExtractCBComposition(
+  json.folder = "/path/to/json",
+  meta = hbb.sample.df
+)
+
+# parse the whole datasets
+hbb.sample.seu <- ParseCBDatasets(meta = hbb.sample.df)
+# subset metadata and gene
+hbb.sample.seu <- ParseCBDatasets(
+  meta = hbb.sample.df, obs.value.filter = "Cell.Type == 'MP' & Phase == 'G2M'",
+  include.genes = c(
+    "PAX7", "MYF5", "C1QTNF3", "MYOD1", "MYOG", "RASSF4", "MYH3", "MYL4",
+    "TNNT3", "PDGFRA", "OGN", "COL3A1"
+  )
+)
+```
+
+<hr />
+
+## [Zenodo](https://zenodo.org/) (processed object)
+
+```{r zenodo, eval=FALSE}
+# extract metadata
+multi.dois <- ExtractZenodoMeta(doi = c("1111", "10.5281/zenodo.7243603", "10.5281/zenodo.7244441"))
+
+# download objects
+multi.dois.parse <- ParseZenodo(
+  doi = c("1111", "10.5281/zenodo.7243603", "10.5281/zenodo.7244441"),
+  file.ext = c("rdata"), timeout = 36000000,
+  out.folder = "/path/to/download_zenodo"
+)
+
+# return SeuratObject
+sinle.doi.parse.seu <- ParseZenodo(
+  doi = "10.5281/zenodo.8011282",
+  file.ext = c("rds"), return.seu = TRUE, timeout = 36000000,
+  out.folder = "/path/to/download_zenodo"
+)
+```
+
+* `return.seu = T`: load downloaded objects to `Seurat`.
+
+[dissect and extract the `RData` files](#processed-object)
+
+<hr />
+
+## [CELLxGENE](https://cellxgene.cziscience.com/) (processed object)
+
+### Given dataset
+
+[CELLxGENE](https://cellxgene.cziscience.com/) does not support downloading `SeuratObject` in [versions after 2025](https://cellxgene.cziscience.com/docs/03__Download%20Published%20Data). **The following code can only download `h5ad` files**.
+
+```{r cellxgene_given, eval=FALSE}
+# download h5ad files
+cellxgene.given.h5ad <- ParseCELLxGENE(
+  link = c(
+    "https://cellxgene.cziscience.com/collections/77f9d7e9-5675-49c3-abed-ce02f39eef1b", # collection
+    "https://cellxgene.cziscience.com/e/e12eb8a9-5e8b-4b59-90c8-77d29a811c00.cxg/" # dataset
+  ),
+  timeout = 36000000,
+  out.folder = "/path/to/download_cellxgene"
+)
+```
+
+<hr />
+
+### Filter samples based on metadata
+
+We have downloaded all the [CELLxGENE](https://cellxgene.cziscience.com/) datasets in **May 2025** and stored in [all.cellxgene.datasets.rds](https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/all.cellxgene.datasets.rds). The `all.cellxgene.datasets.rds` contains the `SeuratObject`.
+
+```{r cellxgene_filter, eval=FALSE}
+# all available datasets
+all.cellxgene.datasets <- ShowCELLxGENEDatasets()
+
+# the datasets with SeuratObject
+# wget https://github.com/showteeth/GEfetch2R/raw/ff2f19f3b557f90fce5f8bf2f8662cebdfd04298/man/benchmark/all.cellxgene.datasets.rds
+all.cellxgene.datasets <- readRDS("all.cellxgene.datasets.rds")
+
+# summarise attributes
+StatDBAttribute(
+  df = all.cellxgene.datasets, filter = c("organism", "sex", "disease"),
+  database = "CELLxGENE", combine = TRUE
+)
+# use cellxgene.census
+# StatDBAttribute(filter = c("disease", "tissue", "cell_type"), database = "CELLxGENE", use.census = TRUE, organism = "homo_sapiens")
+
+# human 10x v2 and v3 datasets
+human.10x.cellxgene.meta <- ExtractCELLxGENEMeta(
+  all.samples.df = all.cellxgene.datasets,
+  assay = c("10x 3' v2", "10x 3' v3"), organism = "Homo sapiens"
+)
+
+# subset
+cellxgene.down.meta <- human.10x.cellxgene.meta[human.10x.cellxgene.meta$cell_type == "oligodendrocyte" &
+  human.10x.cellxgene.meta$tissue == "entorhinal cortex", ]
+
+# download objects
+cellxgene.down <- ParseCELLxGENE(
+  meta = cellxgene.down.meta, file.ext = "rds", timeout = 36000000,
+  out.folder = "/path/to/download_cellxgene"
+)
+
+# retuen SeuratObject
+cellxgene.down.seu <- ParseCELLxGENE(
+  meta = cellxgene.down.meta, file.ext = "rds", return.seu = TRUE, timeout = 36000000,
+  obs.value.filter = "cell_type == 'oligodendrocyte' & disease == 'Alzheimer disease'",
+  obs.keys = c("cell_type", "disease", "sex", "suspension_type", "development_stage"),
+  out.folder = "/path/to/download_cellxgene"
+)
+```
+
+<hr />
+
+## [Human Cell Atlas](https://explore.data.humancellatlas.org/projects) (processed object)
+
+### Given dataset
+
+```{r hca_given, eval=FALSE}
+# download objects
+hca.given.download <- ParseHCA(
+  link = c(
+    "https://explore.data.humancellatlas.org/projects/902dc043-7091-445c-9442-d72e163b9879",
+    "https://explore.data.humancellatlas.org/projects/cdabcf0b-7602-4abf-9afb-3b410e545703"
+  ), timeout = 36000000,
+  out.folder = "/path/to/download_hca"
+)
+```
+
+[dissect and extract the `RData` files](#processed-object)
+
+<hr />
+
+### Filter samples based on metadata
+
+```{r hca_filter, eval=FALSE}
+# all available datasets
+all.hca.projects <- ShowHCAProjects()
+
+# summarise attributes
+StatDBAttribute(df = all.hca.projects, filter = c("organism", "sex"), database = "HCA")
+
+# filter metadata
+hca.human.10x.projects <- ExtractHCAMeta(
+  all.projects.df = all.hca.projects, organism = "Homo sapiens",
+  protocol = c("10x 3' v2", "10x 3' v3")
+)
+
+# small test
+hca.human.10x.down <- ParseHCA(
+  meta = hca.human.10x.projects[1:3, ],
+  out.folder = "/path/to/download_hca",
+  file.ext = c("h5ad", "rds"), timeout = 36000000
+)
+```
+
+[dissect and extract the `RData` files](#processed-object)
+
+<hr />
+
+## Format conversion
+
+There are many tools have been developed to process scRNA-seq data, such as [Scanpy](https://scanpy.readthedocs.io/en/stable/), [Seurat](https://satijalab.org/seurat/), [scran](https://bioconductor.org/packages/release/bioc/html/scran.html) and [Monocle](http://cole-trapnell-lab.github.io/monocle-release/). These tools have their own objects, such as `Anndata` of `Scanpy`, `SeuratObject` of `Seurat`, `SingleCellExperiment` of `scran` and `CellDataSet`/`cell_data_set` of `Monocle2`/`Monocle3`. There are also some file format designed for large omics datasets, such as [loom](http://loompy.org/). To perform a comprehensive scRNA-seq data analysis, we usually need to combine multiple tools, which means we need to perform object conversion frequently. To facilitate user analysis of scRNA-seq data, `GEfetch2R` provides multiple functions to perform object conversion between widely used tools and formats. The object conversion implemented in `GEfetch2R` has two main advantages: 
+
+* **one-step conversion between different objects**. There will be no conversion to intermediate objects, thus preventing unnecessary information loss.
+* **tools used for object conversion are developed by the team of the source/destination object as far as possible**. For example, we use `SeuratDisk` to convert SeuratObject to loom, use `zellkonverter` to perform conversion between `SingleCellExperiment` and `Anndata`. When there is no such tools, we use `sceasy` to perform conversion.
+
+<hr />
+
+### Test data
+
+```{r test_data, eval=FALSE}
+# library
+library(Seurat) # pbmc_small
+library(scRNAseq) # seger
+```
+
+`SeuratObject`:
+
+```{r test_seurat, eval=FALSE}
+# object
+pbmc_small
+```
+
+`SingleCellExperiment`:
+```{r testsce, eval=FALSE}
+seger <- scRNAseq::SegerstolpePancreasData()
+```
+
+<hr />
+
+### Convert SeuratObject to other objects
+
+Here, we will convert SeuratObject to `SingleCellExperiment`, `CellDataSet`/`cell_data_set`, `Anndata`, `loom`.
+
+#### SeuratObject to SingleCellExperiment
+
+The conversion is performed with functions implemented in `Seurat`:
+```{r seu2sce, eval=FALSE}
+sce.obj <- ExportSeurat(seu.obj = pbmc_small, assay = "RNA", to = "SCE")
+```
+
+<hr />
+
+#### SeuratObject to CellDataSet/cell_data_set
+
+To `CellDataSet` (The conversion is performed with functions implemented in `Seurat`):
+
+```{r seu2cds1, eval=FALSE}
+# BiocManager::install("monocle") # reuqire monocle
+cds.obj <- ExportSeurat(seu.obj = pbmc_small, assay = "RNA", reduction = "tsne", to = "CellDataSet")
+```
+
+To `cell_data_set` (The conversion is performed with functions implemented in `SeuratWrappers`):
+
+```{r seu2cds2, eval=FALSE}
+# remotes::install_github('cole-trapnell-lab/monocle3') # reuqire monocle3
+cds3.obj <- ExportSeurat(seu.obj = pbmc_small, assay = "RNA", to = "cell_data_set")
+```
+
+<hr />
+
+#### SeuratObject to AnnData
+
+`AnnData` is a Python object, `reticulate` is used to communicate between Python and R. User should create a Python environment which contains `anndata` package and specify the environment path with `conda.path` to ensure the exact usage of this environment.
+
+The conversion is performed with functions implemented in `sceasy`:
+```{r seu2anndata, eval=FALSE}
+# remove pbmc_small.h5ad first
+anndata.file <- tempfile(pattern = "pbmc_small_", fileext = ".h5ad")
+# you may need to set conda.path
+ExportSeurat(
+  seu.obj = pbmc_small, assay = "RNA", to = "AnnData",
+  anndata.file = anndata.file
+)
+```
+
+<hr />
+
+#### SeuratObject to loom
+
+The conversion is performed with functions implemented in `SeuratDisk`:
+```{r seu2loom, eval=FALSE}
+loom.file <- tempfile(pattern = "pbmc_small_", fileext = ".loom")
+ExportSeurat(
+  seu.obj = pbmc_small, assay = "RNA", to = "loom",
+  loom.file = loom.file
+)
+```
+
+<hr />
+
+### Convert other objects to SeuratObject
+
+#### SingleCellExperiment to SeuratObject
+
+The conversion is performed with functions implemented in `Seurat`:
+```{r sce2seu, eval=FALSE}
+seu.obj.sce <- ImportSeurat(obj = sce.obj, from = "SCE", count.assay = "counts", data.assay = "logcounts", assay = "RNA")
+```
+
+<hr />
+
+#### CellDataSet/cell_data_set to SeuratObject
+
+`CellDataSet` to `SeuratObject` (The conversion is performed with functions implemented in `Seurat`):
+```{r cds2seu1, eval=FALSE}
+seu.obj.cds <- ImportSeurat(obj = cds.obj, from = "CellDataSet", count.assay = "counts", assay = "RNA")
+```
+
+`cell_data_set` to `SeuratObject` (The conversion is performed with functions implemented in `Seurat`):
+```{r cds2seu2, eval=FALSE}
+seu.obj.cds3 <- ImportSeurat(obj = cds3.obj, from = "cell_data_set", count.assay = "counts", data.assay = "logcounts", assay = "RNA")
+```
+
+<hr />
+
+#### AnnData to SeuratObject
+
+`AnnData` is a Python object, `reticulate` is used to communicate between Python and R. User should create a Python environment which contains `anndata` package and specify the environment path with `conda.path` to ensure the exact usage of this environment.
+
+The conversion is performed with functions implemented in `sceasy`:
+```{r anndata2seu, eval=FALSE}
+# you may need to set conda.path
+seu.obj.h5ad <- ImportSeurat(
+  anndata.file = anndata.file, from = "AnnData", assay = "RNA"
+)
+```
+
+<hr />
+
+#### loom to SeuratObject
+
+The conversion is performed with functions implemented in `SeuratDisk` and `Seurat`:
+
+```{r loom2seu, eval=FALSE}
+# loom will lose reduction
+seu.obj.loom <- ImportSeurat(loom.file = loom.file, from = "loom")
+```
+
+<hr />
+
+### Conversion between SingleCellExperiment and AnnData
+
+The conversion is performed with functions implemented in `zellkonverter`.
+
+#### SingleCellExperiment to AnnData
+
+```{r sce2anndata, eval=FALSE}
+# remove seger.h5ad first
+seger.anndata.file <- tempfile(pattern = "seger_", fileext = ".h5ad")
+SCEAnnData(
+  from = "SingleCellExperiment", to = "AnnData", sce = seger, X_name = "counts",
+  anndata.file = seger.anndata.file
+)
+```
+
+<hr />
+
+#### AnnData to SingleCellExperiment
+
+```{r anndata2sce, eval=FALSE}
+seger.anndata <- SCEAnnData(
+  from = "AnnData", to = "SingleCellExperiment",
+  anndata.file = seger.anndata.file
+)
+```
+
+<hr />
+
+### Conversion between SingleCellExperiment and loom
+
+The conversion is performed with functions implemented in `LoomExperiment`.
+
+#### SingleCellExperiment to loom
+
+```{r sce2loom, eval=FALSE}
+# remove seger.loom first
+seger.loom.file <- tempfile(pattern = "seger_", fileext = ".loom")
+SCELoom(
+  from = "SingleCellExperiment", to = "loom", sce = seger,
+  loom.file = seger.loom.file
+)
+```
+
+<hr />
+
+#### loom to SingleCellExperiment
+
+```{r loom2sce, eval=FALSE}
+seger.loom <- SCELoom(
+  from = "loom", to = "SingleCellExperiment",
+  loom.file = seger.loom.file
+)
+```
+
+<hr />
+
+
+

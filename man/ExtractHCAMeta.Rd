@@ -17,7 +17,8 @@ ExtractHCAMeta(
   suspension.type = NULL,
   cell.type = NULL,
   cell.num = NULL,
-  sequencing.type = NULL
+  sequencing.type = NULL,
+  remove.nodata = TRUE
 )
 }
 \arguments{
@@ -58,6 +59,8 @@ Deault: NULL(without filtering).}
 
 \item{sequencing.type}{The sequencing instrument type of the projects (e.g. illumina hiseq 2500),
 obtain available values with \code{StatDBAttribute}, one or multiple values. Default: NULL (All).}
+
+\item{remove.nodata}{Logical value, whether to remove project with no downloadable data. Default: TRUE.}
 }
 \value{
 Dataframe contains filtered projects.

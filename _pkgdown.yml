@@ -12,6 +12,8 @@ navbar:
       href: index.html
     - text: Articles
       menu:
+      - text: Quick start
+        href: articles/QuickStart.html
       - text: Download raw data (sra/fastq/bam)
         href: articles/DownloadRaw.html
       - text: Download count matrix and annotation

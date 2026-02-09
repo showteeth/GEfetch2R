@@ -7,7 +7,7 @@
 DownloadBam(
   gsm.df,
   out.folder = NULL,
-  download.method = c("prefetch", "download.file", "ascp"),
+  download.method = c("prefetch", "download.file", "ascp", "wget"),
   bam.type = c("10x", "other"),
   prefetch.path = NULL,
   prefetch.paras = "-X 100G",
@@ -17,6 +17,7 @@ DownloadBam(
   timeout = 3600,
   ascp.path = NULL,
   max.rate = "300m",
+  wget.path = NULL,
   rename = TRUE,
   parallel = TRUE,
   use.cores = NULL
@@ -27,7 +28,7 @@ DownloadBam(
 
 \item{out.folder}{Output folder. Default: NULL (current working directory).}
 
-\item{download.method}{Method to download sra files, chosen from "prefetch", "download.file", "ascp".
+\item{download.method}{Method to download sra files, chosen from "prefetch", "download.file", "ascp", "wget".
 Default: "prefetch".}
 
 \item{bam.type}{The source of bam files to download, choose from 10x (e.g. CellRanger) or other.
@@ -44,20 +45,22 @@ Used when \code{download.method} is "prefetch". Default: 10x.}
 \item{quiet}{Logical value, whether to show downloading progress. Used when \code{download.method} is "download.file".
 Default: FALSE (show).}
 
-\item{timeout}{Maximum request time. Used when \code{download.method} is "download.file". Default: 3600.}
+\item{timeout}{Maximum request time. Used when \code{download.method} is "download.file" or "wget". Default: 3600.}
 
 \item{ascp.path}{Path to ascp (/path/bin/ascp), please ensure that the relative path of asperaweb_id_dsa.openssh file
 (/path/bin/ascp/../etc/asperaweb_id_dsa.openssh). Default: NULL (conduct automatic detection).}
 
 \item{max.rate}{Max transfer rate. Used when \code{download.method} is "ascp". Default: 300m.}
 
-\item{rename}{Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "ascp".
+\item{wget.path}{Path to wget. Default: NULL (conduct automatic detection).}
+
+\item{rename}{Logical value, whether to rename the download sra files. Recommended when \code{download.method} is "download.file", "ascp" or "wget".
 Default: FALSE (show).}
 
-\item{parallel}{Logical value, whether to download parallelly. Used when \code{download.method} is "ascp" or "download.file".
+\item{parallel}{Logical value, whether to download parallelly. Used when \code{download.method} is "ascp", "wget" or "download.file".
 Default: TRUE.}
 
-\item{use.cores}{The number of cores used. Used when \code{download.method} is "ascp" or "download.file".
+\item{use.cores}{The number of cores used. Used when \code{download.method} is "ascp", "wget" or "download.file".
 Default: NULL (the minimum value of \code{nrow(gsm.df)} and \code{parallel::detectCores()}).}
 }
 \value{
@@ -78,7 +81,7 @@ GSE138266.down <- DownloadBam(
 GSE138266.down <- DownloadBam(
   gsm.df = GSE138266.runs, download.method = "download.file",
   timeout = 3600, out.folder = "/path/to/output",
-  parallel = TRUE, use.cores = 2
+  rename = TRUE, parallel = TRUE, use.cores = 2
 )
 # ascp
 GSE138266.down <- DownloadBam(
@@ -86,6 +89,12 @@ GSE138266.down <- DownloadBam(
   ascp.path = "/path/to/ascp", max.rate = "300m",
   rename = TRUE, out.folder = "/path/to/output",
   parallel = TRUE, use.cores = 2
+)
+# ascp
+GSE138266.down <- DownloadBam(
+  gsm.df = GSE138266.runs, download.method = "wget",
+  wget.path = "/path/to/wget", rename = TRUE,
+  out.folder = "/path/to/output", parallel = TRUE, use.cores = 2
 )
 }
 }

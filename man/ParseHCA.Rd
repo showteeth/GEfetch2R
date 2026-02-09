@@ -5,7 +5,8 @@
 \title{Download Human Cell Atlas Datasets.}
 \usage{
 ParseHCA(
-  meta,
+  meta = NULL,
+  link = NULL,
   file.ext = c("rds", "rdata", "h5", "h5ad", "loom", "tsv"),
   out.folder = NULL,
   timeout = 3600,
@@ -17,8 +18,11 @@ ParseHCA(
 )
 }
 \arguments{
-\item{meta}{Metadata used to download, can be from \code{ExtractHCAMeta},
-should contain entryId and name catalog.}
+\item{meta}{Metadata used to download, can be from \code{ExtractHCAMeta}.
+Skip when \code{link} is not NULL. Default: NULL.}
+
+\item{link}{Vector contains project link(s), e.g. "https://explore.data.humancellatlas.org/projects/902dc043-7091-445c-9442-d72e163b9879".
+Skip when \code{meta} is not NULL. Default: NULL.}
 
 \item{file.ext}{The valid file extension for download. When NULL, use "rds", "rdata", "h5", "h5ad", "loom", "tsv".
 Default: c("rds", "rdata", "h5", "h5ad", "loom", "tsv").}
@@ -60,5 +64,13 @@ all.human.10x.projects <- ExtractHCAMeta(
 )
 # download, need users to provide the output folder
 ParseHCA(meta = all.human.10x.projects, out.folder = "/path/to/output")
+# download given projects
+ParseHCA(
+  link = c(
+    "https://explore.data.humancellatlas.org/projects/902dc043-7091-445c-9442-d72e163b9879",
+    "https://explore.data.humancellatlas.org/projects/cdabcf0b-7602-4abf-9afb-3b410e545703"
+  ),
+  out.folder = "/path/to/output"
+)
 }
 }

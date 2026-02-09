@@ -1,7 +1,7 @@
 Package: GEfetch2R
 Type: Package
 Title: Access and Format Single-Cell RNA-Seq Datasets from Public Resources 
-Version: 0.7.1
+Version: 0.7.3
 Authors@R: 
     person(given = "Yabing",
            family = "Song",
@@ -17,7 +17,7 @@ Description: The goal of 'GEfetch2R' is to access and format single-cell RNA-seq
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 biocViews:
 Imports: 
     Biobase,
@@ -28,16 +28,13 @@ Imports:
     jsonlite,
     magrittr,
     Matrix,
-    openxlsx,
-    parallel,
+    readxl,
     pbapply,
     purrr,
     rPanglaoDB,
     reticulate,
     Seurat,
     tibble,
-    tools,
-    utils,
     SingleCellExperiment,
     SummarizedExperiment,
     scater,
@@ -45,8 +42,9 @@ Imports:
     httr,
     rlang,
     tidyr,
-    methods,
-    DESeq2
+    DESeq2,
+    xml2,
+    R.utils
 Suggests: 
     knitr,
     rmarkdown,

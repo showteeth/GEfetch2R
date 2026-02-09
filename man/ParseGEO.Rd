@@ -12,8 +12,14 @@ ParseGEO(
   timeout = 3600,
   data.type = c("sc", "bulk"),
   supp.type = c("count", "10x", "10xSingle"),
+  file.regex = NULL,
+  extra.cols = c("chr", "start", "end", "strand", "length", "width", "chromosome",
+    "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop"),
+  transpose = TRUE,
   out.folder = NULL,
+  accept.fmt = c("MEX", "h5"),
   gene2feature = TRUE,
+  load2R = TRUE,
   merge = TRUE,
   meta.data = NULL,
   fmu = NULL,
@@ -29,7 +35,7 @@ ParseGEO(
 download supplementary files. If FALSE, use \code{ExpressionSet} (If contains non-integer or empty,
 download supplementary files automatically). Default: FALSE.}
 
-\item{supp.idx}{The index of supplementary files to download. This should be consistent with \code{platform}. Default: 1.}
+\item{supp.idx}{The index of supplementary files to download. This should be consistent with \code{platform}. Used when \code{supp.type} is 10x/count. Default: 1.}
 
 \item{timeout}{Timeout for \code{\link{download.file}}. Default: 3600.}
 
@@ -39,20 +45,33 @@ download supplementary files automatically). Default: FALSE.}
 10x (cellranger output files in tar/gz supplementary files, contains barcodes, genes/features and matrix, e.g. GSE200257)
 and 10xSingle (cellranger output files in supplementary files directly, e.g. GSE236082). Default: count.}
 
-\item{out.folder}{Output folder to save 10x files. Default: NULL (current working directory).}
+\item{file.regex}{The regex to extract correct count matrix files. Used when \code{supp.type} is count.
+Default: NULL (when multiple file extensions are available in the downloaded tar file, use the first file extension).}
 
-\item{gene2feature}{Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}. Default: TRUE.}
+\item{extra.cols}{Extra columns to remove, e.g., "Chr", "Start", "End", "Strand", "Length" (featureCounts). Used when \code{supp.type} is count.
+Default: "chr", "start", "end", "strand", "length", "width", "chromosome", "seqnames", "seqname", "chrom", "chromosome_name", "seqid", "stop".}
 
-\item{merge}{Logical value, whether to merge Seurat list when there are multiple 10x files (\code{supp.type} is 10x). Default: FALSE.}
+\item{transpose}{Logical value, whether to transpose the matrix. Used when the number of rows is less than the number of columns. Used when \code{supp.type} is count. Default: TRUE.}
 
-\item{meta.data}{Dataframe contains sample information for DESeqDataSet, use when \code{data.type} is bulk. Default: NULL.}
+\item{out.folder}{Output folder to save 10x files. Used when \code{supp.type} is 10x/10xSingle. Default: NULL (current working directory).}
 
-\item{fmu}{Column of \code{meta.data} contains group information. Default: NULL.}
+\item{accept.fmt}{Vector of accepted 10x output format, MEX (barcode/feature/gene/matrix), h5 (h5/h5.gz). Used when \code{supp.type} is 10x/10xSingle. Default: c("MEX", "h5").}
 
-\item{...}{Parameters for \code{\link{getGEO}}.}
+\item{gene2feature}{Logical value, whether to rename \code{genes.tsv.gz} to \code{features.tsv.gz}. Used when \code{supp.type} is 10x/10xSingle. Default: TRUE.}
+
+\item{load2R}{Logical value, whether to load the count matrix to R. Default: TRUE.}
+
+\item{merge}{Logical value, whether to merge Seurat list when there are multiple 10x files (\code{supp.type} is 10x).
+Used when \code{supp.type} is 10x/10xSingle. Default: FALSE.}
+
+\item{meta.data}{Dataframe contains sample information for DESeqDataSet. Used when \code{data.type} is bulk. Default: NULL.}
+
+\item{fmu}{Column of \code{meta.data} contains group information. Used when \code{data.type} is bulk. Default: NULL.}
+
+\item{...}{Parameters for \code{\link{getGEO}}. Used when \code{down.supp} is FALSE.}
 }
 \value{
-If \code{data.type} is "sc", return Seurat object (if \code{merge} is TRUE) or Seurat object list (if \code{merge} is FALSE).
+If \code{load2R} is FALSE, return count matrix. If \code{data.type} is "sc", return SeuratObject (if \code{merge} is TRUE), SeuratObject list (if \code{merge} is FALSE), NULL (no SeuratObject detected).
 If \code{data.type} is "bulk", return DESeqDataSet.
 }
 \description{

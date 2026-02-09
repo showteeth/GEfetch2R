@@ -7,15 +7,16 @@
 DownloadFastq(
   gsm.df,
   out.folder = NULL,
-  download.method = c("download.file", "ascp"),
+  download.method = c("download.file", "ascp", "wget"),
   quiet = FALSE,
   timeout = 3600,
   ascp.path = NULL,
   max.rate = "300m",
   parallel = TRUE,
   use.cores = NULL,
+  wget.path = NULL,
   format.10x = TRUE,
-  remove.raw = FALSE
+  remove.raw = TRUE
 )
 }
 \arguments{
@@ -23,12 +24,12 @@ DownloadFastq(
 
 \item{out.folder}{Output folder. Default: NULL (current working directory).}
 
-\item{download.method}{Method to download fastq files, chosen from "download.file" and "ascp". Default: "download.file".}
+\item{download.method}{Method to download fastq files, chosen from "download.file", "ascp" and "wget". Default: "download.file".}
 
 \item{quiet}{Logical value, whether to show downloading progress. Used when \code{download.method} is "download.file".
 Default: FALSE (show).}
 
-\item{timeout}{Maximum request time. Used when \code{download.method} is "download.file". Default: 3600.}
+\item{timeout}{Maximum request time. Used when \code{download.method} is "download.file" or "wget". Default: 3600.}
 
 \item{ascp.path}{Path to ascp (/path/bin/ascp), please ensure that the relative path of asperaweb_id_dsa.openssh file
 (/path/bin/ascp/../etc/asperaweb_id_dsa.openssh). Default: NULL (conduct automatic detection).}
@@ -39,9 +40,11 @@ Default: FALSE (show).}
 
 \item{use.cores}{The number of cores used. Default: NULL (the minimum value of \code{nrow(gsm.df)} and \code{parallel::detectCores()}).}
 
+\item{wget.path}{Path to wget. Default: NULL (conduct automatic detection).}
+
 \item{format.10x}{Logical value, whether to format split fastqs to 10x standard format. Default: TRUE.}
 
-\item{remove.raw}{Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: FALSE.}
+\item{remove.raw}{Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: TRUE.}
 }
 \value{
 Dataframe contains failed \code{gsm.df} of NULL.
@@ -50,17 +53,26 @@ Dataframe contains failed \code{gsm.df} of NULL.
 Download FASTQ Files.
 }
 \examples{
+\dontrun{
 GSE130636.runs <- ExtractRun(acce = "GSE130636", platform = "GPL20301")
 # a small test
 GSE130636.runs <- GSE130636.runs[GSE130636.runs$run \%in\% c("SRR9004325", "SRR9004326"), ]
 # use download.file
 download.file.res <- DownloadFastq(
-  gsm.df = gsm.df, out.folder = "/path/to/output",
+  gsm.df = gsm.df, out.folder = "/path/to/output", remove.raw = TRUE,
   download.method = "download.file", parallel = TRUE, use.cores = 2
 )
 # use ascp
 ascp.res <- DownloadFastq(
-  gsm.df = gsm.df, out.folder = "/home/songyabing/data/projects/tmp/GEfetch2R",
-  download.method = "ascp", ascp.path = "~/.aspera/connect/bin/ascp", parallel = TRUE, use.cores = 2
+  gsm.df = gsm.df, out.folder = "/path/to/output", remove.raw = TRUE,
+  download.method = "ascp", ascp.path = "~/.aspera/connect/bin/ascp",
+  parallel = TRUE, use.cores = 2
 )
+# use wget
+wget.res <- DownloadFastq(
+  gsm.df = gsm.df, out.folder = "/path/to/output", remove.raw = TRUE,
+  download.method = "wget", wget.path = "/usr/bin/wget",
+  parallel = TRUE, use.cores = 2
+)
+}
 }

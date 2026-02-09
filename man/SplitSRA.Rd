@@ -13,7 +13,7 @@ SplitSRA(
   split.cmd.paras = NULL,
   split.cmd.threads = NULL,
   format.10x = TRUE,
-  remove.raw = FALSE
+  remove.raw = TRUE
 )
 }
 \arguments{
@@ -37,7 +37,7 @@ Default: NULL (1).}
 
 \item{format.10x}{Logical value, whether to format split fastqs to 10x standard format. Default: TRUE.}
 
-\item{remove.raw}{Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: FALSE.}
+\item{remove.raw}{Logical value, whether to remove old split fastqs (unformatted), used when \code{format.10x} is TRUE. Default: TRUE.}
 }
 \value{
 NULL or paths of failed sras.
@@ -57,7 +57,7 @@ GSE186003.split <- SplitSRA(
   sra.folder = "/path/to/output",
   split.cmd.path = "/path/to/parallel-fastq-dump",
   sratools.path = "/path/to/sra/bin", fastq.type = "10x",
-  split.cmd.threads = 4
+  split.cmd.threads = 4, remove.raw = TRUE
 )
 }
 }

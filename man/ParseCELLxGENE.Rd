@@ -6,6 +6,7 @@
 \usage{
 ParseCELLxGENE(
   meta = NULL,
+  link = NULL,
   file.ext = c("rds", "h5ad"),
   out.folder = NULL,
   timeout = 3600,
@@ -26,8 +27,11 @@ ParseCELLxGENE(
 }
 \arguments{
 \item{meta}{Metadata used to download, can be from \code{ExtractCELLxGENEMeta},
-should contain dataset_id, rds_id/h5ad_id (depend on \code{file.ext}) and name columns.
-Skip when \code{use.census} is TRUE. Default: NULL.}
+should contain dataset_id, rds_id/h5ad_id (depend on \code{file.ext}) and dataset_description columns.
+Skip when \code{use.census} is TRUE or \code{link} is not NULL. Default: NULL.}
+
+\item{link}{Vector contains dataset/collection link(s). e.g. "https://cellxgene.cziscience.com/e/e12eb8a9-5e8b-4b59-90c8-77d29a811c00.cxg/".
+Skip when \code{use.census} is TRUE or \code{meta} is not NULL. Default: NULL.}
 
 \item{file.ext}{The valid file extension for download. When NULL, use "rds" and "h5ad". Default: c("rds", "h5ad").}
 
@@ -88,6 +92,14 @@ human.10x.cellxgene.meta <- ExtractCELLxGENEMeta(
 )
 # download, need to provide the output folder
 ParseCELLxGENE(meta = human.10x.cellxgene.meta, out.folder = "/path/to/output")
+# download given collection and dataset
+ParseCELLxGENE(
+  link = c(
+    "https://cellxgene.cziscience.com/collections/77f9d7e9-5675-49c3-abed-ce02f39eef1b",
+    "https://cellxgene.cziscience.com/e/e12eb8a9-5e8b-4b59-90c8-77d29a811c00.cxg/"
+  ),
+  out.folder = "/path/to/output"
+)
 }
 }
 \references{
