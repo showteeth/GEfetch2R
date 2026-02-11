@@ -565,7 +565,6 @@ library(scRNAseq) # seger
 ```
 
 `SeuratObject`:
-
 ```{r test_seurat, eval=FALSE}
 # object
 pbmc_small
@@ -576,11 +575,19 @@ pbmc_small
 seger <- scRNAseq::SegerstolpePancreasData()
 ```
 
+`AnnData` ([generate_pbmc3k_anndata.ipynb](https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/generate_pbmc3k_anndata.ipynb)):
+```{python testanndata, eval=FALSE}
+import scanpy as sc
+# pbmc3k.h5ad: https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/pbmc3k.h5ad
+pbmc3k = sc.read('pbmc3k.h5ad')
+pbmc3k
+```
+
 <hr />
 
 ### Convert SeuratObject to other objects
 
-Here, we will convert SeuratObject to `SingleCellExperiment`, `CellDataSet`/`cell_data_set`, `Anndata`, `loom`.
+Here, we will convert `SeuratObject` to `SingleCellExperiment`, `CellDataSet`/`cell_data_set`, `Anndata`, `loom`.
 
 #### SeuratObject to SingleCellExperiment
 
@@ -611,17 +618,21 @@ cds3.obj <- ExportSeurat(seu.obj = pbmc_small, assay = "RNA", to = "cell_data_se
 
 #### SeuratObject to AnnData
 
-`AnnData` is a Python object, `reticulate` is used to communicate between Python and R. User should create a Python environment which contains `anndata` package and specify the environment path with `conda.path` to ensure the exact usage of this environment.
+There are multiple tools available for format conversion from `SeuratObject` to `Anndata`:
 
-The conversion is performed with functions implemented in `sceasy`:
+* `scDIOR` is the best method in terms of information kept and usability
+* `sceasy` has best performance in running time and disk usage.
+
 ```{r seu2anndata, eval=FALSE}
-# remove pbmc_small.h5ad first
-anndata.file <- tempfile(pattern = "pbmc_small_", fileext = ".h5ad")
-# you may need to set conda.path
-ExportSeurat(
-  seu.obj = pbmc_small, assay = "RNA", to = "AnnData",
-  anndata.file = anndata.file
-)
+# SeuratDisk
+Seu2AD(seu.obj = pbmc_small, method = "SeuratDisk", out.folder = "out.folder", 
+       assay = "RNA", save.scale = TRUE)
+# sceasy
+Seu2AD(seu.obj = pbmc_small, method = "sceasy", out.folder = "out.folder", 
+       assay = "RNA", slot = "counts", conda.path = "/path/to/conda")
+# scDIOR
+Seu2AD(seu.obj = pbmc_small, method = "scDIOR", 
+       out.folder = "out.folder", assay = "RNA", save.scale = TRUE)
 ```
 
 <hr />
@@ -645,7 +656,9 @@ ExportSeurat(
 
 The conversion is performed with functions implemented in `Seurat`:
 ```{r sce2seu, eval=FALSE}
-seu.obj.sce <- ImportSeurat(obj = sce.obj, from = "SCE", count.assay = "counts", data.assay = "logcounts", assay = "RNA")
+seu.obj.sce <- ImportSeurat(obj = sce.obj, from = "SCE", 
+                            count.assay = "counts", data.assay = "logcounts", 
+                            assay = "RNA")
 ```
 
 <hr />
@@ -654,26 +667,44 @@ seu.obj.sce <- ImportSeurat(obj = sce.obj, from = "SCE", count.assay = "counts",
 
 `CellDataSet` to `SeuratObject` (The conversion is performed with functions implemented in `Seurat`):
 ```{r cds2seu1, eval=FALSE}
-seu.obj.cds <- ImportSeurat(obj = cds.obj, from = "CellDataSet", count.assay = "counts", assay = "RNA")
+seu.obj.cds <- ImportSeurat(obj = cds.obj, from = "CellDataSet", 
+                            count.assay = "counts", assay = "RNA")
 ```
 
 `cell_data_set` to `SeuratObject` (The conversion is performed with functions implemented in `Seurat`):
 ```{r cds2seu2, eval=FALSE}
-seu.obj.cds3 <- ImportSeurat(obj = cds3.obj, from = "cell_data_set", count.assay = "counts", data.assay = "logcounts", assay = "RNA")
+seu.obj.cds3 <- ImportSeurat(obj = cds3.obj, from = "cell_data_set", 
+                             count.assay = "counts", data.assay = "logcounts",
+                             assay = "RNA")
 ```
 
 <hr />
 
 #### AnnData to SeuratObject
 
-`AnnData` is a Python object, `reticulate` is used to communicate between Python and R. User should create a Python environment which contains `anndata` package and specify the environment path with `conda.path` to ensure the exact usage of this environment.
+There are multiple tools available for format conversion from `AnnData` to `SeuratObject`:
 
-The conversion is performed with functions implemented in `sceasy`:
+* `scDIOR` is the best method in terms of information kept (**`GEfetch2R` integrates `scDIOR` and `SeuratDisk` to achieve the best performance in information kept**)
+* `schard` is the best method in terms of usability
+* `schard` and `sceasy` have comparable performance when cell number below 200k, but `sceasy` has better performance in scalability
+* `sceasy` has better performance in disk usage
+
 ```{r anndata2seu, eval=FALSE}
-# you may need to set conda.path
-seu.obj.h5ad <- ImportSeurat(
-  anndata.file = anndata.file, from = "AnnData", assay = "RNA"
-)
+# SeuratDisk
+ann.seu <- AD2Seu(anndata.file = "pbmc3k.h5ad", method = "SeuratDisk", 
+                  assay = "RNA", load.assays = c("RNA"))
+# sceasy
+ann.sceasy <- AD2Seu(anndata.file = "pbmc3k.h5ad", method = "sceasy",
+                     assay = "RNA", slot = "scale.data")
+# scDIOR
+ann.scdior <- AD2Seu(anndata.file = "pbmc3k.h5ad", method = "scDIOR", 
+                     assay = "RNA")
+# schard
+ann.schard <- AD2Seu(anndata.file = "pbmc3k.h5ad", 
+                     method = "schard", assay = "RNA", use.raw = T)
+# SeuratDisk+scDIOR
+ann.seuscdior <- AD2Seu(anndata.file = "pbmc3k.h5ad", method = "SeuratDisk+scDIOR", 
+                        assay = "RNA", load.assays = c("RNA"))
 ```
 
 <hr />
@@ -691,28 +722,51 @@ seu.obj.loom <- ImportSeurat(loom.file = loom.file, from = "loom")
 
 ### Conversion between SingleCellExperiment and AnnData
 
-The conversion is performed with functions implemented in `zellkonverter`.
-
 #### SingleCellExperiment to AnnData
 
+There are multiple tools available for format conversion from `SingleCellExperiment` to `AnnData`:
+
+* `zellkonverter` is the best method in terms of information kept and running time
+* `scDIOR` is the best method in terms of usability and disk usage
+
 ```{r sce2anndata, eval=FALSE}
-# remove seger.h5ad first
-seger.anndata.file <- tempfile(pattern = "seger_", fileext = ".h5ad")
-SCEAnnData(
-  from = "SingleCellExperiment", to = "AnnData", sce = seger, X_name = "counts",
-  anndata.file = seger.anndata.file
-)
+# sceasy
+SCE2AD(sce.obj = seger, method = "sceasy", out.folder = "benchmark", 
+       slot = "rawcounts", conda.path = "/path/to/conda")
+       
+# scDIOR
+seger.scdior <- seger
+library(SingleCellExperiment)
+# scDIOR does not support varm in rowData
+rowData(seger.scdior)$varm <- NULL
+SCE2AD(sce.obj = seger.scdior, method = "scDIOR", out.folder = "benchmark")
+
+# zellkonverter
+SCE2AD(sce.obj = seger, method = "zellkonverter", 
+       out.folder = "benchmark", slot = "rawcounts", 
+       conda.path = "/path/to/conda")
 ```
 
 <hr />
 
 #### AnnData to SingleCellExperiment
 
+There are multiple tools available for format conversion from `AnnData` to `SingleCellExperiment`:
+
+* `zellkonverter` is the best method in terms of information kept
+* `schard` is the best method in terms of usability and running time
+* `schard` and `scDIOR` have comparable performance in disk usage
+
 ```{r anndata2sce, eval=FALSE}
-seger.anndata <- SCEAnnData(
-  from = "AnnData", to = "SingleCellExperiment",
-  anndata.file = seger.anndata.file
-)
+# scDIOR
+sce.scdior <- AD2SCE(anndata.file = "pbmc3k.h5ad", method = "scDIOR", 
+                     assay = "RNA", use.raw = TRUE, conda.path = "/path/to/conda")
+# zellkonverter
+sce.zell <- AD2SCE(anndata.file = "pbmc3k.h5ad", method = "zellkonverter",
+                   slot = "scale.data", use.raw = TRUE, conda.path = "/path/to/conda")
+# schard
+sce.schard <- AD2SCE(anndata.file = "pbmc3k.h5ad", 
+                     method = "schard", use.raw = TRUE)
 ```
 
 <hr />

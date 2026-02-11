@@ -622,7 +622,6 @@ library(scRNAseq) # seger
 ```
 
 `SeuratObject`:
-
 ```r
 # object
 pbmc_small
@@ -633,11 +632,19 @@ pbmc_small
 seger <- scRNAseq::SegerstolpePancreasData()
 ```
 
+`AnnData` ([generate_pbmc3k_anndata.ipynb](https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/generate_pbmc3k_anndata.ipynb)):
+```python
+import scanpy as sc
+# pbmc3k.h5ad: https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/pbmc3k.h5ad
+pbmc3k = sc.read('pbmc3k.h5ad')
+pbmc3k
+```
+
 <hr />
 
 #### Convert SeuratObject to other objects
 
-Here, we will convert SeuratObject to `SingleCellExperiment`, `CellDataSet`/`cell_data_set`, `Anndata`, `loom`.
+Here, we will convert `SeuratObject` to `SingleCellExperiment`, `CellDataSet`/`cell_data_set`, `Anndata`, `loom`.
 
 ##### SeuratObject to SingleCellExperiment
 

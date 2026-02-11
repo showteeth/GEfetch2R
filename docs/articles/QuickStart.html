@@ -59,14 +59,14 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>QuickStart</h1>
-
-
+            
+      
       <small class="dont-index">Source: <a href="https://github.com/showteeth/GEfetch2R/blob/HEAD/vignettes/QuickStart.Rmd" class="external-link"><code>vignettes/QuickStart.Rmd</code></a></small>
       <div class="d-none name"><code>QuickStart.Rmd</code></div>
     </div>
 
-
-
+    
+    
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -783,12 +783,17 @@ is no such tools, we use <code>sceasy</code> to perform conversion.</li>
 <p><code>SingleCellExperiment</code>:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">seger</span> <span class="op">&lt;-</span> <span class="fu">scRNAseq</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/scRNAseq/man/SegerstolpePancreasData.html" class="external-link">SegerstolpePancreasData</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><code>AnnData</code> (<a href="https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/generate_pbmc3k_anndata.ipynb" class="external-link">generate_pbmc3k_anndata.ipynb</a>):</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="im">import</span> scanpy <span class="im">as</span> sc</span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a><span class="co"># pbmc3k.h5ad: https://github.com/showteeth/GEfetch2R/blob/main/man/benchmark/pbmc3k.h5ad</span></span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>pbmc3k <span class="op">=</span> sc.read(<span class="st">'pbmc3k.h5ad'</span>)</span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>pbmc3k</span></code></pre></div>
 <hr>
 </div>
 <div class="section level3">
 <h3 id="convert-seuratobject-to-other-objects">Convert SeuratObject to other objects<a class="anchor" aria-label="anchor" href="#convert-seuratobject-to-other-objects"></a>
 </h3>
-<p>Here, we will convert SeuratObject to
+<p>Here, we will convert <code>SeuratObject</code> to
 <code>SingleCellExperiment</code>,
 <code>CellDataSet</code>/<code>cell_data_set</code>,
 <code>Anndata</code>, <code>loom</code>.</p>
@@ -797,7 +802,7 @@ is no such tools, we use <code>sceasy</code> to perform conversion.</li>
 </h4>
 <p>The conversion is performed with functions implemented in
 <code>Seurat</code>:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sce.obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, to <span class="op">=</span> <span class="st">"SCE"</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
@@ -806,12 +811,12 @@ is no such tools, we use <code>sceasy</code> to perform conversion.</li>
 </h4>
 <p>To <code>CellDataSet</code> (The conversion is performed with
 functions implemented in <code>Seurat</code>):</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># BiocManager::install("monocle") # reuqire monocle</span></span>
 <span><span class="va">cds.obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, reduction <span class="op">=</span> <span class="st">"tsne"</span>, to <span class="op">=</span> <span class="st">"CellDataSet"</span><span class="op">)</span></span></code></pre></div>
 <p>To <code>cell_data_set</code> (The conversion is performed with
 functions implemented in <code>SeuratWrappers</code>):</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># remotes::install_github('cole-trapnell-lab/monocle3') # reuqire monocle3</span></span>
 <span><span class="va">cds3.obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, to <span class="op">=</span> <span class="st">"cell_data_set"</span><span class="op">)</span></span></code></pre></div>
 <hr>
@@ -819,21 +824,26 @@ functions implemented in <code>SeuratWrappers</code>):</p>
 <div class="section level4">
 <h4 id="seuratobject-to-anndata">SeuratObject to AnnData<a class="anchor" aria-label="anchor" href="#seuratobject-to-anndata"></a>
 </h4>
-<p><code>AnnData</code> is a Python object, <code>reticulate</code> is
-used to communicate between Python and R. User should create a Python
-environment which contains <code>anndata</code> package and specify the
-environment path with <code>conda.path</code> to ensure the exact usage
-of this environment.</p>
-<p>The conversion is performed with functions implemented in
-<code>sceasy</code>:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># remove pbmc_small.h5ad first</span></span>
-<span><span class="va">anndata.file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>pattern <span class="op">=</span> <span class="st">"pbmc_small_"</span>, fileext <span class="op">=</span> <span class="st">".h5ad"</span><span class="op">)</span></span>
-<span><span class="co"># you may need to set conda.path</span></span>
-<span><span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span></span>
-<span>  seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, to <span class="op">=</span> <span class="st">"AnnData"</span>,</span>
-<span>  anndata.file <span class="op">=</span> <span class="va">anndata.file</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<p>There are multiple tools available for format conversion from
+<code>SeuratObject</code> to <code>Anndata</code>:</p>
+<ul>
+<li>
+<code>scDIOR</code> is the best method in terms of information kept
+and usability</li>
+<li>
+<code>sceasy</code> has best performance in running time and disk
+usage.</li>
+</ul>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># SeuratDisk</span></span>
+<span><span class="fu"><a href="../reference/Seu2AD.html">Seu2AD</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, method <span class="op">=</span> <span class="st">"SeuratDisk"</span>, out.folder <span class="op">=</span> <span class="st">"out.folder"</span>, </span>
+<span>       assay <span class="op">=</span> <span class="st">"RNA"</span>, save.scale <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co"># sceasy</span></span>
+<span><span class="fu"><a href="../reference/Seu2AD.html">Seu2AD</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, method <span class="op">=</span> <span class="st">"sceasy"</span>, out.folder <span class="op">=</span> <span class="st">"out.folder"</span>, </span>
+<span>       assay <span class="op">=</span> <span class="st">"RNA"</span>, slot <span class="op">=</span> <span class="st">"counts"</span>, conda.path <span class="op">=</span> <span class="st">"/path/to/conda"</span><span class="op">)</span></span>
+<span><span class="co"># scDIOR</span></span>
+<span><span class="fu"><a href="../reference/Seu2AD.html">Seu2AD</a></span><span class="op">(</span>seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, method <span class="op">=</span> <span class="st">"scDIOR"</span>, </span>
+<span>       out.folder <span class="op">=</span> <span class="st">"out.folder"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, save.scale <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level4">
@@ -841,7 +851,7 @@ of this environment.</p>
 </h4>
 <p>The conversion is performed with functions implemented in
 <code>SeuratDisk</code>:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">loom.file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>pattern <span class="op">=</span> <span class="st">"pbmc_small_"</span>, fileext <span class="op">=</span> <span class="st">".loom"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/ExportSeurat.html">ExportSeurat</a></span><span class="op">(</span></span>
 <span>  seu.obj <span class="op">=</span> <span class="va">pbmc_small</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, to <span class="op">=</span> <span class="st">"loom"</span>,</span>
@@ -858,8 +868,10 @@ of this environment.</p>
 </h4>
 <p>The conversion is performed with functions implemented in
 <code>Seurat</code>:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu.obj.sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span>obj <span class="op">=</span> <span class="va">sce.obj</span>, from <span class="op">=</span> <span class="st">"SCE"</span>, count.assay <span class="op">=</span> <span class="st">"counts"</span>, data.assay <span class="op">=</span> <span class="st">"logcounts"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">seu.obj.sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span>obj <span class="op">=</span> <span class="va">sce.obj</span>, from <span class="op">=</span> <span class="st">"SCE"</span>, </span>
+<span>                            count.assay <span class="op">=</span> <span class="st">"counts"</span>, data.assay <span class="op">=</span> <span class="st">"logcounts"</span>, </span>
+<span>                            assay <span class="op">=</span> <span class="st">"RNA"</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level4">
@@ -867,30 +879,54 @@ of this environment.</p>
 </h4>
 <p><code>CellDataSet</code> to <code>SeuratObject</code> (The conversion
 is performed with functions implemented in <code>Seurat</code>):</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu.obj.cds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span>obj <span class="op">=</span> <span class="va">cds.obj</span>, from <span class="op">=</span> <span class="st">"CellDataSet"</span>, count.assay <span class="op">=</span> <span class="st">"counts"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">seu.obj.cds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span>obj <span class="op">=</span> <span class="va">cds.obj</span>, from <span class="op">=</span> <span class="st">"CellDataSet"</span>, </span>
+<span>                            count.assay <span class="op">=</span> <span class="st">"counts"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span><span class="op">)</span></span></code></pre></div>
 <p><code>cell_data_set</code> to <code>SeuratObject</code> (The
 conversion is performed with functions implemented in
 <code>Seurat</code>):</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu.obj.cds3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span>obj <span class="op">=</span> <span class="va">cds3.obj</span>, from <span class="op">=</span> <span class="st">"cell_data_set"</span>, count.assay <span class="op">=</span> <span class="st">"counts"</span>, data.assay <span class="op">=</span> <span class="st">"logcounts"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">seu.obj.cds3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span>obj <span class="op">=</span> <span class="va">cds3.obj</span>, from <span class="op">=</span> <span class="st">"cell_data_set"</span>, </span>
+<span>                             count.assay <span class="op">=</span> <span class="st">"counts"</span>, data.assay <span class="op">=</span> <span class="st">"logcounts"</span>,</span>
+<span>                             assay <span class="op">=</span> <span class="st">"RNA"</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level4">
 <h4 id="anndata-to-seuratobject">AnnData to SeuratObject<a class="anchor" aria-label="anchor" href="#anndata-to-seuratobject"></a>
 </h4>
-<p><code>AnnData</code> is a Python object, <code>reticulate</code> is
-used to communicate between Python and R. User should create a Python
-environment which contains <code>anndata</code> package and specify the
-environment path with <code>conda.path</code> to ensure the exact usage
-of this environment.</p>
-<p>The conversion is performed with functions implemented in
-<code>sceasy</code>:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># you may need to set conda.path</span></span>
-<span><span class="va">seu.obj.h5ad</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span></span>
-<span>  anndata.file <span class="op">=</span> <span class="va">anndata.file</span>, from <span class="op">=</span> <span class="st">"AnnData"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<p>There are multiple tools available for format conversion from
+<code>AnnData</code> to <code>SeuratObject</code>:</p>
+<ul>
+<li>
+<code>scDIOR</code> is the best method in terms of information kept
+(<strong><code>GEfetch2R</code> integrates <code>scDIOR</code> and
+<code>SeuratDisk</code> to achieve the best performance in information
+kept</strong>)</li>
+<li>
+<code>schard</code> is the best method in terms of usability</li>
+<li>
+<code>schard</code> and <code>sceasy</code> have comparable
+performance when cell number below 200k, but <code>sceasy</code> has
+better performance in scalability</li>
+<li>
+<code>sceasy</code> has better performance in disk usage</li>
+</ul>
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># SeuratDisk</span></span>
+<span><span class="va">ann.seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2Seu.html">AD2Seu</a></span><span class="op">(</span>anndata.file <span class="op">=</span> <span class="st">"pbmc3k.h5ad"</span>, method <span class="op">=</span> <span class="st">"SeuratDisk"</span>, </span>
+<span>                  assay <span class="op">=</span> <span class="st">"RNA"</span>, load.assays <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"RNA"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># sceasy</span></span>
+<span><span class="va">ann.sceasy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2Seu.html">AD2Seu</a></span><span class="op">(</span>anndata.file <span class="op">=</span> <span class="st">"pbmc3k.h5ad"</span>, method <span class="op">=</span> <span class="st">"sceasy"</span>,</span>
+<span>                     assay <span class="op">=</span> <span class="st">"RNA"</span>, slot <span class="op">=</span> <span class="st">"scale.data"</span><span class="op">)</span></span>
+<span><span class="co"># scDIOR</span></span>
+<span><span class="va">ann.scdior</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2Seu.html">AD2Seu</a></span><span class="op">(</span>anndata.file <span class="op">=</span> <span class="st">"pbmc3k.h5ad"</span>, method <span class="op">=</span> <span class="st">"scDIOR"</span>, </span>
+<span>                     assay <span class="op">=</span> <span class="st">"RNA"</span><span class="op">)</span></span>
+<span><span class="co"># schard</span></span>
+<span><span class="va">ann.schard</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2Seu.html">AD2Seu</a></span><span class="op">(</span>anndata.file <span class="op">=</span> <span class="st">"pbmc3k.h5ad"</span>, </span>
+<span>                     method <span class="op">=</span> <span class="st">"schard"</span>, assay <span class="op">=</span> <span class="st">"RNA"</span>, use.raw <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
+<span><span class="co"># SeuratDisk+scDIOR</span></span>
+<span><span class="va">ann.seuscdior</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2Seu.html">AD2Seu</a></span><span class="op">(</span>anndata.file <span class="op">=</span> <span class="st">"pbmc3k.h5ad"</span>, method <span class="op">=</span> <span class="st">"SeuratDisk+scDIOR"</span>, </span>
+<span>                        assay <span class="op">=</span> <span class="st">"RNA"</span>, load.assays <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"RNA"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level4">
@@ -898,7 +934,7 @@ of this environment.</p>
 </h4>
 <p>The conversion is performed with functions implemented in
 <code>SeuratDisk</code> and <code>Seurat</code>:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># loom will lose reduction</span></span>
 <span><span class="va">seu.obj.loom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ImportSeurat.html">ImportSeurat</a></span><span class="op">(</span>loom.file <span class="op">=</span> <span class="va">loom.file</span>, from <span class="op">=</span> <span class="st">"loom"</span><span class="op">)</span></span></code></pre></div>
 <hr>
@@ -907,28 +943,63 @@ of this environment.</p>
 <div class="section level3">
 <h3 id="conversion-between-singlecellexperiment-and-anndata">Conversion between SingleCellExperiment and AnnData<a class="anchor" aria-label="anchor" href="#conversion-between-singlecellexperiment-and-anndata"></a>
 </h3>
-<p>The conversion is performed with functions implemented in
-<code>zellkonverter</code>.</p>
 <div class="section level4">
 <h4 id="singlecellexperiment-to-anndata">SingleCellExperiment to AnnData<a class="anchor" aria-label="anchor" href="#singlecellexperiment-to-anndata"></a>
 </h4>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># remove seger.h5ad first</span></span>
-<span><span class="va">seger.anndata.file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>pattern <span class="op">=</span> <span class="st">"seger_"</span>, fileext <span class="op">=</span> <span class="st">".h5ad"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/SCEAnnData.html">SCEAnnData</a></span><span class="op">(</span></span>
-<span>  from <span class="op">=</span> <span class="st">"SingleCellExperiment"</span>, to <span class="op">=</span> <span class="st">"AnnData"</span>, sce <span class="op">=</span> <span class="va">seger</span>, X_name <span class="op">=</span> <span class="st">"counts"</span>,</span>
-<span>  anndata.file <span class="op">=</span> <span class="va">seger.anndata.file</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<p>There are multiple tools available for format conversion from
+<code>SingleCellExperiment</code> to <code>AnnData</code>:</p>
+<ul>
+<li>
+<code>zellkonverter</code> is the best method in terms of
+information kept and running time</li>
+<li>
+<code>scDIOR</code> is the best method in terms of usability and
+disk usage</li>
+</ul>
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># sceasy</span></span>
+<span><span class="fu"><a href="../reference/SCE2AD.html">SCE2AD</a></span><span class="op">(</span>sce.obj <span class="op">=</span> <span class="va">seger</span>, method <span class="op">=</span> <span class="st">"sceasy"</span>, out.folder <span class="op">=</span> <span class="st">"benchmark"</span>, </span>
+<span>       slot <span class="op">=</span> <span class="st">"rawcounts"</span>, conda.path <span class="op">=</span> <span class="st">"/path/to/conda"</span><span class="op">)</span></span>
+<span>       </span>
+<span><span class="co"># scDIOR</span></span>
+<span><span class="va">seger.scdior</span> <span class="op">&lt;-</span> <span class="va">seger</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">SingleCellExperiment</span><span class="op">)</span></span>
+<span><span class="co"># scDIOR does not support varm in rowData</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">rowData</a></span><span class="op">(</span><span class="va">seger.scdior</span><span class="op">)</span><span class="op">$</span><span class="va">varm</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
+<span><span class="fu"><a href="../reference/SCE2AD.html">SCE2AD</a></span><span class="op">(</span>sce.obj <span class="op">=</span> <span class="va">seger.scdior</span>, method <span class="op">=</span> <span class="st">"scDIOR"</span>, out.folder <span class="op">=</span> <span class="st">"benchmark"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># zellkonverter</span></span>
+<span><span class="fu"><a href="../reference/SCE2AD.html">SCE2AD</a></span><span class="op">(</span>sce.obj <span class="op">=</span> <span class="va">seger</span>, method <span class="op">=</span> <span class="st">"zellkonverter"</span>, </span>
+<span>       out.folder <span class="op">=</span> <span class="st">"benchmark"</span>, slot <span class="op">=</span> <span class="st">"rawcounts"</span>, </span>
+<span>       conda.path <span class="op">=</span> <span class="st">"/path/to/conda"</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level4">
 <h4 id="anndata-to-singlecellexperiment">AnnData to SingleCellExperiment<a class="anchor" aria-label="anchor" href="#anndata-to-singlecellexperiment"></a>
 </h4>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seger.anndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/SCEAnnData.html">SCEAnnData</a></span><span class="op">(</span></span>
-<span>  from <span class="op">=</span> <span class="st">"AnnData"</span>, to <span class="op">=</span> <span class="st">"SingleCellExperiment"</span>,</span>
-<span>  anndata.file <span class="op">=</span> <span class="va">seger.anndata.file</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<p>There are multiple tools available for format conversion from
+<code>AnnData</code> to <code>SingleCellExperiment</code>:</p>
+<ul>
+<li>
+<code>zellkonverter</code> is the best method in terms of
+information kept</li>
+<li>
+<code>schard</code> is the best method in terms of usability and
+running time</li>
+<li>
+<code>schard</code> and <code>scDIOR</code> have comparable
+performance in disk usage</li>
+</ul>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># scDIOR</span></span>
+<span><span class="va">sce.scdior</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2SCE.html">AD2SCE</a></span><span class="op">(</span>anndata.file <span class="op">=</span> <span class="st">"pbmc3k.h5ad"</span>, method <span class="op">=</span> <span class="st">"scDIOR"</span>, </span>
+<span>                     assay <span class="op">=</span> <span class="st">"RNA"</span>, use.raw <span class="op">=</span> <span class="cn">TRUE</span>, conda.path <span class="op">=</span> <span class="st">"/path/to/conda"</span><span class="op">)</span></span>
+<span><span class="co"># zellkonverter</span></span>
+<span><span class="va">sce.zell</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2SCE.html">AD2SCE</a></span><span class="op">(</span>anndata.file <span class="op">=</span> <span class="st">"pbmc3k.h5ad"</span>, method <span class="op">=</span> <span class="st">"zellkonverter"</span>,</span>
+<span>                   slot <span class="op">=</span> <span class="st">"scale.data"</span>, use.raw <span class="op">=</span> <span class="cn">TRUE</span>, conda.path <span class="op">=</span> <span class="st">"/path/to/conda"</span><span class="op">)</span></span>
+<span><span class="co"># schard</span></span>
+<span><span class="va">sce.schard</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AD2SCE.html">AD2SCE</a></span><span class="op">(</span>anndata.file <span class="op">=</span> <span class="st">"pbmc3k.h5ad"</span>, </span>
+<span>                     method <span class="op">=</span> <span class="st">"schard"</span>, use.raw <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -940,7 +1011,7 @@ of this environment.</p>
 <div class="section level4">
 <h4 id="singlecellexperiment-to-loom">SingleCellExperiment to loom<a class="anchor" aria-label="anchor" href="#singlecellexperiment-to-loom"></a>
 </h4>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># remove seger.loom first</span></span>
 <span><span class="va">seger.loom.file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>pattern <span class="op">=</span> <span class="st">"seger_"</span>, fileext <span class="op">=</span> <span class="st">".loom"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/SCELoom.html">SCELoom</a></span><span class="op">(</span></span>
@@ -952,7 +1023,7 @@ of this environment.</p>
 <div class="section level4">
 <h4 id="loom-to-singlecellexperiment">loom to SingleCellExperiment<a class="anchor" aria-label="anchor" href="#loom-to-singlecellexperiment"></a>
 </h4>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">seger.loom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/SCELoom.html">SCELoom</a></span><span class="op">(</span></span>
 <span>  from <span class="op">=</span> <span class="st">"loom"</span>, to <span class="op">=</span> <span class="st">"SingleCellExperiment"</span>,</span>
 <span>  loom.file <span class="op">=</span> <span class="va">seger.loom.file</span></span>
