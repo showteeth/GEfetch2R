@@ -34,13 +34,13 @@ Until now, the public resources supported and the returned values:
   <tr>
     <td>GEO</td>
     <td>https://www.ncbi.nlm.nih.gov/geo/</td>
-    <td>rds, rdata, h5ad, loom</td>
+    <td>rds, RData, h5ad, loom</td>
     <td>SeuratObject(rds) or failed datasets</td>
   </tr>
   <tr>
     <td>Zenodo</td>
     <td>https://zenodo.org/</td>
-    <td>count matrix, rds, rdata, h5ad, et al.</td>
+    <td>count matrix, rds, RData, h5ad, et al.</td>
     <td>SeuratObject(rds) or failed datasets</td>
   </tr>
   <tr>
@@ -52,7 +52,7 @@ Until now, the public resources supported and the returned values:
   <tr>
     <td>Human Cell Atlas</td>
     <td>https://www.humancellatlas.org/</td>
-    <td>rds, rdata, h5, h5ad, loom</td>
+    <td>rds, RData, h5, h5ad, loom</td>
     <td>SeuratObject(rds) or failed projects</td>
   </tr>
 </tbody>
@@ -139,7 +139,7 @@ head(GSE297431.meta.supp)
 
 ### Download object and load to R
 
-After downloading the metadata, users can **download the specified objects** with `ParseGEOProcessed`. The format of downloaded objects are controlled by `file.ext` (choose from `"rds"`, `"rdata"`, `"h5ad"` and `"loom"`). 
+After downloading the metadata, users can **download the specified objects** with `ParseGEOProcessed`. The format of downloaded objects are controlled by `file.ext` (choose from `"rds"`, `"rdata"`, `"h5ad"` and `"loom"`) and **the provided object formats should be in lower case.**
 
 The processed objects in the supplementary files are in two forms:
 
@@ -235,7 +235,7 @@ multi.dois
 
 ### Download object and load to R
 
-After manually check the extracted metadata, users can **download the specified objects** with `ParseZenodo`. The format of downloaded objects are controlled by `file.ext` and **the provided object formats should be in lower case (e.g. rds/rdata/h5ad).**
+After manually check the extracted metadata, users can **download the specified objects** with `ParseZenodo`. The format of downloaded objects are controlled by `file.ext` and **the provided object formats should be in lower case.**
 
 The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds` and `return.seu = TRUE`). If dataframe, users can re-run `ParseZenodo` by setting `doi.df` to the returned value.
 
@@ -279,8 +279,6 @@ The [CELLxGENE](https://cellxgene.cziscience.com/) is a web server contains **20
 [CELLxGENE](https://cellxgene.cziscience.com/) provides an R package ([cellxgene.census](https://github.com/chanzuckerberg/cellxgene-census)) to access the data, but sometimes it's not timely updated. `GEfetch2R` also supports users to access [CELLxGENE](https://cellxgene.cziscience.com/) via [cellxgene.census](https://github.com/chanzuckerberg/cellxgene-census) (`use.census = TRUE`).
 
 ### Given dataset
-
-With the collection or dataset link(s), user can download the `h5ad` objects:
 
 With the collection or dataset link(s), users can **download the `h5ad` objects** with `ParseCELLxGENE`.
 
@@ -394,7 +392,7 @@ nrow(cellxgene.down.meta)
 
 #### Download object and load to R
 
-After manually check the extracted metadata, users can **download the specified objects** with `ParseCELLxGENE`. The downloaded objects are controlled by `file.ext` (choose from `"rds"` and `"h5ad"`).
+After manually check the extracted metadata, users can **download the specified objects** with `ParseCELLxGENE`. The downloaded objects are controlled by `file.ext` (choose from `"rds"` and `"h5ad"`)  and **the provided object formats should be in lower case.**
 
 The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds` and `return.seu = TRUE`). If dataframe, users can re-run `ParseCELLxGENE` by setting `meta` to the returned value.
 
@@ -455,7 +453,7 @@ The [Human Cell Atlas](https://www.humancellatlas.org/) aims to map every cell t
 
 ### Given dataset
 
-With the dataset link(s), users can **download the processed objects** with `ParseHCA`. The format of downloaded objects are controlled by `file.ext` (choose from `"tsv"`, `"rds"`, `"rdata"`, `"h5"`, `"h5ad"` and `"loom"`).
+With the dataset link(s), users can **download the processed objects** with `ParseHCA`. The format of downloaded objects are controlled by `file.ext` (choose from `"tsv"`, `"rds"`, `"rdata"`, `"h5"`, `"h5ad"` and `"loom"`) and **the provided object formats should be in lower case.**
 
 The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds` and `return.seu = TRUE`). If dataframe, users can re-run `ParseHCA` by setting `meta` to the returned value.
 
@@ -544,7 +542,7 @@ nrow(hca.human.10x.projects)
 
 #### Download object and load to R
 
-After manually check the extracted metadata, users can **download the specified objects** with `ParseHCA`. The format of downloaded objects are controlled by `file.ext` (choose from `"tsv"`, `"rds"`, `"rdata"`, `"h5"`, `"h5ad"` and `"loom"`).
+After manually check the extracted metadata, users can **download the specified objects** with `ParseHCA`. The format of downloaded objects are controlled by `file.ext` (choose from `"tsv"`, `"rds"`, `"rdata"`, `"h5"`, `"h5ad"` and `"loom"`) and **the provided object formats should be in lower case.**
 
 The returned value is a dataframe containing failed objects or a `SeuratObject` (if `file.ext` is `rds` and `return.seu = TRUE`). If dataframe, users can re-run `ParseHCA` by setting `meta` to the returned value.
 

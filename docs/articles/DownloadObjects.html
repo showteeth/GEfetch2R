@@ -59,14 +59,14 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>DownloadObjects</h1>
-            
-      
+
+
       <small class="dont-index">Source: <a href="https://github.com/showteeth/GEfetch2R/blob/HEAD/vignettes/DownloadObjects.Rmd" class="external-link"><code>vignettes/DownloadObjects.Rmd</code></a></small>
       <div class="d-none name"><code>DownloadObjects.Rmd</code></div>
     </div>
 
-    
-    
+
+
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
@@ -100,7 +100,7 @@ GEO
 <a href="https://www.ncbi.nlm.nih.gov/geo/" class="external-link uri">https://www.ncbi.nlm.nih.gov/geo/</a>
 </td>
 <td>
-rds, rdata, h5ad, loom
+rds, RData, h5ad, loom
 </td>
 <td>
 SeuratObject(rds) or failed datasets
@@ -114,7 +114,7 @@ Zenodo
 <a href="https://zenodo.org/" class="external-link uri">https://zenodo.org/</a>
 </td>
 <td>
-count matrix, rds, rdata, h5ad, et al.
+count matrix, rds, RData, h5ad, et al.
 </td>
 <td>
 SeuratObject(rds) or failed datasets
@@ -142,7 +142,7 @@ Human Cell Atlas
 <a href="https://www.humancellatlas.org/" class="external-link uri">https://www.humancellatlas.org/</a>
 </td>
 <td>
-rds, rdata, h5, h5ad, loom
+rds, RData, h5, h5ad, loom
 </td>
 <td>
 SeuratObject(rds) or failed projects
@@ -245,7 +245,8 @@ paper abstract, organism, protocol, data processing methods, et al:</li>
 specified objects</strong> with <code>ParseGEOProcessed</code>. The
 format of downloaded objects are controlled by <code>file.ext</code>
 (choose from <code>"rds"</code>, <code>"rdata"</code>,
-<code>"h5ad"</code> and <code>"loom"</code>).</p>
+<code>"h5ad"</code> and <code>"loom"</code>) and <strong>the provided object
+formats should be in lower case.</strong></p>
 <p>The processed objects in the supplementary files are in two
 forms:</p>
 <ul>
@@ -356,7 +357,7 @@ is restricted access, the returned dataframe will be empty.</p>
 <strong>download the specified objects</strong> with
 <code>ParseZenodo</code>. The format of downloaded objects are
 controlled by <code>file.ext</code> and <strong>the provided object
-formats should be in lower case (e.g. rds/rdata/h5ad).</strong></p>
+formats should be in lower case.</strong></p>
 <p>The returned value is a dataframe containing failed objects or a
 <code>SeuratObject</code> (if <code>file.ext</code> is <code>rds</code>
 and <code>return.seu = TRUE</code>). If dataframe, users can re-run
@@ -416,8 +417,6 @@ to access the data, but sometimes it’s not timely updated.
 <div class="section level3">
 <h3 id="given-dataset">Given dataset<a class="anchor" aria-label="anchor" href="#given-dataset"></a>
 </h3>
-<p>With the collection or dataset link(s), user can download the
-<code>h5ad</code> objects:</p>
 <p>With the collection or dataset link(s), users can <strong>download
 the <code>h5ad</code> objects</strong> with
 <code>ParseCELLxGENE</code>.</p>
@@ -535,7 +534,8 @@ number</strong>:</p>
 <strong>download the specified objects</strong> with
 <code>ParseCELLxGENE</code>. The downloaded objects are controlled by
 <code>file.ext</code> (choose from <code>"rds"</code> and
-<code>"h5ad"</code>).</p>
+<code>"h5ad"</code>) and <strong>the provided object
+formats should be in lower case.</strong></p>
 <p>The returned value is a dataframe containing failed objects or a
 <code>SeuratObject</code> (if <code>file.ext</code> is <code>rds</code>
 and <code>return.seu = TRUE</code>). If dataframe, users can re-run
@@ -608,7 +608,8 @@ projects</strong>, most of which are from <code>Homo sapiens</code>
 objects</strong> with <code>ParseHCA</code>. The format of downloaded
 objects are controlled by <code>file.ext</code> (choose from
 <code>"tsv"</code>, <code>"rds"</code>, <code>"rdata"</code>,
-<code>"h5"</code>, <code>"h5ad"</code> and <code>"loom"</code>).</p>
+<code>"h5"</code>, <code>"h5ad"</code> and <code>"loom"</code>) and <strong>the provided object
+formats should be in lower case.</strong></p>
 <p>The returned value is a dataframe containing failed objects or a
 <code>SeuratObject</code> (if <code>file.ext</code> is <code>rds</code>
 and <code>return.seu = TRUE</code>). If dataframe, users can re-run
@@ -705,7 +706,8 @@ number</strong>:</p>
 <code>ParseHCA</code>. The format of downloaded objects are controlled
 by <code>file.ext</code> (choose from <code>"tsv"</code>,
 <code>"rds"</code>, <code>"rdata"</code>, <code>"h5"</code>,
-<code>"h5ad"</code> and <code>"loom"</code>).</p>
+<code>"h5ad"</code> and <code>"loom"</code>) and <strong>the provided object
+formats should be in lower case.</strong></p>
 <p>The returned value is a dataframe containing failed objects or a
 <code>SeuratObject</code> (if <code>file.ext</code> is <code>rds</code>
 and <code>return.seu = TRUE</code>). If dataframe, users can re-run
