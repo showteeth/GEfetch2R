@@ -625,14 +625,20 @@ There are multiple tools available for format conversion from `SeuratObject` to 
 
 ```{r seu2anndata, eval=FALSE}
 # SeuratDisk
-Seu2AD(seu.obj = pbmc_small, method = "SeuratDisk", out.folder = "out.folder", 
-       assay = "RNA", save.scale = TRUE)
+Seu2AD(
+  seu.obj = pbmc_small, method = "SeuratDisk", out.folder = "out.folder",
+  assay = "RNA", save.scale = TRUE
+)
 # sceasy
-Seu2AD(seu.obj = pbmc_small, method = "sceasy", out.folder = "out.folder", 
-       assay = "RNA", slot = "counts", conda.path = "/path/to/conda")
+Seu2AD(
+  seu.obj = pbmc_small, method = "sceasy", out.folder = "out.folder",
+  assay = "RNA", slot = "counts", conda.path = "/path/to/conda"
+)
 # scDIOR
-Seu2AD(seu.obj = pbmc_small, method = "scDIOR", 
-       out.folder = "out.folder", assay = "RNA", save.scale = TRUE)
+Seu2AD(
+  seu.obj = pbmc_small, method = "scDIOR",
+  out.folder = "out.folder", assay = "RNA", save.scale = TRUE
+)
 ```
 
 <hr />
@@ -656,9 +662,11 @@ ExportSeurat(
 
 The conversion is performed with functions implemented in `Seurat`:
 ```{r sce2seu, eval=FALSE}
-seu.obj.sce <- ImportSeurat(obj = sce.obj, from = "SCE", 
-                            count.assay = "counts", data.assay = "logcounts", 
-                            assay = "RNA")
+seu.obj.sce <- ImportSeurat(
+  obj = sce.obj, from = "SCE",
+  count.assay = "counts", data.assay = "logcounts",
+  assay = "RNA"
+)
 ```
 
 <hr />
@@ -667,15 +675,19 @@ seu.obj.sce <- ImportSeurat(obj = sce.obj, from = "SCE",
 
 `CellDataSet` to `SeuratObject` (The conversion is performed with functions implemented in `Seurat`):
 ```{r cds2seu1, eval=FALSE}
-seu.obj.cds <- ImportSeurat(obj = cds.obj, from = "CellDataSet", 
-                            count.assay = "counts", assay = "RNA")
+seu.obj.cds <- ImportSeurat(
+  obj = cds.obj, from = "CellDataSet",
+  count.assay = "counts", assay = "RNA"
+)
 ```
 
 `cell_data_set` to `SeuratObject` (The conversion is performed with functions implemented in `Seurat`):
 ```{r cds2seu2, eval=FALSE}
-seu.obj.cds3 <- ImportSeurat(obj = cds3.obj, from = "cell_data_set", 
-                             count.assay = "counts", data.assay = "logcounts",
-                             assay = "RNA")
+seu.obj.cds3 <- ImportSeurat(
+  obj = cds3.obj, from = "cell_data_set",
+  count.assay = "counts", data.assay = "logcounts",
+  assay = "RNA"
+)
 ```
 
 <hr />
@@ -691,20 +703,30 @@ There are multiple tools available for format conversion from `AnnData` to `Seur
 
 ```{r anndata2seu, eval=FALSE}
 # SeuratDisk
-ann.seu <- AD2Seu(anndata.file = "pbmc3k.h5ad", method = "SeuratDisk", 
-                  assay = "RNA", load.assays = c("RNA"))
+ann.seu <- AD2Seu(
+  anndata.file = "pbmc3k.h5ad", method = "SeuratDisk",
+  assay = "RNA", load.assays = c("RNA")
+)
 # sceasy
-ann.sceasy <- AD2Seu(anndata.file = "pbmc3k.h5ad", method = "sceasy",
-                     assay = "RNA", slot = "scale.data")
+ann.sceasy <- AD2Seu(
+  anndata.file = "pbmc3k.h5ad", method = "sceasy",
+  assay = "RNA", slot = "scale.data"
+)
 # scDIOR
-ann.scdior <- AD2Seu(anndata.file = "pbmc3k.h5ad", method = "scDIOR", 
-                     assay = "RNA")
+ann.scdior <- AD2Seu(
+  anndata.file = "pbmc3k.h5ad", method = "scDIOR",
+  assay = "RNA"
+)
 # schard
-ann.schard <- AD2Seu(anndata.file = "pbmc3k.h5ad", 
-                     method = "schard", assay = "RNA", use.raw = T)
+ann.schard <- AD2Seu(
+  anndata.file = "pbmc3k.h5ad",
+  method = "schard", assay = "RNA", use.raw = T
+)
 # SeuratDisk+scDIOR
-ann.seuscdior <- AD2Seu(anndata.file = "pbmc3k.h5ad", method = "SeuratDisk+scDIOR", 
-                        assay = "RNA", load.assays = c("RNA"))
+ann.seuscdior <- AD2Seu(
+  anndata.file = "pbmc3k.h5ad", method = "SeuratDisk+scDIOR",
+  assay = "RNA", load.assays = c("RNA")
+)
 ```
 
 <hr />
@@ -731,9 +753,11 @@ There are multiple tools available for format conversion from `SingleCellExperim
 
 ```{r sce2anndata, eval=FALSE}
 # sceasy
-SCE2AD(sce.obj = seger, method = "sceasy", out.folder = "benchmark", 
-       slot = "rawcounts", conda.path = "/path/to/conda")
-       
+SCE2AD(
+  sce.obj = seger, method = "sceasy", out.folder = "benchmark",
+  slot = "rawcounts", conda.path = "/path/to/conda"
+)
+
 # scDIOR
 seger.scdior <- seger
 library(SingleCellExperiment)
@@ -742,9 +766,11 @@ rowData(seger.scdior)$varm <- NULL
 SCE2AD(sce.obj = seger.scdior, method = "scDIOR", out.folder = "benchmark")
 
 # zellkonverter
-SCE2AD(sce.obj = seger, method = "zellkonverter", 
-       out.folder = "benchmark", slot = "rawcounts", 
-       conda.path = "/path/to/conda")
+SCE2AD(
+  sce.obj = seger, method = "zellkonverter",
+  out.folder = "benchmark", slot = "rawcounts",
+  conda.path = "/path/to/conda"
+)
 ```
 
 <hr />
@@ -759,14 +785,20 @@ There are multiple tools available for format conversion from `AnnData` to `Sing
 
 ```{r anndata2sce, eval=FALSE}
 # scDIOR
-sce.scdior <- AD2SCE(anndata.file = "pbmc3k.h5ad", method = "scDIOR", 
-                     assay = "RNA", use.raw = TRUE, conda.path = "/path/to/conda")
+sce.scdior <- AD2SCE(
+  anndata.file = "pbmc3k.h5ad", method = "scDIOR",
+  assay = "RNA", use.raw = TRUE, conda.path = "/path/to/conda"
+)
 # zellkonverter
-sce.zell <- AD2SCE(anndata.file = "pbmc3k.h5ad", method = "zellkonverter",
-                   slot = "scale.data", use.raw = TRUE, conda.path = "/path/to/conda")
+sce.zell <- AD2SCE(
+  anndata.file = "pbmc3k.h5ad", method = "zellkonverter",
+  slot = "scale.data", use.raw = TRUE, conda.path = "/path/to/conda"
+)
 # schard
-sce.schard <- AD2SCE(anndata.file = "pbmc3k.h5ad", 
-                     method = "schard", use.raw = TRUE)
+sce.schard <- AD2SCE(
+  anndata.file = "pbmc3k.h5ad",
+  method = "schard", use.raw = TRUE
+)
 ```
 
 <hr />

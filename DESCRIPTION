@@ -2,12 +2,21 @@ Package: GEfetch2R
 Type: Package
 Title: Access and Format Single-Cell RNA-Seq Datasets from Public Resources 
 Version: 0.7.3
-Authors@R: 
+Authors@R: c(
     person(given = "Yabing",
            family = "Song",
            role = c("aut", "cre"),
-           email = "songyb0519@gmail.com")
-Maintainer: Yabing Song <songyb0519@gmail.com>
+           email = "songyb0519@gmail.com"),
+    person(given = "Jiaxin",
+           family = "Gao",
+           role = c("fnd", "aut"),
+           email = "gaojx@im.ac.cn"),
+    person(given = "Jianbin",
+           family = "Wang",
+           role = c("fnd", "aut"),
+           email = ""),
+    person("Gao Lab, Wang Lab and Collaborators", role = "ctb"))
+Maintainer: Yabing Song <songyb0519@gmail.com>; Jiaxin Gao <gaojx@im.ac.cn>
 Description: The goal of 'GEfetch2R' is to access and format single-cell RNA-seq datasets. It can be used to download single-cell RNA-seq
     datasets from widely used public resources, including GEO <https://www.ncbi.nlm.nih.gov/geo/>, Zenodo <https://zenodo.org/>, 
     CELLxGENE <https://cellxgene.cziscience.com/>, Human Cell Atlas <https://www.humancellatlas.org/>, PanglaoDB <https://panglaodb.se/index.html> 
