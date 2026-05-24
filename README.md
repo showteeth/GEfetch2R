@@ -57,6 +57,14 @@ For **scRNA-seq**:
 
 <hr />
 
+## Citation
+
+If you use **GEfetch2R** in published research, please cite:
+
+* Song Y, Wang J\*, Gao J\*. [GEfetch2R: fetching single-cell/bulk RNA-seq data from public repositories to R and benchmarking the subsequent format conversion tools](https://academic.oup.com/gigascience/article/doi/10.1093/gigascience/giag039/8644283). ***GigaScience***, 2026, 15: giag039.
+
+<hr />
+
 ## Framework
 
 <div align="center">

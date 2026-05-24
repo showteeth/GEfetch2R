@@ -1,0 +1,21 @@
+citHeader("To cite GEfetch2R in publications:")
+
+bibentry(
+  bibtype     = "Article",
+  title       = "GEfetch2R: fetching single-cell/bulk RNA-seq data from public repositories to R and benchmarking the subsequent format conversion tools",
+  author      = c(
+              person("Yabing", "Song", email = "songyb0519@gmail.com"),
+              person("Jianbin", "Wang"),
+              person("Jiaxin", "Gao")
+              ),
+  journal     = "GigaScience",
+  year        = "2026",
+  volume      = "15",
+  pages       = "giag039",
+  PMID        = "41964930",
+  doi         = "10.1093/gigascience/giag039",
+  url         = "https://doi.org/10.1093/gigascience/giag039",
+  textVersion = paste("Song Y, Wang J, Gao J.",
+  "GEfetch2R: fetching single-cell/bulk RNA-seq data from public repositories to R and benchmarking the subsequent format conversion tools.",
+  "GigaScience, 2026, 15: giag039.")
+)
